@@ -1,13 +1,14 @@
 const express = require( 'express' );
 let app = express();
 const path = require( 'path' );
+const cors = require( 'cors' );
 const fs = require( 'fs' );
 const bodyParser = require( 'body-parser' );
 const dialog = require( 'electron' ).dialog;
 
 app.use( bodyParser.urlencoded( { extended: false } ) );
 app.use( bodyParser.json() );
-
+app.use( cors() );
 
 app.get( '/', ( request, response ) => {
     response.send( 'Hello world' );

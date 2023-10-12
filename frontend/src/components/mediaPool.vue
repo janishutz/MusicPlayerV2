@@ -36,11 +36,22 @@
             return {
                 hasLoadedSongs: false,
                 songQueue: [],
+                loadedDirs: [],
             }
         },
         methods: {
+            getLoadedDirs () {
+
+            },
             loadSongs() {
-                fetch( 'http://localhost:8081/openSongs' )
+                fetch( 'http://localhost:8081/openSongs' ).then( res => {
+                    if ( res.status === 200 ) {
+                        res.json().then( json => {
+                            this.hasLoadedSongs = true;
+                            this.loadedDirs = json.data;
+                        } );
+                    }
+                } );
             }
         }
     }
