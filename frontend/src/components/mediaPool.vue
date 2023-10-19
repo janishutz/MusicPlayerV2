@@ -37,6 +37,7 @@
                 hasLoadedSongs: false,
                 songQueue: [],
                 loadedDirs: [],
+                allowedFiletypes: [ '.mp3', '.wav' ]
             }
         },
         methods: {
@@ -49,9 +50,26 @@
                         res.json().then( json => {
                             this.hasLoadedSongs = true;
                             this.loadedDirs = json.data;
+                            this.indexFiles();
                         } );
                     }
                 } );
+            },
+            indexFiles () {
+                for ( let dir in this.loadedDirs ) {
+                    fetch( 'http://localhost:8081/indexDirs?dir=' + this.loadedDirs[ dir ] ).then( res => {
+                        if ( res.status === 200 ) {
+                            res.json().then( json => {
+                                for ( let file in json ) {
+                                    const fileType = json[ file ].slice( json[ file ].indexOf( '.' ), json[ file ].length );
+                                    if ( this.allowedFiletypes.includes( fileType ) ) {
+                                        this.songQueue.push( json[ file ] );
+                                    }
+                                }
+                            } );
+                        }
+                    } );
+                }
             }
         }
     }

@@ -16,7 +16,29 @@ app.get( '/', ( request, response ) => {
 
 
 app.get( '/openSongs', ( req, res ) => {
-    res.send( { 'data': dialog.showOpenDialogSync( { properties: [ 'openDirectory' ], title: 'Open music library folder' } ) } );
+    res.send( '{ "data": [ "/home/janis/Music/KB2022" ] }' )
+    // res.send( { 'data': dialog.showOpenDialogSync( { properties: [ 'openDirectory' ], title: 'Open music library folder' } ) } );
+} );
+
+app.get( '/indexDirs', ( req, res ) => {
+    if ( req.query.dir ) {
+        fs.readdir( req.query.dir, { encoding: 'utf-8' }, ( err, dat ) => {
+            if ( err ) res.status( 500 ).send( 'err' );
+            res.send( dat );
+        } );
+    } else {
+        res.status( 400 ).send( 'ERR_REQ_INCOMPLETE' );
+    }
+} );
+
+app.get( '/getSongDetails', ( req, res ) => {
+    if ( req.query.filename ) {
+        fs.readFile( req.query.filename, ( err, data ) => {
+            res.send( '' + data );
+        } );
+    } else {
+        res.status( 400 ).send( 'ERR_REQ_INCOMPLETE' );
+    }
 } );
 
 
