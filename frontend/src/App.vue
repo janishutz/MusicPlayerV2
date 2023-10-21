@@ -17,7 +17,7 @@
         --hover-color: rgb(165, 165, 165);
         --accent-background-hover: rgb(124, 140, 236);
         --overlay-color: rgba(0, 0, 0, 0.7);
-        --inactive-color: rgb(100, 100, 100);
+        --border-color: rgb(100, 100, 100);
         --highlight-backdrop: rgb(143, 134, 192);
         --hint-color: rgb(174, 210, 221);
         --PI: 3.14159265358979;
@@ -33,7 +33,7 @@
         --hover-color: rgb(83, 83, 83);
         --accent-background-hover: #4380a8;
         --overlay-color: rgba(104, 104, 104, 0.575);
-        --inactive-color: rgb(190, 190, 190);
+        --border-color: rgb(190, 190, 190);
         --highlight-backdrop: rgb(85, 63, 207);
         --hint-color: rgb(88, 91, 110);
     }
@@ -49,7 +49,7 @@
             --hover-color: rgb(83, 83, 83);
             --accent-background-hover: #4380a8;
             --overlay-color: rgba(104, 104, 104, 0.575);
-            --inactive-color: rgb(190, 190, 190);
+            --border-color: rgb(190, 190, 190);
             --highlight-backdrop: rgb(85, 63, 207);
             --hint-color: rgb(88, 91, 110);
         }
@@ -76,6 +76,8 @@
         height: 100%;
         margin: 0;
         padding: 0;
+        background-color: var( --background-color );
+        color: var( --primary-color );
     }
 
     #app {

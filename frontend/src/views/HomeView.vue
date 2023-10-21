@@ -3,11 +3,11 @@
         <div class="top-bar">
             <img src="@/assets/logo.png" alt="logo" class="logo">
             <div class="player-wrapper">
-                
+                <Player ref="player"></Player>
             </div>
         </div>
         <div class="pool-wrapper">
-            <mediaPool></mediaPool>
+            <mediaPool @playing="( song ) => { handlePlaying( song ) }"></mediaPool>
         </div>
     </div>
 </template>
@@ -51,11 +51,13 @@
 
 <script>
     import mediaPool from '@/components/mediaPool.vue';
+    import Player from '@/components/player.vue';
 
     export default {
         name: 'HomeView',
         components: {
             mediaPool,
+            Player,
         },
         data() {
             return {
@@ -64,8 +66,8 @@
             }
         },
         methods: {
-            loadSongs() {
-                
+            handlePlaying ( song ) {
+                this.$refs.player.play( song );
             }
         }
     }
