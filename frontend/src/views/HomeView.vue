@@ -3,11 +3,11 @@
         <div class="top-bar">
             <img src="@/assets/logo.png" alt="logo" class="logo">
             <div class="player-wrapper">
-                <Player ref="player"></Player>
+                <Player ref="player" @update="( info ) => { handleUpdates( info ) }"></Player>
             </div>
         </div>
         <div class="pool-wrapper">
-            <mediaPool @playing="( song ) => { handlePlaying( song ) }"></mediaPool>
+            <mediaPool @com="( info ) => { handleCom( info ) }" ref="pool"></mediaPool>
         </div>
     </div>
 </template>
@@ -20,17 +20,21 @@
 
     .pool-wrapper {
         height: 84vh;
+        margin-top: 16vh;
     }
 
     .top-bar {
         margin-left: auto;
         margin-right: auto;
+        position: fixed;
+        z-index: 8;
         width: 99%;
         height: 15vh;
         display: flex;
         align-items: center;
         flex-direction: row;
         border: var( --primary-color ) 2px solid;
+        background-color: var( --background-color );
     }
 
     .player-wrapper {
@@ -66,9 +70,16 @@
             }
         },
         methods: {
-            handlePlaying ( song ) {
-                this.$refs.player.play( song );
-            }
+            handleCom ( data ) {
+                if ( data.type === 'startPlayback' ) {
+                    this.$refs.player.play( data.song, data.autoplay === undefined ? true : data.autoplay );
+                } else {
+                    this.$refs.player.control( data.type );
+                }
+            },
+            handleUpdates ( data ) {
+                this.$refs.pool.update( data );
+            },
         }
     }
 </script>

@@ -29,7 +29,6 @@ app.get( '/openSongs', ( req, res ) => {
 app.get( '/indexDirs', ( req, res ) => {
     if ( req.query.dir ) {
         if ( indexedData[ req.query.dir ] ) {
-            console.log( 'using cache' );
             res.send( indexedData[ req.query.dir ] );
         } else {
             fs.readdir( req.query.dir, { encoding: 'utf-8' }, ( err, dat ) => {
@@ -48,7 +47,7 @@ app.get( '/indexDirs', ( req, res ) => {
                                     'year': metadata[ 'common' ][ 'year' ],
                                     'bpm': metadata[ 'common' ][ 'bpm' ],
                                     'genre': metadata[ 'common' ][ 'genre' ],
-                                    'duration': metadata[ 'format' ][ 'duration' ],
+                                    'duration': Math.round( metadata[ 'format' ][ 'duration' ] ),
                                     'isLossless': metadata[ 'format' ][ 'lossless' ],
                                     'sampleRate': metadata[ 'format' ][ 'sampleRate' ],
                                     'bitrate': metadata[ 'format' ][ 'bitrate' ],
