@@ -47,7 +47,7 @@
     }
 
     .logo {
-        height: 90%;
+        height: 13vh;
         margin-left: 3%;
         margin-right: auto;
     }

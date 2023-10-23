@@ -1,5 +1,5 @@
 <template>
-    <div class="media-pool">
+    <div class="media-pool" :style="isShowingFancyView ? 'overflow: hidden;' : ''">
         <div v-if="hasLoadedSongs" style="width: 100%;" class="song-list-wrapper">
             <div v-for="song in songQueue" class="song-list" :class="[ isPlaying ? ( currentlyPlaying === song.filename ? 'playing': 'not-playing' ) : 'not-playing', !isPlaying && currentlyPlaying === song.filename ? 'active-song': undefined ]">
                 <span class="material-symbols-outlined song-image" v-if="!loadCoverArtPreview || !song.hasCoverArt">music_note</span>
@@ -128,7 +128,7 @@
         align-items: center;
         width: 80%;
         margin: 2px;
-        padding: 15px;
+        padding: 1vh;
         border: 1px var( --border-color ) solid;
     }
 
@@ -199,6 +199,7 @@
                 isPlaying: false,
                 songPos: 0,
                 repeat: false,
+                isShowingFancyView: false,
             }
         },
         methods: {
@@ -235,6 +236,8 @@
                     this.repeat = true;
                 } else if ( status.type === 'repeatOff' ) {
                     this.repeat = false;
+                } else if ( status.type === 'fancyView' ) {
+                    this.isShowingFancyView = status.status;
                 }
             },
             queueHandler ( command ) {

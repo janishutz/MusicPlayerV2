@@ -66,6 +66,10 @@ app.get( '/indexDirs', ( req, res ) => {
                             } catch ( err ) {
                                 files[ req.query.dir + '/' + dat[ file ] ] = 'ERROR';
                             }
+                        } else if ( dat[ file ].slice( dat[ file ].indexOf( '.' ), dat[ file ].length ) === '.csv' ) {
+
+                        } else if ( dat[ file ].slice( dat[ file ].indexOf( '.' ), dat[ file ].length ) === '.json' ) {
+                            
                         }
                     }
                     indexedData[ req.query.dir ] = files;

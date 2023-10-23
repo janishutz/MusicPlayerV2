@@ -26,6 +26,7 @@
                     <h3>{{ playingSong.title ?? 'No song selected' }}</h3>
                     <p>{{ playingSong.artist }}</p>
                 </div>
+                <div class="image"></div>
             </div>
             <div class="playback-pos-info">
                 <div style="margin-right: auto;">{{ playbackPosBeautified }}</div>
@@ -33,14 +34,14 @@
             </div>
             <sliderView :active="audioLoaded" :position="playbackPos" :duration="playingSong.duration" @pos="( p ) => { setPos( p ) }"></sliderView>
         </div>
-        <FancyView v-if="isShowingFancyView" :song="playingSong"></FancyView>
+        <FancyView v-if="isShowingFancyView" :song="playingSong" @control="instruction => { control( instruction ) }" :playing="isPlaying"></FancyView>
     </div>
 </template>
 
 <style>
     .song-info {
         background-color: #8e9ced;
-        height: 80%;
+        height: 13vh;
         width: 50%;
         margin-left: auto;
         margin-right: auto;
@@ -48,11 +49,11 @@
     }
 
     .image {
-        width: 6vh;
-        height: 6vh;
+        width: 7vh;
+        height: 7vh;
         object-fit: cover;
         object-position: center;
-        font-size: 6vh;
+        font-size: 7vh;
         margin-left: 1vh;
         margin-top: 1vh;
     }
@@ -107,8 +108,8 @@
     .playback-pos-info {
         display: flex;
         flex-direction: row;
-        width: 99%;
-        margin-left: 0.5%;
+        width: 98%;
+        margin-left: 1%;
         position: absolute;
         bottom: 17px;
     }
@@ -239,6 +240,9 @@ export default {
                 } else if ( action === 'repeatOff' ) {
                     this.$emit( 'update', { 'type': 'repeatOff' } );
                     this.repeatMode = 'off';
+                } else if ( action === 'exitFancyView' ) {
+                    this.isShowingFancyView = false;
+                    this.$emit( 'update', { 'type': 'fancyView', 'status': false } );
                 }
             } else if ( action === 'songsLoaded' ) {
                 this.hasLoadedSongs = true;
@@ -256,6 +260,9 @@ export default {
             } else if ( action === 'repeatOff' ) {
                 this.$emit( 'update', { 'type': 'repeatOff' } );
                 this.repeatMode = 'off';
+            } else if ( action === 'exitFancyView' ) {
+                this.isShowingFancyView = false;
+                this.$emit( 'update', { 'type': 'fancyView', 'status': false } );
             }
         },
         setPos( pos ) {
@@ -263,6 +270,7 @@ export default {
             musicPlayer.currentTime = pos;
         },
         showFancyView() {
+            this.$emit( 'update', { 'type': 'fancyView', 'status': true } );
             this.isShowingFancyView = true;
         },
     }
