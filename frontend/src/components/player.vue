@@ -17,7 +17,7 @@
         <div class="song-info">
             <audio v-if="audioLoaded" :src="'http://localhost:8081/getSongFile?filename=' + playingSong.filename" id="music-player"></audio>
             <div class="song-info-wrapper">
-                <div v-if="audioLoaded">
+                <div v-if="audioLoaded" @click="showFancyView()" style="cursor: pointer;">
                     <span class="material-symbols-outlined image" v-if="!playingSong.hasCoverArt">music_note</span>
                     <img v-else :src="'http://localhost:8081/getSongCover?filename=' + playingSong.filename" class="image">
                 </div>
@@ -33,6 +33,7 @@
             </div>
             <sliderView :active="audioLoaded" :position="playbackPos" :duration="playingSong.duration" @pos="( p ) => { setPos( p ) }"></sliderView>
         </div>
+        <FancyView v-if="isShowingFancyView" :song="playingSong"></FancyView>
     </div>
 </template>
 
@@ -114,6 +115,7 @@
 </style>
 
 <script>
+import FancyView from './fancyView.vue';
 import SliderView from './sliderView.vue';
 
 export default {
@@ -129,10 +131,12 @@ export default {
             playbackPosBeautified: '00:00',
             durationBeautified: '--:--',
             hasLoadedSongs: false,
+            isShowingFancyView: false,
         }
     },
     components: {
         SliderView,
+        FancyView,
     },
     methods: {
         play( song, autoplay, doCrossFade = false ) {
@@ -257,6 +261,9 @@ export default {
         setPos( pos ) {
             let musicPlayer = document.getElementById( 'music-player' );
             musicPlayer.currentTime = pos;
+        },
+        showFancyView() {
+            this.isShowingFancyView = true;
         },
     }
 }
