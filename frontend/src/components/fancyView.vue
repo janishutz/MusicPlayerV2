@@ -3,7 +3,13 @@
         <span class="material-symbols-outlined fancy-view-song-art" v-if="!song.hasCoverArt">music_note</span>
         <img v-else :src="'http://localhost:8081/getSongCover?filename=' + song.filename" class="fancy-view-song-art">
         <button @click="exit()" id="exit-button"><span class="material-symbols-outlined" style="font-size: 4vh;">close</span></button>
-        <div class="controls"></div>
+        <div class="controls">
+            <div>
+                <div style="margin-right: auto;">{{ playbackPosBeautified }}</div>
+                <div>{{ durationBeautified }}</div>
+            </div>
+            <sliderView :active="audioLoaded" :position="playbackPos" :duration="song.duration" @pos="( p ) => { setPos( p ) }"></sliderView>
+        </div>
     </div>
 </template>
 
@@ -39,18 +45,43 @@
 </style>
 
 <script>
+    import SliderView from './sliderView.vue';
     export default {
         methods: {
-            control ( instruction ) {
+            control ( instruction, value ) {
 
+            },
+            setPos ( pos ) {
+                this.$emit( 'posUpdate', pos );
             },
             exit() {
                 this.$emit( 'control', 'exitFancyView' );
             }
         },
+        components: {
+            SliderView,
+        },
         props: {
             song: {
                 type: Object,
+            },
+            playbackPos: {
+                type: Number,
+            },
+            playbackPosBeautified: {
+                type: String,
+            },
+            durationBeautified: {
+                type: String,
+            },
+            shuffle: {
+                type: Boolean,
+            },
+            isPlaying: {
+                type: Boolean,
+            },
+            repeatMode: {
+                type: String,
             }
         }
     }

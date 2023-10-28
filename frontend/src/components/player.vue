@@ -34,7 +34,10 @@
             </div>
             <sliderView :active="audioLoaded" :position="playbackPos" :duration="playingSong.duration" @pos="( p ) => { setPos( p ) }"></sliderView>
         </div>
-        <FancyView v-if="isShowingFancyView" :song="playingSong" @control="instruction => { control( instruction ) }" :playing="isPlaying"></FancyView>
+        <FancyView v-if="isShowingFancyView" :song="playingSong" @control="instruction => { control( instruction ) }" :isPlaying="isPlaying"
+            :shuffle="isShuffleEnabled" :repeatMode="repeatMode" :durationBeautified="durationBeautified" 
+            :playbackPos="playbackPos" :playbackPosBeautified="playbackPosBeautified"
+            @posUpdate="pos => { setPos( pos ) }"></FancyView>
     </div>
 </template>
 
