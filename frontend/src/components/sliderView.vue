@@ -144,11 +144,6 @@ export default {
                 this.originalPos = Math.ceil( this.position / this.duration * ( document.getElementById( 'progress-slider-' + this.name ).scrollWidth - 5 ) );
             }
         }
-    },
-    created() {
-        setTimeout( () => {
-            console.log( document.getElementById( 'progress-slider-' + this.name ).scrollWidth );
-        }, 1000 );
     }
 }
 </script>
