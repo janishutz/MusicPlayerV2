@@ -8,7 +8,8 @@
                 <div style="margin-right: auto;">{{ playbackPosBeautified }}</div>
                 <div>{{ durationBeautified }}</div>
             </div>
-            <sliderView :active="audioLoaded" :position="playbackPos" :duration="song.duration" @pos="( p ) => { setPos( p ) }"></sliderView>
+            <sliderView :active="true" :position="playbackPos" :duration="song.duration" @pos="( p ) => { setPos( p ) }"
+                name="fancy"></sliderView>
         </div>
     </div>
 </template>

@@ -32,7 +32,8 @@
                 <div style="margin-right: auto;">{{ playbackPosBeautified }}</div>
                 <div>{{ durationBeautified }}</div>
             </div>
-            <sliderView :active="audioLoaded" :position="playbackPos" :duration="playingSong.duration" @pos="( p ) => { setPos( p ) }"></sliderView>
+            <sliderView :active="audioLoaded" :position="playbackPos" :duration="playingSong.duration" @pos="( p ) => { setPos( p ) }"
+                name="player"></sliderView>
         </div>
         <FancyView v-if="isShowingFancyView" :song="playingSong" @control="instruction => { control( instruction ) }" :isPlaying="isPlaying"
             :shuffle="isShuffleEnabled" :repeatMode="repeatMode" :durationBeautified="durationBeautified" 

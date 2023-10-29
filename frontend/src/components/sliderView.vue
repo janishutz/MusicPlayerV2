@@ -1,6 +1,7 @@
 <template>
     <div style="width: 100%; height: 100%;">
-        <progress id="progress-slider" :value="sliderProgress" max="1000" @mousedown="( e ) => { setPos( e ) }" :class="active ? '' : 'slider-inactive'"></progress>
+        <progress :id="'progress-slider-' + name" class="progress-slider" :value="sliderProgress" max="1000" @mousedown="( e ) => { setPos( e ) }" 
+            :class="active ? '' : 'slider-inactive'"></progress>
         <div v-if="active" id="slider-knob" @mousedown="( e ) => { startMove( e ) }"
             :style="'left: ' + ( parseInt( originalPos ) + parseInt( sliderPos ) ) + 'px;'">
             <div id="slider-knob-style"></div>
@@ -13,7 +14,7 @@
 </template>
 
 <style scoped>
-    #progress-slider {
+    .progress-slider {
         width: 100%;
         margin: 0;
         position: absolute;
@@ -24,7 +25,7 @@
         background-color: #baf4c9;
     }
 
-    #progress-slider::-webkit-progress-value {
+    .progress-slider::-webkit-progress-value {
         background-color: #baf4c9;
     }
 
@@ -85,6 +86,10 @@ export default {
         active: {
             type: Boolean,
             default: true,
+        },
+        name: {
+            type: String,
+            default: '1',
         }
     },
     data () {
@@ -99,7 +104,7 @@ export default {
     methods: {
         handleDrag( e ) {
             if ( this.isDragging ) {
-                if ( 0 < this.originalPos + e.screenX - this.offset && this.originalPos + e.screenX - this.offset < document.getElementById( 'progress-slider' ).clientWidth - 5 ) {
+                if ( 0 < this.originalPos + e.screenX - this.offset && this.originalPos + e.screenX - this.offset < document.getElementById( 'progress-slider-' + this.name ).clientWidth - 5 ) {
                     this.sliderPos = e.screenX - this.offset;
                     this.calcProgressPos();
                 }
@@ -126,19 +131,24 @@ export default {
             }
         },
         calcProgressPos() {
-            this.sliderProgress = Math.ceil( ( this.originalPos + parseInt( this.sliderPos ) ) / ( document.getElementById( 'progress-slider' ).clientWidth - 5 ) * 1000 );
+            this.sliderProgress = Math.ceil( ( this.originalPos + parseInt( this.sliderPos ) ) / ( document.getElementById( 'progress-slider-' + this.name ).clientWidth - 5 ) * 1000 );
         },
         calcPlaybackPos() {
-            this.$emit( 'pos', Math.round( ( this.originalPos + parseInt( this.sliderPos ) ) / ( document.getElementById( 'progress-slider' ).clientWidth - 5 ) * this.duration ) );
+            this.$emit( 'pos', Math.round( ( this.originalPos + parseInt( this.sliderPos ) ) / ( document.getElementById( 'progress-slider-' + this.name ).clientWidth - 5 ) * this.duration ) );
         }
     },
     watch: {
         position() {
             if ( !this.isDragging ) {
                 this.sliderProgress = Math.ceil( this.position / this.duration * 1000 + 2 );
-                this.originalPos = Math.ceil( this.position / this.duration * ( document.getElementById( 'progress-slider' ).clientWidth - 5 ) );
+                this.originalPos = Math.ceil( this.position / this.duration * ( document.getElementById( 'progress-slider-' + this.name ).scrollWidth - 5 ) );
             }
         }
+    },
+    created() {
+        setTimeout( () => {
+            console.log( document.getElementById( 'progress-slider-' + this.name ).scrollWidth );
+        }, 1000 );
     }
 }
 </script>
