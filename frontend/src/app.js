@@ -13,16 +13,93 @@ app.use( cors() );
 
 let indexedData = {};
 let coverArtIndex = {};
-const allowedFileTypes = [ '.mp3', '.wav', '.flac' ]
+const allowedFileTypes = [ '.mp3', '.wav', '.flac' ];
+
+let connectedClients = [];
+
+let currentDetails = {
+    'songQueue': [],
+    'currentlyPlaying': '',
+    'pos': 0,
+    'isPlaying': false
+};
+
+let connectedMain = {};
+
 
 app.get( '/', ( request, response ) => {
-    response.send( 'Hello world' );
+    response.sendFile( path.join( __dirname + '/client/showcase.html' ) );
+} );
+
+app.get( '/showcase.js', ( req, res ) => {
+    res.sendFile( path.join( __dirname + '/client/showcase.js' ) );
+} );
+
+app.get( '/showcase.css', ( req, res ) => {
+    res.sendFile( path.join( __dirname + '/client/showcase.css' ) );
+} );
+
+app.get( '/clientDisplayNotifier', ( req, res ) => {
+    res.writeHead( 200, {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+    } );
+    res.status( 200 );
+    res.flushHeaders();
+    let det = { 'type': 'basics', 'data': currentDetails };
+    res.write( `data: ${ JSON.stringify( det ) }\n\n` );
+    connectedClients.push( res );
+} );
+
+app.get( '/mainNotifier', ( req, res ) => {
+    const ipRetrieved = req.headers[ 'x-forwarded-for' ];
+    const ip = ipRetrieved ? ipRetrieved.split( /, / )[ 0 ] : req.connection.remoteAddress;
+    if ( ip === '::ffff:127.0.0.1' ) {
+        res.writeHead( 200, {
+            'Content-Type': 'text/event-stream',
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive',
+        } );
+        res.status( 200 );
+        res.flushHeaders();
+        let det = { 'type': 'basics', 'data': currentDetails };
+        res.write( `data: ${ JSON.stringify( det ) }\n\n` );
+        connectedMain = res;
+    } else {
+        res.send( 'wrong' );
+    }
 } );
 
 
+app.post( '/statusUpdate', ( req, res ) => {
+    if ( req.body.status === 'playingSong' ) {
+
+    } else if ( req.body.status === 'isPlaying' ) {
+
+    } else if ( req.body.status === 'songQueue' ) {
+
+    } else if ( req.body.status === 'pos' ) {
+
+    }
+} );
+
+
+app.get( '/clientStatusUpdate/:status', ( req, res ) => {
+    if ( req.params.status === 'disconnect' ) {
+
+    } else if ( req.params.status === 'fullScreenExit' ) {
+
+    } else if ( req.params.status === 'inactive' ) {
+
+    } else if ( req.params.status === 'reactivated' ) {
+
+    }
+} );
+
 app.get( '/openSongs', ( req, res ) => {
-    res.send( '{ "data": [ "/home/janis/Music/KB2022" ] }' );
-    // res.send( '{ "data": [ "/mnt/storage/SORTED/Music/audio/KB2022" ] }' );
+    // res.send( '{ "data": [ "/home/janis/Music/KB2022" ] }' );
+    res.send( '{ "data": [ "/mnt/storage/SORTED/Music/audio/KB2022" ] }' );
     // res.send( { 'data': dialog.showOpenDialogSync( { properties: [ 'openDirectory' ], title: 'Open music library folder' } ) } );
 } );
 
