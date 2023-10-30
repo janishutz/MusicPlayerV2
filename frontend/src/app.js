@@ -21,8 +21,8 @@ app.get( '/', ( request, response ) => {
 
 
 app.get( '/openSongs', ( req, res ) => {
-    // res.send( '{ "data": [ "/home/janis/Music/KB2022" ] }' );
-    res.send( '{ "data": [ "/mnt/storage/SORTED/Music/audio/KB2022" ] }' );
+    res.send( '{ "data": [ "/home/janis/Music/KB2022" ] }' );
+    // res.send( '{ "data": [ "/mnt/storage/SORTED/Music/audio/KB2022" ] }' );
     // res.send( { 'data': dialog.showOpenDialogSync( { properties: [ 'openDirectory' ], title: 'Open music library folder' } ) } );
 } );
 
