@@ -42,7 +42,7 @@
     </div>
 </template>
 
-<style>
+<style scoped>
     .song-info {
         background-color: #8e9ced;
         height: 13vh;
