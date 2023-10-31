@@ -16,6 +16,7 @@ let coverArtIndex = {};
 const allowedFileTypes = [ '.mp3', '.wav', '.flac' ];
 
 let connectedClients = [];
+let changedStatus = [];
 
 let currentDetails = {
     'songQueue': [],
@@ -71,18 +72,20 @@ app.get( '/mainNotifier', ( req, res ) => {
     }
 } );
 
+const sendUpdate = () => {
+    console.log( currentDetails );
+}
 
+const allowedTypes = [ 'playingSong', 'isPlaying', 'songQueue', 'pos' ];
 app.post( '/statusUpdate', ( req, res ) => {
-    if ( req.body.status === 'playingSong' ) {
-    
-    } else if ( req.body.status === 'isPlaying' ) {
-        
-    } else if ( req.body.status === 'songQueue' ) {
-        
-    } else if ( req.body.status === 'pos' ) {
-        
+    if ( allowedTypes.includes( req.body.type ) ) {
+        currentDetails[ req.body.type ] = req.body.data;
+        changedStatus.push( req.body.type );
+        sendUpdate();
+        res.send( 'ok' );
+    } else {
+        res.status( 400 ).send( 'ERR_UNKNOWN_TYPE' );
     }
-    res.send( 'ok' );
 } );
 
 
@@ -99,8 +102,8 @@ app.get( '/clientStatusUpdate/:status', ( req, res ) => {
 } );
 
 app.get( '/openSongs', ( req, res ) => {
-    res.send( '{ "data": [ "/home/janis/Music/KB2022" ] }' );
-    // res.send( '{ "data": [ "/mnt/storage/SORTED/Music/audio/KB2022" ] }' );
+    // res.send( '{ "data": [ "/home/janis/Music/KB2022" ] }' );
+    res.send( '{ "data": [ "/mnt/storage/SORTED/Music/audio/KB2022" ] }' );
     // res.send( { 'data': dialog.showOpenDialogSync( { properties: [ 'openDirectory' ], title: 'Open music library folder' } ) } );
 } );
 

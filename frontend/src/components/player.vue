@@ -156,9 +156,8 @@ export default {
                 if ( autoplay ) {
                     this.control( 'play' );
                     this.isPlaying = true;
-                    this.sendUpdate( 'isPLaying' );
+                    this.sendUpdate( 'isPlaying' );
                     this.sendUpdate( 'playingSong' );
-                    this.sendUpdate( 'songQueue' );
                     this.sendUpdate( 'pos' );
                 }
                 const minuteCount = Math.floor( this.playingSong.duration / 60 );
@@ -191,10 +190,8 @@ export default {
                 data = this.playbackPos;
             } else if ( update === 'playingSong' ) {
                 data = this.playingSong;
-            } else if ( update === 'songQueue' ) {
-                data = this.playbackPos;
-            } else if ( update === 'pos' ) {
-                data = this.playbackPos;
+            } else if ( update === 'isPlaying' ) {
+                data = this.isPlaying;
             }
             let fetchOptions = {
                 method: 'post',
@@ -204,7 +201,7 @@ export default {
                     'charset': 'utf-8'
                 },
             };
-            fetch( '/statusUpdate', fetchOptions ).then( res => {
+            fetch( 'http://localhost:8081/statusUpdate', fetchOptions ).then( res => {
                 console.log( res );
             } );
         },
