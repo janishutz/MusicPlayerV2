@@ -6,7 +6,8 @@ createApp( {
         return {
             hasLoaded: false,
             songs: {},
-            playingSong: {}
+            playingSong: {},
+            isPlaying: false,
         };
     },
     methods: {

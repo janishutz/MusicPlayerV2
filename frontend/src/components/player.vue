@@ -181,6 +181,29 @@ export default {
                 }
             }, 300 );
         },
+        sendUpdate( update ) {
+            let data = {};
+            if ( update === 'pos' ) {
+                data = this.playbackPos;
+            } else if ( update === 'playingSong' ) {
+                data = this.playingSong;
+            } else if ( update === 'songQueue' ) {
+                data = this.playbackPos;
+            } else if ( update === 'pos' ) {
+                data = this.playbackPos;
+            }
+            let fetchOptions = {
+                method: 'post',
+                body: JSON.stringify( { 'type': update, 'data': data } ),
+                headers: {
+                    'Content-Type': 'application/json',
+                    'charset': 'utf-8'
+                },
+            };
+            fetch( '/statusUpdate', fetchOptions ).then( res => {
+
+            } );
+        },
         control( action ) {
             // https://css-tricks.com/lets-create-a-custom-audio-player/
             let musicPlayer = document.getElementById( 'music-player' );
