@@ -74,14 +74,15 @@ app.get( '/mainNotifier', ( req, res ) => {
 
 app.post( '/statusUpdate', ( req, res ) => {
     if ( req.body.status === 'playingSong' ) {
-
+    
     } else if ( req.body.status === 'isPlaying' ) {
-
+        
     } else if ( req.body.status === 'songQueue' ) {
-
+        
     } else if ( req.body.status === 'pos' ) {
-
+        
     }
+    res.send( 'ok' );
 } );
 
 
@@ -98,8 +99,8 @@ app.get( '/clientStatusUpdate/:status', ( req, res ) => {
 } );
 
 app.get( '/openSongs', ( req, res ) => {
-    // res.send( '{ "data": [ "/home/janis/Music/KB2022" ] }' );
-    res.send( '{ "data": [ "/mnt/storage/SORTED/Music/audio/KB2022" ] }' );
+    res.send( '{ "data": [ "/home/janis/Music/KB2022" ] }' );
+    // res.send( '{ "data": [ "/mnt/storage/SORTED/Music/audio/KB2022" ] }' );
     // res.send( { 'data': dialog.showOpenDialogSync( { properties: [ 'openDirectory' ], title: 'Open music library folder' } ) } );
 } );
 
@@ -109,7 +110,10 @@ app.get( '/indexDirs', ( req, res ) => {
             res.send( indexedData[ req.query.dir ] );
         } else {
             fs.readdir( req.query.dir, { encoding: 'utf-8' }, ( err, dat ) => {
-                if ( err ) res.status( 500 ).send( err );
+                if ( err ) { 
+                    res.status( 404 ).send( 'ERR_DIR_NOT_FOUND' );
+                    return;
+                };
                 ( async() => {
                     // TODO: Check for songlist.csv or songlist.json file and use the data provided there for each song to override 
                     // what was found automatically. If no song title was found in songlist or metadata, use filename

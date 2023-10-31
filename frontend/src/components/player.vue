@@ -156,6 +156,10 @@ export default {
                 if ( autoplay ) {
                     this.control( 'play' );
                     this.isPlaying = true;
+                    this.sendUpdate( 'isPLaying' );
+                    this.sendUpdate( 'playingSong' );
+                    this.sendUpdate( 'songQueue' );
+                    this.sendUpdate( 'pos' );
                 }
                 const minuteCount = Math.floor( this.playingSong.duration / 60 );
                 this.durationBeautified = minuteCount + ':';
@@ -201,7 +205,7 @@ export default {
                 },
             };
             fetch( '/statusUpdate', fetchOptions ).then( res => {
-
+                console.log( res );
             } );
         },
         control( action ) {

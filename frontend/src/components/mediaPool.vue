@@ -21,6 +21,10 @@
             <p>Analyzing metadata...</p>
             <span class="material-symbols-outlined loading-spinner">autorenew</span>
         </div>
+        <div v-else-if="errorOccurredLoading" class="no-songs">
+            <h3>This directory does not exist!</h3>
+            <button @click="loadSongs()">Load songs</button>
+        </div>
         <div v-else class="no-songs">
             <h3>No songs loaded</h3>
             <button @click="loadSongs()">Load songs</button>
@@ -200,6 +204,7 @@
                 songPos: 0,
                 repeat: false,
                 isShowingFancyView: false,
+                errorOccurredLoading: false,
             }
         },
         methods: {
@@ -276,6 +281,7 @@
                 for ( let dir in this.loadedDirs ) {
                     fetch( 'http://localhost:8081/indexDirs?dir=' + this.loadedDirs[ dir ] + ( this.loadCoverArtPreview ? '&coverart=true' : '' ) ).then( res => {
                         if ( res.status === 200 ) {
+                            this.errorOccurredLoading = false;
                             res.json().then( json => {
                                 for ( let song in json ) {
                                     this.songQueue.push( json[ song ] );
@@ -286,6 +292,9 @@
                                 this.hasLoadedSongs = true;
                                 this.$emit( 'com', { 'type': 'songsLoaded' } );
                             } );
+                        } else if ( res.status === 404 ) {
+                            this.isLoadingSongs = false;
+                            this.errorOccurredLoading = true;
                         }
                     } );
                 }
