@@ -120,6 +120,7 @@ app.get( '/indexDirs', ( req, res ) => {
                 ( async() => {
                     // TODO: Check for songlist.csv or songlist.json file and use the data provided there for each song to override 
                     // what was found automatically. If no song title was found in songlist or metadata, use filename
+                    // TODO: Also save found information to those files and don't rerun checks if data is present
                     let files = {};
                     for ( let file in dat ) {
                         if ( allowedFileTypes.includes( dat[ file ].slice( dat[ file ].indexOf( '.' ), dat[ file ].length ) ) ) {
@@ -148,6 +149,7 @@ app.get( '/indexDirs', ( req, res ) => {
                                     files[ req.query.dir + '/' + dat[ file ] ][ 'hasCoverArt' ] = false;
                                 }
                             } catch ( err ) {
+                                console.error( err );
                                 files[ req.query.dir + '/' + dat[ file ] ] = 'ERROR';
                             }
                         } else if ( dat[ file ].slice( dat[ file ].indexOf( '.' ), dat[ file ].length ) === '.csv' ) {

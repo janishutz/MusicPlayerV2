@@ -39,6 +39,7 @@
             :shuffle="isShuffleEnabled" :repeatMode="repeatMode" :durationBeautified="durationBeautified" 
             :playbackPos="playbackPos" :playbackPosBeautified="playbackPosBeautified"
             @posUpdate="pos => { setPos( pos ) }"></FancyView>
+        <Notifications ref="notifications" size="bigger" location="topright"></Notifications>
     </div>
 </template>
 
@@ -121,7 +122,9 @@
 
 <script>
 import FancyView from './fancyView.vue';
+import Notifications from './notifications.vue';
 import SliderView from './sliderView.vue';
+import * as realtimeBPM from 'realtime-bpm-analyzer';
 
 export default {
     data() {
@@ -142,14 +145,16 @@ export default {
     components: {
         SliderView,
         FancyView,
+        Notifications,
     },
     methods: {
         play( song, autoplay, doCrossFade = false ) {
             this.playingSong = song;
             this.audioLoaded = true;
-            this.init( doCrossFade, autoplay );
+            this.init( doCrossFade, autoplay, song.filename );
         },
-        init( doCrossFade, autoplay ) {
+        // TODO: Make function that connects to status service and add various warnings.
+        init( doCrossFade, autoplay, filename ) {
             this.control( 'reset' );
             // TODO: make it support cross-fade
             setTimeout( () => {
@@ -182,6 +187,22 @@ export default {
                         }
                     }
                 }
+                if ( !this.playingSong.bpm ) {
+                    const audioContext = new AudioContext();
+                    fetch( 'http://localhost:8081/getSongFile?filename=' + filename ).then( res => {
+                        res.arrayBuffer().then( buf => {
+                            // The file is uploaded, now we decode it
+                            audioContext.decodeAudioData( buf, audioBuffer => {
+                                // The result is passed to the analyzer
+                                realtimeBPM.analyzeFullBuffer( audioBuffer ).then( topCandidates => {
+                                    // Do something with the BPM
+                                    this.playingSong.bpm = topCandidates[ 0 ].tempo;
+                                    this.sendUpdate( 'playingSong' );
+                                } );
+                            });
+                        } );
+                    } );
+                }
             }, 300 );
         },
         sendUpdate( update ) {
@@ -201,8 +222,8 @@ export default {
                     'charset': 'utf-8'
                 },
             };
-            fetch( 'http://localhost:8081/statusUpdate', fetchOptions ).then( res => {
-                console.log( res );
+            fetch( 'http://localhost:8081/statusUpdate', fetchOptions ).catch( err => {
+                console.error( err );
             } );
         },
         control( action ) {
@@ -273,6 +294,7 @@ export default {
                     this.$emit( 'update', { 'type': 'fancyView', 'status': false } );
                 }
             } else if ( action === 'songsLoaded' ) {
+                this.$refs.notifications.createNotification( 'Songs loaded successfully', 5, 'ok', 'default' );
                 this.hasLoadedSongs = true;
             } else if ( action === 'shuffleOff' ) {
                 this.$emit( 'update', { 'type': 'shuffleOff' } );
