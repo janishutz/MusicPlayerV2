@@ -6,16 +6,22 @@ const fs = require( 'fs' );
 const bodyParser = require( 'body-parser' );
 const musicMetadata = require( 'music-metadata' );
 const dialog = require( 'electron' ).dialog;
+const session = require( 'express-session' );
 
 app.use( bodyParser.urlencoded( { extended: false } ) );
 app.use( bodyParser.json() );
 app.use( cors() );
+app.use( session( {
+    secret: 'aeogetwöfaöow0ofö034eö8ptqw39eöavfui786uqew9t0ez9eauigwöfqewoöaiq938w0c8p9awöäf9¨äüöe',
+    saveUninitialized: true,
+    resave: false,
+} ) );
 
 let indexedData = {};
 let coverArtIndex = {};
 const allowedFileTypes = [ '.mp3', '.wav', '.flac' ];
 
-let connectedClients = [];
+let connectedClients = {};
 let changedStatus = [];
 
 let currentDetails = {
@@ -50,7 +56,7 @@ app.get( '/clientDisplayNotifier', ( req, res ) => {
     res.flushHeaders();
     let det = { 'type': 'basics', 'data': currentDetails };
     res.write( `data: ${ JSON.stringify( det ) }\n\n` );
-    connectedClients.push( res );
+    connectedClients[ req.session.id ] = res;
 } );
 
 app.get( '/mainNotifier', ( req, res ) => {
@@ -72,8 +78,10 @@ app.get( '/mainNotifier', ( req, res ) => {
     }
 } );
 
-const sendUpdate = () => {
-    console.log( currentDetails );
+const sendUpdate = ( update ) => {
+    for ( let client in connectedClients ) {
+        connectedClients[ client ].write( 'data: ' + JSON.stringify( { 'type': update, 'data': currentDetails[ update ] } ) + '\n\n' );
+    }
 }
 
 const allowedTypes = [ 'playingSong', 'isPlaying', 'songQueue', 'pos' ];
@@ -81,7 +89,7 @@ app.post( '/statusUpdate', ( req, res ) => {
     if ( allowedTypes.includes( req.body.type ) ) {
         currentDetails[ req.body.type ] = req.body.data;
         changedStatus.push( req.body.type );
-        sendUpdate();
+        sendUpdate( req.body.type );
         res.send( 'ok' );
     } else {
         res.status( 400 ).send( 'ERR_UNKNOWN_TYPE' );
@@ -102,8 +110,8 @@ app.get( '/clientStatusUpdate/:status', ( req, res ) => {
 } );
 
 app.get( '/openSongs', ( req, res ) => {
-    // res.send( '{ "data": [ "/home/janis/Music/KB2022" ] }' );
-    res.send( '{ "data": [ "/mnt/storage/SORTED/Music/audio/KB2022" ] }' );
+    res.send( '{ "data": [ "/home/janis/Music/KB2022" ] }' );
+    // res.send( '{ "data": [ "/mnt/storage/SORTED/Music/audio/KB2022" ] }' );
     // res.send( { 'data': dialog.showOpenDialogSync( { properties: [ 'openDirectory' ], title: 'Open music library folder' } ) } );
 } );
 
@@ -175,7 +183,6 @@ app.get( '/getSongCover', ( req, res ) => {
         } else {
             res.status( 404 ).send( 'No cover image for this file' );
         }
-        
     } else {
         res.status( 400 ).send( 'ERR_REQ_INCOMPLETE' );
     }

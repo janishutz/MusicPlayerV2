@@ -34,6 +34,7 @@ createApp( {
                 } else if ( data.type === 'currentlyPlaying' ) {
                     
                 }
+                console.log( data.data );
             };
 
             source.onopen = () => {
