@@ -171,3 +171,21 @@ body {
     font-size: 5vw !important;
     user-select: none;
 }
+
+.current-song {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    height: 55vh;
+    width: 100%;
+}
+
+.fancy-view-song-art {
+    height: 30vh;
+    width: 30vh;
+    object-fit: cover;
+    object-position: center;
+    margin-bottom: 20px;
+    font-size: 30vh !important;
+}

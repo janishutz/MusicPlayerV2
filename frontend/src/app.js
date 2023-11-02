@@ -43,6 +43,10 @@ app.get( '/showcase.js', ( req, res ) => {
     res.sendFile( path.join( __dirname + '/client/showcase.js' ) );
 } );
 
+app.get( '/colorPaletteExtractor.js', ( req, res ) => {
+    res.sendFile( path.join( __dirname + '/client/colorPaletteExtractor.js' ) );
+} );
+
 app.get( '/showcase.css', ( req, res ) => {
     res.sendFile( path.join( __dirname + '/client/showcase.css' ) );
 } );

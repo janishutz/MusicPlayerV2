@@ -11,32 +11,41 @@
     </head>
     <body>
         <div class="content" id="app">
-            <h1>Ok</h1>
-            <div class="song-list-wrapper" v-if="hasLoaded">
-                <div v-for="song in songQueue" class="song-list">
-                    <span class="material-symbols-outlined song-image" v-if="!song.hasCoverArt && ( playingSong.filename !== song.filename || isPlaying )">music_note</span>
-                    <img v-else-if="song.hasCoverArt && ( playingSong.filename !== song.filename || isPlaying )" :src="'/getSongCover?filename=' + song.filename" class="song-image">
-                    <div v-if="playingSong.filename === song.filename && isPlaying" class="playing-symbols">
-                        <div class="playing-symbols-wrapper">
-                            <div class="playing-bar" id="bar-1"></div>
-                            <div class="playing-bar" id="bar-2"></div>
-                            <div class="playing-bar" id="bar-3"></div>
+            <div v-if="hasLoaded" style="width: 100%">
+                <div class="current-song">
+                    <span class="material-symbols-outlined fancy-view-song-art" v-if="!playingSong.hasCoverArt">music_note</span>
+                    <img v-else :src="'/getSongCover?filename=' + playingSong.filename" class="fancy-view-song-art">
+                    <h1>{{ playingSong.title }}</h1>
+                    <p>{{ playingSong.artist }}</p>
+                </div>
+                <div class="song-list-wrapper">
+                    <div v-for="song in songQueue" class="song-list">
+                        <span class="material-symbols-outlined song-image" v-if="!song.hasCoverArt && ( playingSong.filename !== song.filename || isPlaying )">music_note</span>
+                        <img v-else-if="song.hasCoverArt && ( playingSong.filename !== song.filename || isPlaying )" :src="'/getSongCover?filename=' + song.filename" class="song-image">
+                        <div v-if="playingSong.filename === song.filename && isPlaying" class="playing-symbols">
+                            <div class="playing-symbols-wrapper">
+                                <div class="playing-bar" id="bar-1"></div>
+                                <div class="playing-bar" id="bar-2"></div>
+                                <div class="playing-bar" id="bar-3"></div>
+                            </div>
+                        </div>
+                        <span class="material-symbols-outlined pause-icon" v-if="!isPlaying && playingSong.filename === song.filename">pause</span>
+                        <div class="song-details-wrapper">
+                            <h3>{{ song.title }}</h3>
+                            <p>{{ song.artist }}</p>
                         </div>
                     </div>
-                    <span class="material-symbols-outlined pause-icon" v-if="!isPlaying && playingSong.filename === song.filename">pause</span>
-                    <div class="song-details-wrapper">
-                        <h3>{{ song.title }}</h3>
-                        <p>{{ song.artist }}</p>
-                    </div>
+                    <!-- <img :src="" alt=""> -->
                 </div>
-                <!-- <img :src="" alt=""> -->
             </div>
             <div v-else>
                 <h1>Loading...</h1>
             </div>
+            <canvas id="canvas"></canvas>
         </div>
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.1/jquery.min.js"></script>
         <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+        <script src="/colorPaletteExtractor.js"></script>
         <script src="/showcase.js"></script>
     </body>
 </html>

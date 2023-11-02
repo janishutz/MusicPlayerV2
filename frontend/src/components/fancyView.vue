@@ -80,6 +80,7 @@
         object-fit: cover;
         object-position: center;
         margin-bottom: 20px;
+        font-size: 40vh;
     }
 
     .controls {

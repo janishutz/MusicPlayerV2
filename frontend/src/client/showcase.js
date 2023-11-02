@@ -10,6 +10,7 @@ createApp( {
             isPlaying: false,
             pos: 0,
             queuePos: 0,
+            colourPalette: [],
         };
     },
     computed: {
@@ -40,6 +41,11 @@ createApp( {
                     this.songs = data.data.songQueue ?? [];
                     this.pos = data.data.pos ?? 0;
                     this.queuePos = data.data.queuePos ?? 0;
+                    getColourPalette( '/getSongCover?filename=' + data.data.playingSong.filename ).then( palette => {
+                        this.colourPalette = palette;
+                    } ).catch( () => {
+                        this.colourPalette = [ { 'r': 255, 'g': 0, 'b': 0 }, { 'r': 0, 'g': 255, 'b': 0 }, { 'r': 0, 'g': 0, 'b': 255 } ]
+                    } );
                 } else if ( data.type === 'pos' ) {
                     this.pos = data.data;
                 } else if ( data.type === 'isPlaying' ) {
@@ -48,6 +54,11 @@ createApp( {
                     this.songs = data.data;
                 } else if ( data.type === 'playingSong' ) {
                     this.playingSong = data.data;
+                    getColourPalette( '/getSongCover?filename=' + data.data.filename ).then( palette => {
+                        this.colourPalette = palette;
+                    } ).catch( () => {
+                        this.colourPalette = [ { 'r': 255, 'g': 0, 'b': 0 }, { 'r': 0, 'g': 255, 'b': 0 }, { 'r': 0, 'g': 0, 'b': 255 } ]
+                    } );
                 } else if ( data.type === 'queuePos' ) {
                     this.queuePos = data.data;
                 }
