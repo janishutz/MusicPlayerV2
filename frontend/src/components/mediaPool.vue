@@ -35,11 +35,12 @@
 <style>
     .playing-symbols {
         position: absolute;
-        left: 9.95vw;
+        left: 10%;
         display: flex;
         justify-content: center;
         align-items: center;
         flex-direction: row;
+        margin: 0;
         width: 5vw;
         height: 5vw;
         background-color: rgba( 0, 0, 0, 0.6 );
@@ -56,7 +57,7 @@
 
     .playing-bar {
         height: 60%;
-        background-color: var( --primary-color );
+        background-color: white;
         width: 10%;
         border-radius: 50px;
         margin: auto;
@@ -226,6 +227,17 @@
                             this.$emit( 'com', { 'type': 'pause' } );
                         }
                     }
+                    let fetchOptions = {
+                        method: 'post',
+                        body: JSON.stringify( { 'type': 'queuePos', 'data': this.songPos } ),
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'charset': 'utf-8'
+                        },
+                    };
+                    fetch( 'http://localhost:8081/statusUpdate', fetchOptions ).catch( err => {
+                        console.error( err );
+                    } );
                 } else if ( status.type === 'previous' ) {
                     if ( this.songPos > 0 ) {
                         this.songPos -= 1;
@@ -291,6 +303,17 @@
                                 this.isLoadingSongs = false;
                                 this.hasLoadedSongs = true;
                                 this.$emit( 'com', { 'type': 'songsLoaded' } );
+                                let fetchOptions = {
+                                    method: 'post',
+                                    body: JSON.stringify( { 'type': 'songQueue', 'data': this.songQueue } ),
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'charset': 'utf-8'
+                                    },
+                                };
+                                fetch( 'http://localhost:8081/statusUpdate', fetchOptions ).catch( err => {
+                                    console.error( err );
+                                } );
                             } );
                         } else if ( res.status === 404 ) {
                             this.isLoadingSongs = false;
@@ -312,6 +335,17 @@
                 }
                 this.currentlyPlaying = song.filename;
                 this.update( { 'type': 'playback', 'status': true } );
+                let fetchOptions = {
+                    method: 'post',
+                    body: JSON.stringify( { 'type': 'queuePos', 'data': this.songPos } ),
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'charset': 'utf-8'
+                    },
+                };
+                fetch( 'http://localhost:8081/statusUpdate', fetchOptions ).catch( err => {
+                    console.error( err );
+                } );
             },
             pause( song ) {
                 this.update( { 'type': 'playback', 'status': false } );

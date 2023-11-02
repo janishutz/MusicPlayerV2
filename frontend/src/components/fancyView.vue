@@ -76,7 +76,9 @@
 
     .fancy-view-song-art {
         height: 40vh;
-        width: auto;
+        width: 40vh;
+        object-fit: cover;
+        object-position: center;
         margin-bottom: 20px;
     }
 

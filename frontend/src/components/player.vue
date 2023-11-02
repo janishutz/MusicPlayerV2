@@ -184,6 +184,8 @@ export default {
                         } else {
                             musicPlayer.currentTime = 0;
                             this.control( 'play' );
+                            this.playbackPos = musicPlayer.currentTime;
+                            this.sendUpdate( 'pos' );
                         }
                     }
                 }
@@ -248,6 +250,7 @@ export default {
                             this.playbackPosBeautified += secondCount;
                         }
                     }, 0.02 );
+                    this.sendUpdate( 'isPlaying' );
                 } else if ( action === 'pause' ) {
                     this.$emit( 'update', { 'type': 'playback', 'status': false } );
                     musicPlayer.pause();
@@ -255,8 +258,11 @@ export default {
                         clearInterval( this.progressTracker );
                     } catch ( err ) {};
                     this.isPlaying = false;
+                    this.sendUpdate( 'isPlaying' );
                 } else if ( action === 'replay10' ) {
                     musicPlayer.currentTime = musicPlayer.currentTime > 10 ? musicPlayer.currentTime - 10 : 0;
+                    this.playbackPos = musicPlayer.currentTime;
+                    this.sendUpdate( 'pos' );
                 } else if ( action === 'forward10' ) {
                     if ( musicPlayer.currentTime < ( musicPlayer.duration - 10 ) ) {
                         musicPlayer.currentTime = musicPlayer.currentTime + 10;
@@ -265,6 +271,8 @@ export default {
                             this.control( 'next' );
                         } else {
                             musicPlayer.currentTime = 0;
+                            this.playbackPos = musicPlayer.currentTime;
+                            this.sendUpdate( 'pos' );
                         }
                     }
                 } else if ( action === 'reset' ) {

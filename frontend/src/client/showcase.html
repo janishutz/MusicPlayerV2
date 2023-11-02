@@ -11,8 +11,24 @@
     </head>
     <body>
         <div class="content" id="app">
-            <div class="wrapper" v-if="hasLoaded">
-                <h1>Ok</h1>
+            <h1>Ok</h1>
+            <div class="song-list-wrapper" v-if="hasLoaded">
+                <div v-for="song in songQueue" class="song-list">
+                    <span class="material-symbols-outlined song-image" v-if="!song.hasCoverArt && ( playingSong.filename !== song.filename || isPlaying )">music_note</span>
+                    <img v-else-if="song.hasCoverArt && ( playingSong.filename !== song.filename || isPlaying )" :src="'/getSongCover?filename=' + song.filename" class="song-image">
+                    <div v-if="playingSong.filename === song.filename && isPlaying" class="playing-symbols">
+                        <div class="playing-symbols-wrapper">
+                            <div class="playing-bar" id="bar-1"></div>
+                            <div class="playing-bar" id="bar-2"></div>
+                            <div class="playing-bar" id="bar-3"></div>
+                        </div>
+                    </div>
+                    <span class="material-symbols-outlined pause-icon" v-if="!isPlaying && playingSong.filename === song.filename">pause</span>
+                    <div class="song-details-wrapper">
+                        <h3>{{ song.title }}</h3>
+                        <p>{{ song.artist }}</p>
+                    </div>
+                </div>
                 <!-- <img :src="" alt=""> -->
             </div>
             <div v-else>

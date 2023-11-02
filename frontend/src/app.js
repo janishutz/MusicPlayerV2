@@ -26,9 +26,10 @@ let changedStatus = [];
 
 let currentDetails = {
     'songQueue': [],
-    'currentlyPlaying': '',
+    'playingSong': {},
     'pos': 0,
-    'isPlaying': false
+    'isPlaying': false,
+    'queuePos': 0,
 };
 
 let connectedMain = {};
@@ -84,7 +85,7 @@ const sendUpdate = ( update ) => {
     }
 }
 
-const allowedTypes = [ 'playingSong', 'isPlaying', 'songQueue', 'pos' ];
+const allowedTypes = [ 'playingSong', 'isPlaying', 'songQueue', 'pos', 'queuePos' ];
 app.post( '/statusUpdate', ( req, res ) => {
     if ( allowedTypes.includes( req.body.type ) ) {
         currentDetails[ req.body.type ] = req.body.data;
@@ -110,8 +111,8 @@ app.get( '/clientStatusUpdate/:status', ( req, res ) => {
 } );
 
 app.get( '/openSongs', ( req, res ) => {
-    res.send( '{ "data": [ "/home/janis/Music/KB2022" ] }' );
-    // res.send( '{ "data": [ "/mnt/storage/SORTED/Music/audio/KB2022" ] }' );
+    // res.send( '{ "data": [ "/home/janis/Music/KB2022" ] }' );
+    res.send( '{ "data": [ "/mnt/storage/SORTED/Music/audio/KB2022" ] }' );
     // res.send( { 'data': dialog.showOpenDialogSync( { properties: [ 'openDirectory' ], title: 'Open music library folder' } ) } );
 } );
 

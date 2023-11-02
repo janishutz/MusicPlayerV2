@@ -5,15 +5,27 @@ createApp( {
     data() {
         return {
             hasLoaded: false,
-            songs: {},
+            songs: [],
             playingSong: {},
             isPlaying: false,
+            pos: 0,
+            queuePos: 0,
         };
+    },
+    computed: {
+        songQueue() {
+            let ret = [];
+            for ( let song in this.songs ) {
+                if ( parseInt( song ) >= this.queuePos ) {
+                    ret.push( this.songs[ song ] );
+                }
+            }
+            return ret;
+        }
     },
     methods: {
         connect() {
             let source = new EventSource( '/clientDisplayNotifier', { withCredentials: true } );
-            let self = this;
 
             source.onmessage = ( e ) => {
                 let data;
@@ -23,18 +35,22 @@ createApp( {
                     data = { 'type': e.data };
                 }
                 if ( data.type === 'basics' ) {
-                    console.log( 'basics' );
-                    console.log( data.data );
+                    this.isPlaying = data.data.isPlaying ?? false;
+                    this.playingSong = data.data.playingSong ?? {};
+                    this.songs = data.data.songQueue ?? [];
+                    this.pos = data.data.pos ?? 0;
+                    this.queuePos = data.data.queuePos ?? 0;
                 } else if ( data.type === 'pos' ) {
-
+                    this.pos = data.data;
                 } else if ( data.type === 'isPlaying' ) {
-                    
+                    this.isPlaying = data.data;
                 } else if ( data.type === 'songQueue' ) {
-                    
-                } else if ( data.type === 'currentlyPlaying' ) {
-                    
+                    this.songs = data.data;
+                } else if ( data.type === 'playingSong' ) {
+                    this.playingSong = data.data;
+                } else if ( data.type === 'queuePos' ) {
+                    this.queuePos = data.data;
                 }
-                console.log( data.data );
             };
 
             source.onopen = () => {
