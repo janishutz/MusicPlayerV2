@@ -51,6 +51,10 @@ app.get( '/showcase.css', ( req, res ) => {
     res.sendFile( path.join( __dirname + '/client/showcase.css' ) );
 } );
 
+app.get( '/backgroundAnim.css', ( req, res ) => {
+    res.sendFile( path.join( __dirname + '/client/backgroundAnim.css' ) );
+} );
+
 app.get( '/clientDisplayNotifier', ( req, res ) => {
     res.writeHead( 200, {
         'Content-Type': 'text/event-stream',

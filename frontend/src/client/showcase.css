@@ -189,3 +189,11 @@ body {
     margin-bottom: 20px;
     font-size: 30vh !important;
 }
+
+#canvas {
+    display: none;
+}
+
+#app {
+    background-color: rgba( 0, 0, 0, 0 );
+}

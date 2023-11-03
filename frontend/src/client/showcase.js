@@ -43,6 +43,7 @@ createApp( {
                     this.queuePos = data.data.queuePos ?? 0;
                     getColourPalette( '/getSongCover?filename=' + data.data.playingSong.filename ).then( palette => {
                         this.colourPalette = palette;
+                        this.handleBackground();
                     } ).catch( () => {
                         this.colourPalette = [ { 'r': 255, 'g': 0, 'b': 0 }, { 'r': 0, 'g': 255, 'b': 0 }, { 'r': 0, 'g': 0, 'b': 255 } ]
                     } );
@@ -50,12 +51,14 @@ createApp( {
                     this.pos = data.data;
                 } else if ( data.type === 'isPlaying' ) {
                     this.isPlaying = data.data;
+                    this.handleBackground();
                 } else if ( data.type === 'songQueue' ) {
                     this.songs = data.data;
                 } else if ( data.type === 'playingSong' ) {
                     this.playingSong = data.data;
                     getColourPalette( '/getSongCover?filename=' + data.data.filename ).then( palette => {
                         this.colourPalette = palette;
+                        this.handleBackground();
                     } ).catch( () => {
                         this.colourPalette = [ { 'r': 255, 'g': 0, 'b': 0 }, { 'r': 0, 'g': 255, 'b': 0 }, { 'r': 0, 'g': 0, 'b': 255 } ]
                     } );
@@ -76,7 +79,20 @@ createApp( {
                 }
             }, false );
         },
-    }, 
+        handleBackground() {
+            let colours = {};
+            for ( let i = 0; i < 3; i++ ) {
+                colours[ i ] = 'rgb(' + this.colourPalette[ i ].r + ',' + this.colourPalette[ i ].g + ',' + this.colourPalette[ i ].b + ')';
+            }
+            $( '.background' ).css( 'background', `conic-gradient( ${ colours[ 0 ] }, ${ colours[ 1 ] }, ${ colours[ 2 ] }, ${ colours[ 0 ] } } )` );
+            if ( this.playingSong.bpm && this.isPlaying ) {
+                $( '.beat' ).show();
+                $( '.beat' ).css( 'animation-duration', 60 / this.playingSong.bpm );
+            } else {
+                $( '.beat' ).hide();
+            }
+        }
+    },
     mounted() {
         this.connect();
     }
