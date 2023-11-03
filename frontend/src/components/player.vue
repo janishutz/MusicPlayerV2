@@ -124,7 +124,7 @@
 import FancyView from './fancyView.vue';
 import Notifications from './notifications.vue';
 import SliderView from './sliderView.vue';
-import * as realtimeBPM from 'realtime-bpm-analyzer';
+import { guess } from 'web-audio-beat-detector';
 
 export default {
     data() {
@@ -140,6 +140,7 @@ export default {
             durationBeautified: '--:--',
             hasLoadedSongs: false,
             isShowingFancyView: false,
+            notifier: null,
         }
     },
     components: {
@@ -193,15 +194,14 @@ export default {
                     const audioContext = new AudioContext();
                     fetch( 'http://localhost:8081/getSongFile?filename=' + filename ).then( res => {
                         res.arrayBuffer().then( buf => {
-                            // The file is uploaded, now we decode it
                             audioContext.decodeAudioData( buf, audioBuffer => {
-                                // The result is passed to the analyzer
-                                realtimeBPM.analyzeFullBuffer( audioBuffer ).then( topCandidates => {
-                                    // Do something with the BPM
-                                    this.playingSong.bpm = topCandidates[ 0 ].tempo;
+                                guess( audioBuffer ).then( ( data ) => {
+                                    this.playingSong.bpm = data.bpm;
+                                    this.playingSong.accurateTempo = data.tempo;
+                                    this.playingSong.bpmOffset = data.offset;
                                     this.sendUpdate( 'playingSong' );
                                 } );
-                            });
+                            } );
                         } );
                     } );
                 }
@@ -250,12 +250,16 @@ export default {
                             this.playbackPosBeautified += secondCount;
                         }
                     }, 0.02 );
+                    this.progressTracker = setInterval( () => {
+                        this.sendUpdate( 'pos' );
+                    }, 5000 );
                     this.sendUpdate( 'isPlaying' );
                 } else if ( action === 'pause' ) {
                     this.$emit( 'update', { 'type': 'playback', 'status': false } );
                     musicPlayer.pause();
                     try {
                         clearInterval( this.progressTracker );
+                        clearInterval( this.notifier );
                     } catch ( err ) {};
                     this.isPlaying = false;
                     this.sendUpdate( 'isPlaying' );

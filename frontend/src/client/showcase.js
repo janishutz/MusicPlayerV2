@@ -27,6 +27,22 @@ createApp( {
                 }
             }
             return ret;
+        },
+        getTimeUntil(  ) {
+            return ( song ) => {
+                let timeRemaining = 0;
+                for ( let i = this.queuePos; i < this.songs.length; i++ ) {
+                    if ( this.songs[ i ] == song ) {
+                        break;
+                    }
+                    timeRemaining += parseInt( this.songs[ i ].duration );
+                }
+                if ( timeRemaining === 0 ) {
+                    return 'Currently playing';
+                } else {
+                    return 'Playing in less than ' + Math.ceil( timeRemaining / 60 - this.pos / 60 )  + 'min';
+                }
+            }
         }
     },
     methods: {
@@ -34,12 +50,12 @@ createApp( {
             this.startTime = new Date().getTime();
             this.timeTracker = setInterval( () => {
                 this.pos += 0.075;
-                this.progressBar = this.pos / this.playingSong.duration * 1000;
+                this.progressBar = ( this.pos / this.playingSong.duration ) * 1000;
             }, 75 );
 
             this.timeCorrector = setInterval( () => {
                 this.pos = this.oldPos + ( new Date().getTime() - this.startTime ) / 1000;
-                this.progressBar = this.pos / this.playingSong.duration * 1000;
+                this.progressBar = ( this.pos / this.playingSong.duration ) * 1000;
             }, 5000 );
         },
         stopTimeTracker () {
@@ -47,6 +63,20 @@ createApp( {
             clearInterval( this.timeCorrector );
             this.oldPos = this.pos;
         },
+        // getTimeUntil( song ) {
+        //     let timeRemaining = 0;
+        //     for ( let i = this.queuePos; i < this.songs.length; i++ ) {
+        //         if ( this.songs[ i ] == song ) {
+        //             break;
+        //         }
+        //         timeRemaining += parseInt( this.songs[ i ].duration );
+        //     }
+        //     if ( timeRemaining === 0 ) {
+        //         return 'Currently playing';
+        //     } else {
+        //         return 'Playing in about ' + Math.ceil( timeRemaining / 60 ) + 'min';
+        //     }
+        // },
         connect() {
             let source = new EventSource( '/clientDisplayNotifier', { withCredentials: true } );
             source.onmessage = ( e ) => {
@@ -62,9 +92,9 @@ createApp( {
                     this.songs = data.data.songQueue ?? [];
                     this.pos = data.data.pos ?? 0;
                     this.oldPos = data.data.pos ?? 0;
+                    this.startTime = new Date().getTime();
                     this.progressBar = this.pos / this.playingSong.duration * 1000;
                     this.queuePos = data.data.queuePos ?? 0;
-                    if ( this.isPlaying ) this.startTimeTracker();
                     getColourPalette( '/getSongCover?filename=' + data.data.playingSong.filename ).then( palette => {
                         this.colourPalette = palette;
                         this.handleBackground();
@@ -109,7 +139,8 @@ createApp( {
             }, false );
         },
         handleBackground() {
-            // TODO: Consider using mic and realtime-bpm-analyzer
+            // TODO: Add hotkeys
+            // TODO: Check that colours are not too similar
             let colours = {};
             if ( this.colourPalette[ 0 ] ) {
                 for ( let i = 0; i < 3; i++ ) {
@@ -117,23 +148,17 @@ createApp( {
                 }
             }
             $( '#background' ).css( 'background', `conic-gradient( ${ colours[ 0 ] }, ${ colours[ 1 ] }, ${ colours[ 2 ] }, ${ colours[ 0 ] } )` );
-            // if ( this.playingSong.bpm && this.isPlaying ) {
-            //     $( '.beat' ).show();
-            //     $( '.beat' ).css( 'animation-duration', 60 / this.playingSong.bpm );
-            //     $( '.beat' ).css( 'animation-delay', this.pos % ( 60 / this.playingSong.bpm  * this.pos ) );
-            // } else {
-            //     $( '.beat' ).hide();
-            // }
+            if ( this.playingSong.bpm && this.isPlaying ) {
+                $( '.beat' ).show();
+                $( '.beat' ).css( 'animation-duration', 60 / this.playingSong.bpm );
+                $( '.beat' ).css( 'animation-delay', this.pos % ( 60 / this.playingSong.bpm  * this.pos ) + this.playingSong.bpmOffset - ( 60 / this.playingSong.bpm  * this.pos / 2 ) );
+            } else {
+                $( '.beat' ).hide();
+            }
         }
     },
     mounted() {
         this.connect();
-        // Initialize Web Audio API components
-        const audioContext = new ( window.AudioContext || window.webkitAudioContext )();
-        // Start audio analysis
-        navigator.mediaDevices.getUserMedia( { audio: true } ).then( ( stream ) => {
-            
-        } );
     },
     watch: {
         isPlaying( value ) {

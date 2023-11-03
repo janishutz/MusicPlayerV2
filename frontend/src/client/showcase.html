@@ -14,12 +14,14 @@
     <body>
         <div class="content" id="app">
             <div v-if="hasLoaded" style="width: 100%">
-                <div class="current-song">
+                <div class="current-song-wrapper">
                     <span class="material-symbols-outlined fancy-view-song-art" v-if="!playingSong.hasCoverArt">music_note</span>
                     <img v-else :src="'/getSongCover?filename=' + playingSong.filename" class="fancy-view-song-art">
-                    <progress max="1000" id="progress" :value="progressBar"></progress>
-                    <h1>{{ playingSong.title }}</h1>
-                    <p>{{ playingSong.artist }}</p>
+                    <div class="current-song">
+                        <progress max="1000" id="progress" :value="progressBar"></progress>
+                        <h1>{{ playingSong.title }}</h1>
+                        <p>{{ playingSong.artist }}</p>
+                    </div>
                 </div>
                 <div class="song-list-wrapper">
                     <div v-for="song in songQueue" class="song-list">
@@ -36,6 +38,9 @@
                         <div class="song-details-wrapper">
                             <h3>{{ song.title }}</h3>
                             <p>{{ song.artist }}</p>
+                        </div>
+                        <div class="time-until">
+                            {{ getTimeUntil( song ) }}
                         </div>
                     </div>
                     <!-- <img :src="" alt=""> -->

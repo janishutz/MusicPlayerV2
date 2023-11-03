@@ -18,7 +18,8 @@
     "music-metadata": "^7.13.0",
     "realtime-bpm-analyzer": "^3.2.1",
     "vue": "^3.2.13",
-    "vue-router": "^4.0.3"
+    "vue-router": "^4.0.3",
+    "web-audio-beat-detector": "^8.1.55"
   },
   "devDependencies": {
     "@vue/cli-plugin-babel": "~5.0.0",
