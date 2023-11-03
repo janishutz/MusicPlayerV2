@@ -9,22 +9,14 @@
     background: conic-gradient( blue, green, red, blue );
     animation: gradientAnim 10s infinite linear;
     background-position: center;
+    transition: all 0.1s;
 }
 
 .beat {
     height: 100%;
     width: 100%;
     background-color: rgba( 0, 0, 0, 0.2 );
-    animation: beatAnim 0.6s infinite linear;
-}
-
-@keyframes beatAnim {
-    0% {
-        background-color: rgba( 0, 0, 0, 0.2 );
-    }
-    50% {
-        background-color: rgba( 0, 0, 0, 0 );
-    }
+    display: none;
 }
 
 @keyframes gradientAnim {

@@ -121,7 +121,12 @@ const getColourPalette = ( imageURL ) => {
             canvas.width = image.width ?? 500;
             canvas.height = image.height ?? 500;
             const ctx = canvas.getContext( '2d' );
-            ctx.drawImage(image, 0, 0);
+            try {
+                ctx.drawImage( image, 0, 0 );
+            } catch ( err ) {
+                reject( err );
+                return;
+            }
             
             /**
              * getImageData returns an array full of RGBA values

@@ -325,7 +325,9 @@ export default {
         },
         setPos( pos ) {
             let musicPlayer = document.getElementById( 'music-player' );
+            this.playbackPos = pos;
             musicPlayer.currentTime = pos;
+            this.sendUpdate( 'pos' );
         },
         showFancyView() {
             this.$emit( 'update', { 'type': 'fancyView', 'status': true } );
