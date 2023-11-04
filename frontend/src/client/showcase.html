@@ -16,12 +16,19 @@
             <div v-if="hasLoaded" style="width: 100%">
                 <div class="current-song-wrapper">
                     <span class="material-symbols-outlined fancy-view-song-art" v-if="!playingSong.hasCoverArt">music_note</span>
-                    <img v-else :src="'/getSongCover?filename=' + playingSong.filename" class="fancy-view-song-art">
+                    <img v-else :src="'/getSongCover?filename=' + playingSong.filename" class="fancy-view-song-art" id="current-image">
                     <div class="current-song">
                         <progress max="1000" id="progress" :value="progressBar"></progress>
                         <h1>{{ playingSong.title }}</h1>
                         <p>{{ playingSong.artist }}</p>
                     </div>
+                </div>
+                <div class="mode-selector-wrapper">
+                    <select v-model="visualizationSettings" @change="setVisualization()">
+                        <option value="mic">Microphone (Mic access required)</option>
+                        <option value="bpm">BPM (might not be 100% accurate)</option>
+                        <option value="off">No visualization except background</option>
+                    </select>
                 </div>
                 <div class="song-list-wrapper">
                     <div v-for="song in songQueue" class="song-list">
@@ -51,12 +58,14 @@
             </div>
             <div class="background" id="background">
                 <div class="beat"></div>
+                <div class="beat-manual"></div>
             </div>
             <canvas id="canvas"></canvas>
         </div>
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.1/jquery.min.js"></script>
         <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-        <script src="/colorPaletteExtractor.js"></script>
+        <!-- <script src="/colorPaletteExtractor.js"></script> -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.3.0/color-thief.umd.js"></script>
         <script src="/showcase.js"></script>
     </body>
 </html>

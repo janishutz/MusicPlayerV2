@@ -11,12 +11,15 @@
     background-position: center;
 }
 
-.beat {
+.beat, .beat-manual {
     height: 100%;
     width: 100%;
-    background-color: rgba( 0, 0, 0, 0.2 );
-    animation: beatAnim 0.6s infinite linear;
+    background-color: rgba( 0, 0, 0, 0.15 );
     display: none;
+}
+
+.beat {
+    animation: beatAnim 0.6s infinite linear;
 }
 
 @keyframes beatAnim {
