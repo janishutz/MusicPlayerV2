@@ -33,6 +33,7 @@ let currentDetails = {
 };
 
 let connectedMain = {};
+// TODO: Add backend integration
 
 
 app.get( '/', ( request, response ) => {

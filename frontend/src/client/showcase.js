@@ -216,7 +216,7 @@ createApp( {
                     clearInterval( this.micAnalyzer );
                 } catch ( err ) {}
             } else if ( this.visualizationSettings === 'mic' ) {
-                $( '.beat' ).hide();
+                $( '.beat-manual' ).hide();
                 try {
                     clearInterval( this.micAnalyzer );
                 } catch ( err ) {}
@@ -233,10 +233,11 @@ createApp( {
             navigator.mediaDevices.getUserMedia( { audio: true } ).then( ( stream ) => {
                 const mic = audioContext.createMediaStreamSource( stream );
                 mic.connect( analyser );
-                analyser.connect( audioContext.destination );
                 analyser.getByteFrequencyData( dataArray );
                 let prevSpectrum = null;
                 let threshold = 10; // Adjust as needed
+                // TODO: Make sure it works as it should
+                // TODO: Make pos update also occur on 10 sec time jump
                 this.beatDetected = false;
                 this.micAnalyzer = setInterval( () => {
                     analyser.getByteFrequencyData( dataArray );
