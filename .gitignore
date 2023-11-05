@@ -1,2 +1,4 @@
 # ignore node_modules
 node_modules
+*.secret.json
+apple_private_key.p8

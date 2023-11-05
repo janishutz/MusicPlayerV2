@@ -270,6 +270,8 @@ export default {
                 } else if ( action === 'forward10' ) {
                     if ( musicPlayer.currentTime < ( musicPlayer.duration - 10 ) ) {
                         musicPlayer.currentTime = musicPlayer.currentTime + 10;
+                        this.playbackPos = musicPlayer.currentTime;
+                        this.sendUpdate( 'pos' );
                     } else {
                         if ( this.repeatMode !== 'one' ) {
                             this.control( 'next' );
@@ -283,10 +285,17 @@ export default {
                     clearInterval( this.progressTracker );
                     this.playbackPos = 0;
                     musicPlayer.currentTime = 0;
+                    this.sendUpdate( 'pos' );
                 } else if ( action === 'next' ) {
                     this.$emit( 'update', { 'type': 'next' } );
                 } else if ( action === 'previous' ) {
-                    this.$emit( 'update', { 'type': 'previous' } );
+                    if ( this.playbackPos > 3 ) {
+                        this.playbackPos = 0;
+                        musicPlayer.currentTime = 0;
+                        this.sendUpdate( 'pos' );
+                    } else {
+                        this.$emit( 'update', { 'type': 'previous' } );
+                    }
                 } else if ( action === 'shuffleOff' ) {
                     this.$emit( 'update', { 'type': 'shuffleOff' } );
                     this.isShuffleEnabled = false;
@@ -337,6 +346,26 @@ export default {
             this.$emit( 'update', { 'type': 'fancyView', 'status': true } );
             this.isShowingFancyView = true;
         },
+    },
+    created() {
+        document.addEventListener( 'keydown', ( e ) => {
+            if ( e.key === ' ' ) {
+                e.preventDefault();
+                if ( !this.isPlaying ) {
+                    this.control( 'play' );
+                } else {
+                    this.control( 'pause' );
+                }
+            } else if ( e.key === 'ArrowRight' ) {
+                e.preventDefault();
+                this.control( 'next' );
+            } else if ( e.key === 'ArrowLeft' ) {
+                e.preventDefault();
+                this.control( 'previous' );
+            } else {
+                console.log( e.key );
+            }
+        } );
     }
 }
 </script>

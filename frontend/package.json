@@ -16,6 +16,8 @@
     "cors": "^2.8.5",
     "express-session": "^1.17.3",
     "music-metadata": "^7.13.0",
+    "node-fetch": "^2.7.0",
+    "node-musickit-api": "^2.1.1",
     "realtime-bpm-analyzer": "^3.2.1",
     "vue": "^3.2.13",
     "vue-router": "^4.0.3",

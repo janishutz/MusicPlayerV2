@@ -7,6 +7,25 @@
 *
 */
 
-module.exports.fetch = () => {
-    // TODO: Implement
+const MusicKit = require( 'node-musickit-api' );
+const fs = require( 'fs' );
+const path = require( 'path' );
+
+// TODO: deploy non-secret version
+const settings = JSON.parse( fs.readFileSync( path.join( __dirname + '/config/apple-music-api.config.secret.json' ) ) );
+
+const music = new MusicKit( {
+    key: fs.readFileSync( path.join( __dirname + '/config/apple_private_key.p8' ) ).toString(),
+    teamId: settings.teamID, // This is your developer account's team ID
+    keyId: settings.keyID // This is the keys ID
+} );
+
+module.exports.fetch = ( type, searchQuery, callback ) => {
+    music.search( settings.storefront, type, searchQuery, ( err, data ) => {
+        if ( err ) { 
+            callback( err, null ); 
+            return; 
+        }
+        callback( null, data );
+    } );
 }
