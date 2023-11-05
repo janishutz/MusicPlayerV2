@@ -1,13 +1,24 @@
+/*
+*				MusicPlayerV2 - indexer.js
+*
+*	Created by Janis Hutz 11/05/2023, Licensed under the GPL V3 License
+*			https://janishutz.com, development@janishutz.com
+*
+*
+*/
+
 const fs = require( 'fs' );
 const imageFetcher = require( './imageFetcher.js' );
 const musicMetadata = require( 'music-metadata' );
 const allowedFileTypes = [ '.mp3', '.wav', '.flac' ];
+const csv = require( 'csv-parser' );
+const path = require( 'path' );
 
 let indexedData = {};
 let coverArtIndex = {};
 
 module.exports.index = ( req ) => {
-    return new Promise( ( reject, resolve ) => {
+    return new Promise( ( resolve, reject ) => {
         fs.readdir( req.query.dir, { encoding: 'utf-8' }, ( err, dat ) => {
             if ( err ) { 
                 res.status( 404 ).send( 'ERR_DIR_NOT_FOUND' );
@@ -27,8 +38,19 @@ module.exports.index = ( req ) => {
     } );
 }
 
-const parseExistingData = () => {
-    
+const parseExistingData = ( dat, dir ) => {
+    return new Promise( ( resolve, reject ) => {
+        if ( dat.includes( 'songlist.csv' ) ) {
+            let results = {};
+            fs.createReadStream( path.join( dir + '/songlist.csv' ) ).pipe( csv( [ 'name', 'artist', 'dancingStyle', 'tempo' ] ) ).on( 'data', ( data ) => {
+                results[ req.query.dir + '/' + dat[ file ] ] = data;
+            } ).on( 'end', () => {
+                resolve( results );
+            } );
+        } else if ( dat.includes( 'songlist.json' ) ) {
+            resolve( JSON.parse( fs.readFileSync( path.join( dir + '/songlist.json' ) ) ) );
+        }
+    } );
 }
 
 const parseDir = async ( dat, req ) => {
