@@ -16,8 +16,8 @@ const settings = JSON.parse( fs.readFileSync( path.join( __dirname + '/config/ap
 
 const music = new MusicKit( {
     key: fs.readFileSync( path.join( __dirname + '/config/apple_private_key.p8' ) ).toString(),
-    teamId: settings.teamID, // This is your developer account's team ID
-    keyId: settings.keyID // This is the keys ID
+    teamId: settings.teamID,
+    keyId: settings.keyID
 } );
 
 module.exports.fetch = ( type, searchQuery, callback ) => {

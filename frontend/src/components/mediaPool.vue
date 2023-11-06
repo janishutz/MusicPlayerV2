@@ -206,6 +206,7 @@
                 repeat: false,
                 isShowingFancyView: false,
                 errorOccurredLoading: false,
+                coverArtSetting: 'api'
             }
         },
         methods: {
@@ -291,7 +292,7 @@
             },
             indexFiles () {
                 for ( let dir in this.loadedDirs ) {
-                    fetch( 'http://localhost:8081/indexDirs?dir=' + this.loadedDirs[ dir ] + ( this.loadCoverArtPreview ? '&coverart=true' : '' ) ).then( res => {
+                    fetch( 'http://localhost:8081/indexDirs?dir=' + this.loadedDirs[ dir ] + ( this.loadCoverArtPreview ? '&coverart=' + this.coverArtSetting : '' ) ).then( res => {
                         if ( res.status === 200 ) {
                             this.errorOccurredLoading = false;
                             res.json().then( json => {

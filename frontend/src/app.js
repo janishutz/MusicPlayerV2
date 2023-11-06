@@ -6,6 +6,7 @@ const fs = require( 'fs' );
 const bodyParser = require( 'body-parser' );
 const dialog = require( 'electron' ).dialog;
 const session = require( 'express-session' );
+const indexer = require( './indexer.js' );
 
 
 app.use( bodyParser.urlencoded( { extended: false } ) );
@@ -121,11 +122,15 @@ app.get( '/openSongs', ( req, res ) => {
 app.get( '/indexDirs', ( req, res ) => {
     if ( req.query.dir ) {
         // TODO: Load from json file
-        if ( indexedData[ req.query.dir ] ) {
-            res.send( indexedData[ req.query.dir ] );
-        } else {
-            res.send( files );
-        }
+        indexer.index( req ).then( dirIndex => {
+            res.send( dirIndex );
+        } ).catch( err => {
+            if ( err === 'ERR_DIR_NOT_FOUND' ) {
+                res.status( 404 ).send( 'ERR_DIR_NOT_FOUND' );
+            } else {
+                res.status( 500 ).send( 'unable to process' );
+            }
+        } );
     } else {
         res.status( 400 ).send( 'ERR_REQ_INCOMPLETE' );
     }
