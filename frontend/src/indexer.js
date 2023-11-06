@@ -14,7 +14,6 @@ const allowedFileTypes = [ '.mp3', '.wav', '.flac' ];
 const csv = require( 'csv-parser' );
 const path = require( 'path' );
 
-let indexedData = {};
 let coverArtIndex = {};
 
 module.exports.index = ( req ) => {
@@ -25,18 +24,20 @@ module.exports.index = ( req ) => {
                 return;
             };
             ( async() => {
-                // TODO: Check for songlist.csv or songlist.json file and use the data provided there for each song to override 
+                // Check for songlist.csv or songlist.json file and use the data provided there for each song to override 
                 // what was found automatically. If no song title was found in songlist or metadata, use filename
-                // TODO: Also save found information to those files and don't rerun checks if data is present
-                if ( dat.includes( 'songlist.csv' ) || dat.includes( 'songlist.json' ) ) {
-                    parseExistingData( dat, req.query.dir ).then( data => {
-                        parseDir( dat, req, data );
-                    } );
-                } else if ( dat.includes( 'songs.json' ) ) {
+                // additionally check if dir has been indexed (songs.json file)
+                if ( dat.includes( 'songs.json' ) ) {
                     parseExistingData( dat, req.query.dir ).then( data => {
                         resolve( data );
                     } ).catch( err => {
                         reject( err );
+                    } );
+                } else if ( dat.includes( 'songlist.csv' ) || dat.includes( 'songlist.json' ) ) {
+                    parseExistingData( dat, req.query.dir ).then( data => {
+                        parseDir( dat, req, data ).then( indexedDir => {
+                            resolve( indexedDir );
+                        } );
                     } );
                 } else {
                     resolve( await parseDir( dat, req ) );
@@ -45,6 +46,10 @@ module.exports.index = ( req ) => {
         } );
     } );
 }
+
+module.exports.getImages = ( filename ) => {
+    return coverArtIndex[ filename ];
+};
 
 const parseExistingData = ( dat, dir ) => {
     return new Promise( ( resolve, reject ) => {
@@ -56,12 +61,11 @@ const parseExistingData = ( dat, dir ) => {
             let results = {};
             let pos = 0;
             fs.createReadStream( path.join( dir + '/songlist.csv' ) )
-            .pipe( csv( [ 'name', 'artist', 'dancingStyle', 'tempo' ] ) )
+            .pipe( csv() )
             .on( 'data', ( data ) => {
                 results[ dir + '/' + dat[ pos ] ] = data;
                 pos += 1;
             } ).on( 'end', () => {
-                console.log( results );
                 resolve( results );
             } );
         } else if ( dat.includes( 'songlist.json' ) ) {
@@ -71,12 +75,11 @@ const parseExistingData = ( dat, dir ) => {
 }
 
 hasCompletedFetching = {};
-
+let files = {};
 const parseDir = ( dat, req, existingData ) => {
-    console.log( existingData );
     return new Promise( ( resolve, reject ) => {
         ( async() => {
-            let files = {};
+            files = {};
             for ( let file in dat ) {
                 if ( allowedFileTypes.includes( dat[ file ].slice( dat[ file ].indexOf( '.' ), dat[ file ].length ) ) ) {
                     try {
@@ -94,7 +97,9 @@ const parseDir = ( dat, req, existingData ) => {
                             'numberOfChannels': metadata[ 'format' ][ 'numberOfChannels' ],
                             'container': metadata[ 'format' ][ 'container' ],
                             'filename': req.query.dir + '/' + dat[ file ],
+                            'coverArtOrigin': req.query.coverart ?? 'none',
                         }
+                        runReplace( existingData, req.query.dir + '/' + dat[ file ], req.query.doOverride ?? false );
                         if ( req.query.coverart == 'meta' ) {
                             if ( metadata[ 'common' ][ 'picture' ] ) {
                                 files[ req.query.dir + '/' + dat[ file ] ][ 'hasCoverArt' ] = true;
@@ -102,28 +107,10 @@ const parseDir = ( dat, req, existingData ) => {
                             } else {
                                 files[ req.query.dir + '/' + dat[ file ] ][ 'hasCoverArt' ] = false;
                             }
+                            hasCompletedFetching[ req.query.dir + '/' + dat[ file ] ] = true;
                         } else if ( req.query.coverart == 'api' ) {
                             hasCompletedFetching[ req.query.dir + '/' + dat[ file ] ] = false;
-                            imageFetcher.fetch( 'songs', metadata[ 'common' ][ 'artist' ] + ' ' + metadata[ 'common' ][ 'title' ], ( err, data ) => {
-                                if ( err ) {
-                                    files[ req.query.dir + '/' + dat[ file ] ][ 'hasCoverArt' ] = false;
-                                    return;
-                                }
-                                if ( data.results.songs ) {
-                                    if ( data.results.songs.data ) {
-                                        let url = data.results.songs.data[ 0 ].attributes.artwork.url;
-                                        url = url.replace( '{w}', data.results.songs.data[ 0 ].attributes.artwork.width );
-                                        url = url.replace( '{h}', data.results.songs.data[ 0 ].attributes.artwork.height );
-                                        console.log( url );
-                                    } else {
-                                        files[ req.query.dir + '/' + dat[ file ] ][ 'hasCoverArt' ] = false;
-                                    }
-                                } else {
-                                    files[ req.query.dir + '/' + dat[ file ] ][ 'hasCoverArt' ] = false;
-                                }
-                                hasCompletedFetching[ req.query.dir + '/' + dat[ file ] ] = true;
-                            } );
-                            files[ req.query.dir + '/' + dat[ file ] ][ 'hasCoverArt' ] = true;
+                            fetchImages( metadata[ 'common' ][ 'title' ], metadata[ 'common' ][ 'artist' ], metadata[ 'common' ][ 'year' ], req.query.dir, dat[ file ] );
                         } else {
                             files[ req.query.dir + '/' + dat[ file ] ][ 'hasCoverArt' ] = false;
                         }
@@ -134,14 +121,15 @@ const parseDir = ( dat, req, existingData ) => {
                 }
             }
             let ok = false;
-            setInterval( () => {
+            let waiter = setInterval( () => {
                 for ( let song in hasCompletedFetching ) {
                     if ( !hasCompletedFetching[ song ] ) {
                         ok = false;
                     }
                 }
                 if ( ok ) {
-                    indexedData[ req.query.dir ] = files;
+                    saveToDisk( req.query.dir );
+                    clearInterval( waiter );
                     resolve( files );
                 }
                 ok = true;
@@ -150,7 +138,59 @@ const parseDir = ( dat, req, existingData ) => {
     } )
 };
 
+const runReplace = ( existingData, currentFile, doOverride ) => {
+    for ( let param in existingData[ currentFile ] ) {
+        if ( !files[ currentFile ][ param ] || doOverride ) {
+            files[ currentFile ][ param ] = existingData[ currentFile ][ param ];
+        }
+    }
+};
 
-const saveToDisk = () => {
+let imageQueue = [];
+let runInterval = null;
+const fetchImages = ( title, artist, year, dir, filename ) => {
+    imageQueue.push( { 'title': title, 'artist': artist, 'year': year, 'dir': dir, 'filename': filename } );
+    if ( runInterval === null ) {
+        runInterval = setInterval( () => {
+            if ( imageQueue.length > 0 ) {
+                const cur = imageQueue.reverse().pop();
+                imageQueue.reverse();
+                runFetch( cur.title, cur.artist, cur.year, cur.dir, cur.filename );
+            } else {
+                clearInterval( runInterval );
+                runInterval = null;
+            }
+        }, 100 );
+    }
+};
 
+const runFetch = ( title, artist, year, dir, filename ) => {
+    imageFetcher.fetch( 'songs', ( artist ?? '' ) + ' ' + ( title ?? '' ) + ' ' + ( year ?? '' ), ( err, data ) => {
+        if ( err ) {
+            files[ dir + '/' + filename ][ 'hasCoverArt' ] = false;
+            console.error( dir + '/' + filename );
+            console.error( err );
+            hasCompletedFetching[ dir + '/' + filename ] = true;
+            return;
+        }
+        if ( data.results.songs ) {
+            if ( data.results.songs.data ) {
+                let url = data.results.songs.data[ 0 ].attributes.artwork.url;
+                url = url.replace( '{w}', data.results.songs.data[ 0 ].attributes.artwork.width );
+                url = url.replace( '{h}', data.results.songs.data[ 0 ].attributes.artwork.height );
+                files[ dir + '/' + filename ][ 'coverArtURL' ] = url;
+                files[ dir + '/' + filename ][ 'hasCoverArt' ] = true;
+            } else {
+                files[ dir + '/' + filename ][ 'hasCoverArt' ] = false;
+            }
+        } else {
+            files[ dir + '/' + filename ][ 'hasCoverArt' ] = false;
+        }
+        hasCompletedFetching[ dir + '/' + filename ] = true;
+    } );
+}
+
+
+const saveToDisk = ( dir ) => {
+    fs.writeFileSync( path.join( dir + '/songs.json' ), JSON.stringify( files ) );
 };

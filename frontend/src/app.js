@@ -138,8 +138,8 @@ app.get( '/indexDirs', ( req, res ) => {
 
 app.get( '/getSongCover', ( req, res ) => {
     if ( req.query.filename ) {
-        if ( coverArtIndex[ req.query.filename ] ) {
-            res.send( coverArtIndex[ req.query.filename ] );
+        if ( indexer.getImages( req.query.filename ) ) {
+            res.send( indexer.getImages( req.query.filename ) );
         } else {
             res.status( 404 ).send( 'No cover image for this file' );
         }

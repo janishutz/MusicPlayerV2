@@ -148,7 +148,6 @@ createApp( {
             }, false );
         },
         handleBackground() {
-            // TODO: Add hotkeys
             let colourDetails = [];
             let colours = [];
             let differentEnough = true;

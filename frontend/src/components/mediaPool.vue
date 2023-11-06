@@ -2,7 +2,8 @@
     <div class="media-pool" :style="isShowingFancyView ? 'overflow: hidden;' : ''">
         <div v-if="hasLoadedSongs" style="width: 100%;" class="song-list-wrapper">
             <div v-for="song in songQueue" class="song-list" :class="[ isPlaying ? ( currentlyPlaying === song.filename ? 'playing': 'not-playing' ) : 'not-playing', !isPlaying && currentlyPlaying === song.filename ? 'active-song': undefined ]">
-                <span class="material-symbols-outlined song-image" v-if="!loadCoverArtPreview || !song.hasCoverArt">music_note</span>
+                <span class="material-symbols-outlined song-image" v-if="!song.hasCoverArt">music_note</span>
+                <img v-else-if="song.hasCoverArt && song.coverArtOrigin === 'api'" :src="song.coverArtURL" class="song-image">
                 <img v-else :src="'http://localhost:8081/getSongCover?filename=' + song.filename" class="song-image">
                 <div v-if="currentlyPlaying === song.filename && isPlaying" class="playing-symbols">
                     <div class="playing-symbols-wrapper">
@@ -195,7 +196,6 @@
             return {
                 hasLoadedSongs: false,
                 isLoadingSongs: false,
-                loadCoverArtPreview: true,
                 allSongs: [],
                 songQueue: [],
                 loadedDirs: [],
@@ -206,7 +206,8 @@
                 repeat: false,
                 isShowingFancyView: false,
                 errorOccurredLoading: false,
-                coverArtSetting: 'api'
+                coverArtSetting: 'api',
+                doOverride: false,
             }
         },
         methods: {
@@ -292,7 +293,7 @@
             },
             indexFiles () {
                 for ( let dir in this.loadedDirs ) {
-                    fetch( 'http://localhost:8081/indexDirs?dir=' + this.loadedDirs[ dir ] + ( this.loadCoverArtPreview ? '&coverart=' + this.coverArtSetting : '' ) ).then( res => {
+                    fetch( 'http://localhost:8081/indexDirs?dir=' + this.loadedDirs[ dir ] + '&coverart=' + this.coverArtSetting + '&doOverride=' + this.doOverride ).then( res => {
                         if ( res.status === 200 ) {
                             this.errorOccurredLoading = false;
                             res.json().then( json => {

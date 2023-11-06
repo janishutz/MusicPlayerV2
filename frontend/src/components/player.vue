@@ -19,6 +19,7 @@
             <div class="song-info-wrapper">
                 <div v-if="audioLoaded" @click="showFancyView()" style="cursor: pointer;">
                     <span class="material-symbols-outlined image" v-if="!playingSong.hasCoverArt">music_note</span>
+                    <img v-else-if="playingSong.hasCoverArt && playingSong.coverArtOrigin === 'api'" :src="playingSong.coverArtURL" class="image">
                     <img v-else :src="'http://localhost:8081/getSongCover?filename=' + playingSong.filename" class="image">
                 </div>
                 <span class="material-symbols-outlined image" v-else>music_note</span>

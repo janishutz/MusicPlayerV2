@@ -16,6 +16,7 @@
             <div v-if="hasLoaded" style="width: 100%">
                 <div class="current-song-wrapper">
                     <span class="material-symbols-outlined fancy-view-song-art" v-if="!playingSong.hasCoverArt">music_note</span>
+                    <img v-else-if="playingSong.hasCoverArt && playingSong.coverArtOrigin === 'api'" :src="playingSong.coverArtURL" class="fancy-view-song-art" id="current-image" crossorigin="anonymous">
                     <img v-else :src="'/getSongCover?filename=' + playingSong.filename" class="fancy-view-song-art" id="current-image">
                     <div class="current-song">
                         <progress max="1000" id="progress" :value="progressBar"></progress>
@@ -33,7 +34,8 @@
                 <div class="song-list-wrapper">
                     <div v-for="song in songQueue" class="song-list">
                         <span class="material-symbols-outlined song-image" v-if="!song.hasCoverArt && ( playingSong.filename !== song.filename || isPlaying )">music_note</span>
-                        <img v-else-if="song.hasCoverArt && ( playingSong.filename !== song.filename || isPlaying )" :src="'/getSongCover?filename=' + song.filename" class="song-image">
+                        <img v-else-if="song.hasCoverArt && ( playingSong.filename !== song.filename || isPlaying ) && song.coverArtOrigin === 'api'" :src="song.coverArtURL" class="song-image">
+                        <img v-else-if="song.hasCoverArt && ( playingSong.filename !== song.filename || isPlaying ) && song.coverArtOrigin !== 'api'" :src="'/getSongCover?filename=' + song.filename" class="song-image">
                         <div v-if="playingSong.filename === song.filename && isPlaying" class="playing-symbols">
                             <div class="playing-symbols-wrapper">
                                 <div class="playing-bar" id="bar-1"></div>
