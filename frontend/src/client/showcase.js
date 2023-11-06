@@ -32,7 +32,7 @@ createApp( {
             }
             return ret;
         },
-        getTimeUntil(  ) {
+        getTimeUntil() {
             return ( song ) => {
                 let timeRemaining = 0;
                 for ( let i = this.queuePos; i < this.songs.length; i++ ) {
@@ -41,10 +41,18 @@ createApp( {
                     }
                     timeRemaining += parseInt( this.songs[ i ].duration );
                 }
-                if ( timeRemaining === 0 ) {
-                    return 'Currently playing';
+                if ( this.isPlaying ) {
+                    if ( timeRemaining === 0 ) {
+                        return 'Currently playing';
+                    } else {
+                        return 'Playing in less than ' + Math.ceil( timeRemaining / 60 - this.pos / 60 )  + 'min';
+                    }
                 } else {
-                    return 'Playing in less than ' + Math.ceil( timeRemaining / 60 - this.pos / 60 )  + 'min';
+                    if ( timeRemaining === 0 ) {
+                        return 'Plays next';
+                    } else {
+                        return 'Playing less than ' + Math.ceil( timeRemaining / 60 - this.pos / 60 )  + 'min after starting to play';
+                    }
                 }
             }
         }

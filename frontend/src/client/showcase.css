@@ -133,7 +133,7 @@ body {
     height: 55vh;
     width: 100%;
     margin-bottom: 0.5%;
-    margin-top: 0.5%;
+    margin-top: 0.25%;
 }
 
 .current-song {
@@ -141,7 +141,7 @@ body {
     justify-content: center;
     align-items: center;
     flex-direction: column;
-    margin-top: 2vh;
+    margin-top: 1vh;
     padding: 1vh;
     text-align: center;
     background-color: rgba( 0, 0, 0, 0.4 );
@@ -152,7 +152,7 @@ body {
     width: 30vh;
     object-fit: cover;
     object-position: center;
-    margin-bottom: 20px;
+    margin-bottom: 10px;
     font-size: 30vh !important;
 }
 
@@ -181,4 +181,20 @@ body {
 
 .mode-selector-wrapper:hover {
     opacity: 1;
+}
+
+.dancing-style {
+    font-size: 250%;
+    margin: 0;
+    font-weight: bolder;
+}
+
+.info {
+    position: fixed;
+    font-size: 12px;
+    transform: rotate(270deg);
+    left: -150px;
+    margin: 0;
+    padding: 0;
+    top: 50%;
 }

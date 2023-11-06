@@ -1,6 +1,7 @@
 <template>
     <div class="fancy-view">
         <span class="material-symbols-outlined fancy-view-song-art" v-if="!song.hasCoverArt">music_note</span>
+        <img v-else-if="song.hasCoverArt && song.coverArtOrigin === 'api'" :src="song.coverArtURL" class="fancy-view-song-art">
         <img v-else :src="'http://localhost:8081/getSongCover?filename=' + song.filename" class="fancy-view-song-art">
         <button @click="exit()" id="exit-button"><span class="material-symbols-outlined" style="font-size: 4vh;">close</span></button>
         <div class="controls-wrapper">
