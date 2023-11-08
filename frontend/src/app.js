@@ -114,14 +114,13 @@ app.get( '/clientStatusUpdate/:status', ( req, res ) => {
 } );
 
 app.get( '/openSongs', ( req, res ) => {
-    res.send( '{ "data": [ "/home/janis/Music/KB2022" ] }' );
-    // res.send( '{ "data": [ "/mnt/storage/SORTED/Music/audio/KB2022" ] }' );
+    // res.send( '{ "data": [ "/home/janis/Music/KB2022" ] }' );
+    res.send( '{ "data": [ "/mnt/storage/SORTED/Music/audio/KB2022" ] }' );
     // res.send( { 'data': dialog.showOpenDialogSync( { properties: [ 'openDirectory' ], title: 'Open music library folder' } ) } );
 } );
 
 app.get( '/indexDirs', ( req, res ) => {
     if ( req.query.dir ) {
-        // TODO: Load from json file
         indexer.index( req ).then( dirIndex => {
             res.send( dirIndex );
         } ).catch( err => {

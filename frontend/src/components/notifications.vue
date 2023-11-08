@@ -113,6 +113,7 @@ export default {
         }
     },
     created () {
+        window.$ = window.jQuery = require( 'jquery' );
         this.notificationScheduler = setInterval( () => { 
             if ( this.displayTimeCurrentNotification >= this.notificationDisplayTime ) {
                 this.handleNotifications();

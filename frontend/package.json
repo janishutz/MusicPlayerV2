@@ -1,6 +1,20 @@
 {
   "name": "musicplayerv2",
   "version": "0.1.0",
+  "maintainers": [
+    "Janis Hutz <development@janishutz.com>"
+  ],
+  "description": "A music player",
+  "homepage": "https://janishutz.com/projects/musicplayerv2",
+  "author": {
+    "name": "Janis Hutz",
+    "email": "development@janishutz.com",
+    "url": "https://janishutz.com"
+  },
+  "license": "GPL-3.0-or-later",
+  "bugs": {
+    "url": "https://github.com/simplePCBuilding/musicplayerv2/issues"
+  },
   "private": true,
   "scripts": {
     "serve": "vue-cli-service serve",
@@ -15,7 +29,9 @@
     "core-js": "^3.8.3",
     "cors": "^2.8.5",
     "csv-parser": "^3.0.0",
+    "electron-squirrel-startup": "^1.0.0",
     "express-session": "^1.17.3",
+    "jquery": "^3.7.1",
     "music-metadata": "^7.13.0",
     "node-fetch": "^2.7.0",
     "node-musickit-api": "^2.1.1",
