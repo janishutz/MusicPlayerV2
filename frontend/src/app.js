@@ -19,13 +19,14 @@ app.use( session( {
     resave: false,
 } ) );
 
+const conf = JSON.parse( fs.readFileSync( path.join( __dirname + '/config/config.json' ) ) );
 
 // TODO: Import from config
-const remoteURL = 'http://localhost:3000';
+const remoteURL = conf.connectionURL ?? 'http://localhost:3000';
 let hasConnected = false;
 
 const connect = () => {
-    if ( authKey !== '' ) {
+    if ( authKey !== '' && conf.doConnect ) {
         axios.post( remoteURL + '/connect', { 'authKey': authKey } ).then( res => {
             if ( res.status === 200 ) {
                 console.log( '[ BACKEND INTEGRATION ] Connection successful' );
@@ -42,10 +43,7 @@ const connect = () => {
     }
 };
 
-let authKey = '';
-try {
-    authKey = '' + fs.readFileSync( path.join( __dirname + '/config/authKey.txt' ) );
-} catch( err ) {};
+let authKey = conf.authKey ?? '';
 
 connect();
 
@@ -69,8 +67,8 @@ app.get( '/', ( request, response ) => {
 } );
 
 app.get( '/openSongs', ( req, res ) => {
-    res.send( '{ "data": [ "/home/janis/Music/KB2022" ] }' );
-    // res.send( '{ "data": [ "/mnt/storage/SORTED/Music/audio/KB2022" ] }' );
+    // res.send( '{ "data": [ "/home/janis/Music/KB2022" ] }' );
+    res.send( '{ "data": [ "/mnt/storage/SORTED/Music/audio/KB2022" ] }' );
     // res.send( { 'data': dialog.showOpenDialogSync( { properties: [ 'openDirectory' ], title: 'Open music library folder' } ) } );
 } );
 
@@ -119,6 +117,24 @@ app.get( '/mainNotifier', ( req, res ) => {
 } );
 
 const sendUpdate = ( update ) => {
+    if ( update === 'pos' ) {
+        currentDetails[ 'playingSong' ][ 'startTime' ] = new Date().getTime();
+        for ( let client in connectedClients ) {
+            connectedClients[ client ].write( 'data: ' + JSON.stringify( { 'type': 'playingSong', 'data': currentDetails[ 'playingSong' ] } ) + '\n\n' );
+        }
+    } else if ( update === 'playingSong' ) {
+        currentDetails[ update ][ 'startTime' ] = new Date().getTime();
+    } else if ( update === 'isPlaying' ) {
+        currentDetails[ 'playingSong' ][ 'startTime' ] = new Date().getTime();
+        for ( let client in connectedClients ) {
+            connectedClients[ client ].write( 'data: ' + JSON.stringify( { 'type': 'playingSong', 'data': currentDetails[ 'playingSong' ] } ) + '\n\n' );
+        }
+
+        for ( let client in connectedClients ) {
+            connectedClients[ client ].write( 'data: ' + JSON.stringify( { 'type': 'pos', 'data': currentDetails[ 'pos' ] } ) + '\n\n' );
+        }
+    }
+
     for ( let client in connectedClients ) {
         connectedClients[ client ].write( 'data: ' + JSON.stringify( { 'type': update, 'data': currentDetails[ update ] } ) + '\n\n' );
     }
@@ -126,16 +142,20 @@ const sendUpdate = ( update ) => {
     // Check if connected and if not, try to authenticate with data from authKey file
 
     if ( hasConnected ) {
-        if ( update === 'pos' ) {
-            return;
-        } else if ( update === 'playingSong' ) {
-            currentDetails[ update ][ 'startTime' ] === new Date().getTime();
+        if ( update === 'isPlaying' ) {
+            axios.post( remoteURL + '/statusUpdate', { 'type': 'playingSong', 'data': currentDetails[ 'playingSong' ], 'authKey': authKey } ).catch( err => {
+                console.error( err );
+            } );
+
+            axios.post( remoteURL + '/statusUpdate', { 'type': 'pos', 'data': currentDetails[ 'pos' ], 'authKey': authKey } ).catch( err => {
+                console.error( err );
+            } );
+        } else if ( update === 'pos' ) {
+            axios.post( remoteURL + '/statusUpdate', { 'type': 'playingSong', 'data': currentDetails[ 'playingSong' ], 'authKey': authKey } ).catch( err => {
+                console.error( err );
+            } );
         }
-        axios.post( remoteURL + '/statusUpdate', { 'type': update, 'data': currentDetails[ update ], 'authKey': authKey } ).then( res => {
-            if ( res.status !== 200 ) {
-                console.log( res );
-            }
-        } ).catch( err => {
+        axios.post( remoteURL + '/statusUpdate', { 'type': update, 'data': currentDetails[ update ], 'authKey': authKey } ).catch( err => {
             console.error( err );
         } );
     } else {

@@ -48,52 +48,18 @@ body {
     flex-direction: row;
 }
 
-.playing-bar {
-    height: 60%;
-    background-color: white;
-    width: 10%;
-    border-radius: 50px;
-    margin: auto;
-}
-
-#bar-1 {
-    animation: music-playing 0.9s infinite ease-in-out;
-}
-
-#bar-2 {
-    animation: music-playing 0.9s infinite ease-in-out;
-    animation-delay: 0.3s;
-}
-
-#bar-3 {
-    animation: music-playing 0.9s infinite ease-in-out;
-    animation-delay: 0.6s;
-}
-
-@keyframes music-playing {
-    0% {
-        transform: scaleY( 1 );
-    }
-    50% {
-        transform: scaleY( 0.5 );
-    }
-    100% {
-        transform: scaleY( 1 );
-    }
-}
-
 .song-list-wrapper {
     width: 100%;
     display: flex;
     justify-content: center;
     align-items: center;
     flex-direction: column;
+    margin-bottom: 5%;
 }
 
 .song-list {
     display: flex;
     flex-direction: row;
-    justify-content: center;
     align-items: center;
     width: 80%;
     margin: 2px;
@@ -107,6 +73,7 @@ body {
     display: block;
     margin-left: 10px;
     margin-right: auto;
+    width: 65%;
 }
 
 .song-list .song-image {
@@ -128,22 +95,20 @@ body {
 
 .current-song-wrapper {
     display: flex;
-    justify-content: center;
     align-items: center;
     flex-direction: column;
-    height: 55vh;
     width: 100%;
-    margin-bottom: 0.5%;
-    margin-top: 0.25%;
+    margin-bottom: 2%;
+    margin-top: 1%;
 }
 
 .current-song {
     display: flex;
-    justify-content: center;
     align-items: center;
     flex-direction: column;
     margin-top: 1vh;
     padding: 1vh;
+    max-width: 80%;
     text-align: center;
     background-color: rgba( 0, 0, 0, 0.4 );
 }
@@ -157,19 +122,27 @@ body {
     font-size: 30vh !important;
 }
 
-#canvas {
-    display: none;
-}
-
 #app {
     background-color: rgba( 0, 0, 0, 0 );
 }
 
-#progress {
+#progress, #progress::-webkit-progress-bar {
     background-color: rgba(45, 28, 145);
+    color: rgba(45, 28, 145);
     width: 30vw;
     border: none;
-    border-radius: 50px;
+    border-radius: 0px;
+    accent-color: white;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+#progress::-moz-progress-bar {
+    background-color: white;
+}
+
+#progress::-webkit-progress-value {
+    background-color: white !important;
 }
 
 .mode-selector-wrapper {
@@ -198,4 +171,9 @@ body {
     margin: 0;
     padding: 0;
     top: 50%;
+}
+
+.time-until {
+    width: 30%;
+    text-align: end;
 }

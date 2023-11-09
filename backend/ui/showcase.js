@@ -11,8 +11,6 @@ createApp( {
             pos: 0,
             queuePos: 0,
             colourPalette: [],
-            startTime: 0,
-            offsetTime: 0,
             progressBar: 0,
             timeTracker: null,
         };
@@ -54,11 +52,13 @@ createApp( {
     },
     methods: {
         startTimeTracker () {
-            this.startTime = new Date().getTime();
             this.timeTracker = setInterval( () => {
-                this.pos = this.playingSong.startTime - new Date().getTime() / 1000;
+                this.pos = ( new Date().getTime() - this.playingSong.startTime ) / 1000 + this.oldPos;
                 this.progressBar = ( this.pos / this.playingSong.duration ) * 1000;
-            }, 75 );
+                if ( isNaN( this.progressBar ) ) {
+                    this.progressBar = 0;
+                }
+            }, 100 );
         },
         stopTimeTracker () {
             clearInterval( this.timeTracker );
@@ -79,13 +79,11 @@ createApp( {
                     this.songs = data.data.songQueue ?? [];
                     this.pos = data.data.pos ?? 0;
                     this.oldPos = data.data.pos ?? 0;
-                    this.startTime = new Date().getTime();
                     this.progressBar = this.pos / this.playingSong.duration * 1000;
                     this.queuePos = data.data.queuePos ?? 0;
                 } else if ( data.type === 'pos' ) {
                     this.pos = data.data;
                     this.oldPos = data.data;
-                    this.startTime = new Date().getTime();
                     this.progressBar = data.data / this.playingSong.duration * 1000;
                 } else if ( data.type === 'isPlaying' ) {
                     this.isPlaying = data.data;
@@ -102,12 +100,18 @@ createApp( {
                 this.hasLoaded = true;
             };
                 
+            let self = this;
+
             source.addEventListener( 'error', function( e ) {
                 if ( e.eventPhase == EventSource.CLOSED ) source.close();
 
                 if ( e.target.readyState == EventSource.CLOSED ) {
                     console.log( 'disconnected' );
                 }
+
+                setTimeout( () => {
+                    self.connect();
+                }, 1000 );
             }, false );
         },
     },

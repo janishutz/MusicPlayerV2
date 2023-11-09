@@ -156,19 +156,27 @@ body {
     font-size: 30vh !important;
 }
 
-#canvas {
-    display: none;
-}
-
 #app {
     background-color: rgba( 0, 0, 0, 0 );
 }
 
-#progress {
+#progress, #progress::-webkit-progress-bar {
     background-color: rgba(45, 28, 145);
+    color: rgba(45, 28, 145);
     width: 30vw;
     border: none;
-    border-radius: 50px;
+    border-radius: 0px;
+    accent-color: white;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+#progress::-moz-progress-bar {
+    background-color: white;
+}
+
+#progress::-webkit-progress-value {
+    background-color: white !important;
 }
 
 .mode-selector-wrapper {

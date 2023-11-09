@@ -11,11 +11,8 @@ createApp( {
             pos: 0,
             queuePos: 0,
             colourPalette: [],
-            startTime: 0,
-            offsetTime: 0,
             progressBar: 0,
             timeTracker: null,
-            timeCorrector: null,
             visualizationSettings: 'mic',
             micAnalyzer: null,
             beatDetected: false,
@@ -59,20 +56,16 @@ createApp( {
     },
     methods: {
         startTimeTracker () {
-            this.startTime = new Date().getTime();
             this.timeTracker = setInterval( () => {
-                this.pos += 0.075;
+                this.pos = ( new Date().getTime() - this.playingSong.startTime ) / 1000 + this.oldPos;
                 this.progressBar = ( this.pos / this.playingSong.duration ) * 1000;
-            }, 75 );
-
-            this.timeCorrector = setInterval( () => {
-                this.pos = this.oldPos + ( new Date().getTime() - this.startTime ) / 1000;
-                this.progressBar = ( this.pos / this.playingSong.duration ) * 1000;
-            }, 5000 );
+                if ( isNaN( this.progressBar ) ) {
+                    this.progressBar = 0;
+                }
+            }, 100 );
         },
         stopTimeTracker () {
             clearInterval( this.timeTracker );
-            clearInterval( this.timeCorrector );
             this.oldPos = this.pos;
         },
         getImageData() {
@@ -109,7 +102,6 @@ createApp( {
                     this.songs = data.data.songQueue ?? [];
                     this.pos = data.data.pos ?? 0;
                     this.oldPos = data.data.pos ?? 0;
-                    this.startTime = new Date().getTime();
                     this.progressBar = this.pos / this.playingSong.duration * 1000;
                     this.queuePos = data.data.queuePos ?? 0;
                     this.getImageData().then( palette => {
@@ -122,7 +114,6 @@ createApp( {
                 } else if ( data.type === 'pos' ) {
                     this.pos = data.data;
                     this.oldPos = data.data;
-                    this.startTime = new Date().getTime();
                     this.progressBar = data.data / this.playingSong.duration * 1000;
                 } else if ( data.type === 'isPlaying' ) {
                     this.isPlaying = data.data;
@@ -146,6 +137,8 @@ createApp( {
             source.onopen = () => {
                 this.hasLoaded = true;
             };
+
+            let self = this;
                 
             source.addEventListener( 'error', function( e ) {
                 if ( e.eventPhase == EventSource.CLOSED ) source.close();
@@ -153,6 +146,11 @@ createApp( {
                 if ( e.target.readyState == EventSource.CLOSED ) {
                     console.log( 'disconnected' );
                 }
+
+                // TODO: Notify about disconnect
+                setTimeout( () => {
+                    self.connect();
+                }, 1000 );
             }, false );
         },
         handleBackground() {
@@ -206,28 +204,32 @@ createApp( {
             this.setVisualization();
         },
         setVisualization () {
-            if ( this.visualizationSettings === 'bpm' ) {
-                if ( this.playingSong.bpm && this.isPlaying ) {
-                    $( '.beat' ).show();
-                    $( '.beat' ).css( 'animation-duration', 60 / this.playingSong.bpm );
-                    $( '.beat' ).css( 'animation-delay', this.pos % ( 60 / this.playingSong.bpm  * this.pos ) + this.playingSong.bpmOffset - ( 60 / this.playingSong.bpm  * this.pos / 2 ) );
-                } else {
+            if ( Object.keys( this.playingSong ).length > 0 ) {
+                if ( this.visualizationSettings === 'bpm' ) {
+                    if ( this.playingSong.bpm && this.isPlaying ) {
+                        $( '.beat' ).show();
+                        $( '.beat' ).css( 'animation-duration', 60 / this.playingSong.bpm );
+                        $( '.beat' ).css( 'animation-delay', this.pos % ( 60 / this.playingSong.bpm  * this.pos ) + this.playingSong.bpmOffset - ( 60 / this.playingSong.bpm  * this.pos / 2 ) );
+                    } else {
+                        $( '.beat' ).hide();
+                    }
+                    try {
+                        clearInterval( this.micAnalyzer );
+                    } catch ( err ) {}
+                } else if ( this.visualizationSettings === 'off' ) {
                     $( '.beat' ).hide();
+                    try {
+                        clearInterval( this.micAnalyzer );
+                    } catch ( err ) {}
+                } else if ( this.visualizationSettings === 'mic' ) {
+                    $( '.beat-manual' ).hide();
+                    try {
+                        clearInterval( this.micAnalyzer );
+                    } catch ( err ) {}
+                    this.micAudioHandler();
                 }
-                try {
-                    clearInterval( this.micAnalyzer );
-                } catch ( err ) {}
-            } else if ( this.visualizationSettings === 'off' ) {
-                $( '.beat' ).hide();
-                try {
-                    clearInterval( this.micAnalyzer );
-                } catch ( err ) {}
-            } else if ( this.visualizationSettings === 'mic' ) {
-                $( '.beat-manual' ).hide();
-                try {
-                    clearInterval( this.micAnalyzer );
-                } catch ( err ) {}
-                this.micAudioHandler();
+            } else {
+                console.log( 'not playing yet' );
             }
         },
         micAudioHandler () {
@@ -288,9 +290,9 @@ createApp( {
     },
     mounted() {
         this.connect();
-        if ( this.visualizationSettings === 'mic' ) {
-            this.micAudioHandler();
-        }
+        // if ( this.visualizationSettings === 'mic' ) {
+        //     this.micAudioHandler();
+        // }
     },
     watch: {
         isPlaying( value ) {

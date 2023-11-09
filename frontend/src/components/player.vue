@@ -31,7 +31,7 @@
             </div>
             <div class="playback-pos-info">
                 <div style="margin-right: auto;">{{ playbackPosBeautified }}</div>
-                <div>{{ durationBeautified }}</div>
+                <div @click="toggleShowMode()" style="cursor: pointer;">{{ durationBeautified }}</div>
             </div>
             <sliderView :active="audioLoaded" :position="playbackPos" :duration="playingSong.duration" @pos="( p ) => { setPos( p ) }"
                 name="player"></sliderView>
@@ -142,6 +142,7 @@ export default {
             hasLoadedSongs: false,
             isShowingFancyView: false,
             notifier: null,
+            isShowingRemainingTime: false,
         }
     },
     components: {
@@ -208,6 +209,22 @@ export default {
                 }
             }, 300 );
         },
+        toggleShowMode() {
+            this.isShowingRemainingTime = !this.isShowingRemainingTime;
+            if ( !this.isShowingRemainingTime ) {
+                const minuteCounts = Math.floor( this.playingSong.duration / 60 );
+                this.durationBeautified = String( minuteCounts ) + ':';
+                if ( ( '' + minuteCounts ).length === 1 ) {
+                    this.durationBeautified = '0' + minuteCounts + ':';
+                }
+                const secondCounts = Math.floor( this.playingSong.duration - minuteCounts * 60 );
+                if ( ( '' + secondCounts ).length === 1 ) {
+                    this.durationBeautified += '0' + secondCounts;
+                } else {
+                    this.durationBeautified += secondCounts;
+                }
+            }
+        },
         sendUpdate( update ) {
             let data = {};
             if ( update === 'pos' ) {
@@ -250,14 +267,27 @@ export default {
                         } else {
                             this.playbackPosBeautified += secondCount;
                         }
-                    }, 0.02 );
-                    this.progressTracker = setInterval( () => {
-                        this.sendUpdate( 'pos' );
-                    }, 5000 );
+
+                        if ( this.isShowingRemainingTime ) {
+                            const minuteCounts = Math.floor( ( this.playingSong.duration - this.playbackPos ) / 60 );
+                            this.durationBeautified = '-' + String( minuteCounts ) + ':';
+                            if ( ( '' + minuteCounts ).length === 1 ) {
+                                this.durationBeautified = '-0' + minuteCounts + ':';
+                            }
+                            const secondCounts = Math.floor( ( this.playingSong.duration - this.playbackPos ) - minuteCounts * 60 );
+                            if ( ( '' + secondCounts ).length === 1 ) {
+                                this.durationBeautified += '0' + secondCounts;
+                            } else {
+                                this.durationBeautified += secondCounts;
+                            }
+                        }
+                    }, 20 );
+                    this.sendUpdate( 'pos' );
                     this.sendUpdate( 'isPlaying' );
                 } else if ( action === 'pause' ) {
                     this.$emit( 'update', { 'type': 'playback', 'status': false } );
                     musicPlayer.pause();
+                    this.sendUpdate( 'pos' );
                     try {
                         clearInterval( this.progressTracker );
                         clearInterval( this.notifier );
