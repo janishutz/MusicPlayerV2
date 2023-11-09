@@ -363,8 +363,6 @@ export default {
             } else if ( e.key === 'ArrowLeft' ) {
                 e.preventDefault();
                 this.control( 'previous' );
-            } else {
-                console.log( e.key );
             }
         } );
     }

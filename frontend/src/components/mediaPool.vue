@@ -285,8 +285,12 @@
                 fetch( 'http://localhost:8081/openSongs' ).then( res => {
                     if ( res.status === 200 ) {
                         res.json().then( json => {
-                            this.loadedDirs = json.data;
-                            this.indexFiles();
+                            if ( Object.keys( json ).length > 0 ) {
+                                this.loadedDirs = json.data;
+                                this.indexFiles();
+                            } else {
+                                this.isLoadingSongs = false;
+                            }
                         } );
                     }
                 } );

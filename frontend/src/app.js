@@ -21,8 +21,8 @@ app.use( session( {
 
 
 // TODO: Import from config
-const remoteURL = 'https://music.janishutz.com';
-const hasConnected = false;
+const remoteURL = 'http://localhost:3000';
+let hasConnected = false;
 
 const connect = () => {
     if ( authKey !== '' ) {
@@ -69,9 +69,9 @@ app.get( '/', ( request, response ) => {
 } );
 
 app.get( '/openSongs', ( req, res ) => {
-    // res.send( '{ "data": [ "/home/janis/Music/KB2022" ] }' );
+    res.send( '{ "data": [ "/home/janis/Music/KB2022" ] }' );
     // res.send( '{ "data": [ "/mnt/storage/SORTED/Music/audio/KB2022" ] }' );
-    res.send( { 'data': dialog.showOpenDialogSync( { properties: [ 'openDirectory' ], title: 'Open music library folder' } ) } );
+    // res.send( { 'data': dialog.showOpenDialogSync( { properties: [ 'openDirectory' ], title: 'Open music library folder' } ) } );
 } );
 
 app.get( '/showcase.js', ( req, res ) => {
@@ -122,15 +122,24 @@ const sendUpdate = ( update ) => {
     for ( let client in connectedClients ) {
         connectedClients[ client ].write( 'data: ' + JSON.stringify( { 'type': update, 'data': currentDetails[ update ] } ) + '\n\n' );
     }
-    // TODO: Check if connected and if not, try to authenticate with data from authKey file
-    // TODO: reduce request count by bundling and sending more in one go to reduce load
+    
+    // Check if connected and if not, try to authenticate with data from authKey file
 
     if ( hasConnected ) {
-        axios.post( remoteURL + '/statusUpdate', { 'data': 'hello' } ).then( res => {
-            console.log( res );
+        if ( update === 'pos' ) {
+            return;
+        } else if ( update === 'playingSong' ) {
+            currentDetails[ update ][ 'startTime' ] === new Date().getTime();
+        }
+        axios.post( remoteURL + '/statusUpdate', { 'type': update, 'data': currentDetails[ update ], 'authKey': authKey } ).then( res => {
+            if ( res.status !== 200 ) {
+                console.log( res );
+            }
         } ).catch( err => {
             console.error( err );
         } );
+    } else {
+        connect();
     }
 }
 
