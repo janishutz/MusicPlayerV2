@@ -7,6 +7,7 @@ const bodyParser = require( 'body-parser' );
 const dialog = require( 'electron' ).dialog;
 const session = require( 'express-session' );
 const indexer = require( './indexer.js' );
+const axios = require( 'axios' );
 
 
 app.use( bodyParser.urlencoded( { extended: false } ) );
@@ -17,6 +18,36 @@ app.use( session( {
     saveUninitialized: true,
     resave: false,
 } ) );
+
+
+// TODO: Import from config
+const remoteURL = 'https://music.janishutz.com';
+const hasConnected = false;
+
+const connect = () => {
+    if ( authKey !== '' ) {
+        axios.post( remoteURL + '/connect', { 'authKey': authKey } ).then( res => {
+            if ( res.status === 200 ) {
+                console.log( '[ BACKEND INTEGRATION ] Connection successful' );
+                hasConnected = true;
+            } else {
+                console.error( '[ BACKEND INTEGRATION ] Connection error occurred' );
+            }
+        } ).catch( err => {
+            console.error( err );
+        } );
+        return 'connecting';
+    } else {
+        return 'noAuthKey';
+    }
+};
+
+let authKey = '';
+try {
+    authKey = '' + fs.readFileSync( path.join( __dirname + '/config/authKey.txt' ) );
+} catch( err ) {};
+
+connect();
 
 
 let connectedClients = {};
@@ -33,9 +64,14 @@ let currentDetails = {
 let connectedMain = {};
 // TODO: Add backend integration
 
-
 app.get( '/', ( request, response ) => {
     response.sendFile( path.join( __dirname + '/client/showcase.html' ) );
+} );
+
+app.get( '/openSongs', ( req, res ) => {
+    // res.send( '{ "data": [ "/home/janis/Music/KB2022" ] }' );
+    // res.send( '{ "data": [ "/mnt/storage/SORTED/Music/audio/KB2022" ] }' );
+    res.send( { 'data': dialog.showOpenDialogSync( { properties: [ 'openDirectory' ], title: 'Open music library folder' } ) } );
 } );
 
 app.get( '/showcase.js', ( req, res ) => {
@@ -86,6 +122,16 @@ const sendUpdate = ( update ) => {
     for ( let client in connectedClients ) {
         connectedClients[ client ].write( 'data: ' + JSON.stringify( { 'type': update, 'data': currentDetails[ update ] } ) + '\n\n' );
     }
+    // TODO: Check if connected and if not, try to authenticate with data from authKey file
+    // TODO: reduce request count by bundling and sending more in one go to reduce load
+
+    if ( hasConnected ) {
+        axios.post( remoteURL + '/statusUpdate', { 'data': 'hello' } ).then( res => {
+            console.log( res );
+        } ).catch( err => {
+            console.error( err );
+        } );
+    }
 }
 
 const allowedTypes = [ 'playingSong', 'isPlaying', 'songQueue', 'pos', 'queuePos' ];
@@ -111,12 +157,6 @@ app.get( '/clientStatusUpdate/:status', ( req, res ) => {
     } else if ( req.params.status === 'reactivated' ) {
 
     }
-} );
-
-app.get( '/openSongs', ( req, res ) => {
-    // res.send( '{ "data": [ "/home/janis/Music/KB2022" ] }' );
-    res.send( '{ "data": [ "/mnt/storage/SORTED/Music/audio/KB2022" ] }' );
-    // res.send( { 'data': dialog.showOpenDialogSync( { properties: [ 'openDirectory' ], title: 'Open music library folder' } ) } );
 } );
 
 app.get( '/indexDirs', ( req, res ) => {

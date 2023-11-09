@@ -26,6 +26,7 @@
   },
   "main": "background.js",
   "dependencies": {
+    "axios": "^1.6.1",
     "core-js": "^3.8.3",
     "cors": "^2.8.5",
     "csv-parser": "^3.0.0",
