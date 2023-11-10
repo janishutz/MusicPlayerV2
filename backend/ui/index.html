@@ -15,9 +15,8 @@
         <div class="content" id="app">
             <div v-if="hasLoaded" style="width: 100%">
                 <div class="current-song-wrapper">
-                    <span class="material-symbols-outlined fancy-view-song-art" v-if="!playingSong.hasCoverArt">music_note</span>
+                    <span class="material-symbols-outlined fancy-view-song-art" v-if="!playingSong.hasCoverArt || playingSong.coverArtOrigin !== 'api'">music_note</span>
                     <img v-else-if="playingSong.hasCoverArt && playingSong.coverArtOrigin === 'api'" :src="playingSong.coverArtURL" class="fancy-view-song-art" id="current-image" crossorigin="anonymous">
-                    <img v-else :src="'/getSongCover?filename=' + playingSong.filename" class="fancy-view-song-art" id="current-image">
                     <div class="current-song">
                         <progress max="1000" id="progress" :value="progressBar"></progress>
                         <h1>{{ playingSong.title }}</h1>
