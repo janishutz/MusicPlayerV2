@@ -276,8 +276,30 @@
                     for ( let el in newOrder ) {
                         this.songQueue.push( processArray[ newOrder[ el ] ] );
                     }
+                    let fetchOptions = {
+                        method: 'post',
+                        body: JSON.stringify( { 'type': 'songQueue', 'data': this.songQueue } ),
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'charset': 'utf-8'
+                        },
+                    };
+                    fetch( 'http://localhost:8081/statusUpdate', fetchOptions ).catch( err => {
+                        console.error( err );
+                    } );
                 } else if ( command === 'shuffleOff' ) {
                     this.songQueue = JSON.parse( JSON.stringify( this.allSongs ) );
+                    let fetchOptions = {
+                        method: 'post',
+                        body: JSON.stringify( { 'type': 'songQueue', 'data': this.songQueue } ),
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'charset': 'utf-8'
+                        },
+                    };
+                    fetch( 'http://localhost:8081/statusUpdate', fetchOptions ).catch( err => {
+                        console.error( err );
+                    } );
                 }
             },
             loadSongs() {

@@ -8,6 +8,7 @@ const dialog = require( 'electron' ).dialog;
 const session = require( 'express-session' );
 const indexer = require( './indexer.js' );
 const axios = require( 'axios' );
+const ip = require( 'ip' );
 
 
 app.use( bodyParser.urlencoded( { extended: false } ) );
@@ -64,6 +65,10 @@ let connectedMain = {};
 
 app.get( '/', ( request, response ) => {
     response.sendFile( path.join( __dirname + '/client/showcase.html' ) );
+} );
+
+app.get( '/getLocalIP', ( req, res ) => {
+    res.send( ip.address() );
 } );
 
 app.get( '/openSongs', ( req, res ) => {

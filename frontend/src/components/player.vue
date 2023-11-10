@@ -13,6 +13,13 @@
             <span class="material-symbols-outlined control-icon" :class="hasLoadedSongs ? 'active': 'inactive'" v-if="repeatMode === 'off'" @click="control( 'repeatOne' )">repeat</span>
             <span class="material-symbols-outlined control-icon" :class="hasLoadedSongs ? 'active': 'inactive'" v-else-if="repeatMode === 'one'" @click="control( 'repeatAll' )">repeat_one_on</span>
             <span class="material-symbols-outlined control-icon" :class="hasLoadedSongs ? 'active': 'inactive'" v-else-if="repeatMode === 'all'" @click="control( 'repeatOff' )">repeat_on</span>
+            <div class="control-icon" id="settings">
+                <span class="material-symbols-outlined">info</span>
+                <div id="showIP">
+                    <h4>IP to connect to:</h4><br>
+                    <p>{{ localIP }}:8081</p>
+                </div>
+            </div>
         </div>
         <div class="song-info">
             <audio v-if="audioLoaded" :src="'http://localhost:8081/getSongFile?filename=' + playingSong.filename" id="music-player"></audio>
@@ -119,6 +126,40 @@
         position: absolute;
         bottom: 17px;
     }
+
+    #showIP {
+        background-color: rgb(63, 63, 63);
+        display: none;
+        position: absolute;
+        min-height: 16vh;
+        padding: 2vh;
+        min-width: 20vw;
+        z-index: 10;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+        font-size: 70%;
+        border-radius: 5px 10px 10px 10px;
+    }
+
+    #showIP h4, #showIP p {
+        margin: 0;
+    }
+
+    #settings:hover #showIP {
+        display: flex;
+    }
+
+    #showIP::before {
+        content: " ";
+        position: absolute;
+        bottom: 100%; /* At the bottom of the tooltip */
+        left: 0;
+        margin-left: 3px;
+        border-width: 10px;
+        border-style: solid;
+        border-color: transparent transparent rgb(63, 63, 63) transparent;
+    }
 </style>
 
 <script>
@@ -143,6 +184,7 @@ export default {
             isShowingFancyView: false,
             notifier: null,
             isShowingRemainingTime: false,
+            localIP: ''
         }
     },
     components: {
@@ -393,6 +435,13 @@ export default {
             } else if ( e.key === 'ArrowLeft' ) {
                 e.preventDefault();
                 this.control( 'previous' );
+            }
+        } );
+        fetch( 'http://localhost:8081/getLocalIP' ).then( res => {
+            if ( res.status === 200 ) {
+                res.text().then( ip => {
+                    this.localIP = ip;
+                } );
             }
         } );
     }
