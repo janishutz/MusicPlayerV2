@@ -26,8 +26,11 @@
     0% {
         background-color: rgba( 0, 0, 0, 0.2 );
     }
-    50% {
+    20% {
         background-color: rgba( 0, 0, 0, 0 );
+    }
+    100% {
+        background-color: rgba( 0, 0, 0, 0.2 );
     }
 }
 

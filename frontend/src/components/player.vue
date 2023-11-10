@@ -207,9 +207,9 @@ export default {
                     this.control( 'play' );
                     this.isPlaying = true;
                     this.sendUpdate( 'isPlaying' );
-                    this.sendUpdate( 'playingSong' );
                     this.sendUpdate( 'pos' );
                 }
+                this.sendUpdate( 'playingSong' );
                 const minuteCount = Math.floor( this.playingSong.duration / 60 );
                 this.durationBeautified = minuteCount + ':';
                 if ( ( '' + minuteCount ).length === 1 ) {
