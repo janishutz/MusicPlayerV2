@@ -28,6 +28,6 @@ to the same network, just from the browser.
 # Features
 - Electron App that runs on all major Desktop OS (Linux, MacOS & Windows)
 - Show all song information over the local network on any amount of client displays
-- Client displays show the playback position and all information from the CSV / JSON file that contains all song information
-- Modular themes (set a precreated theme in the settings page or add your own)
+- Client displays show the playback position and all information from the metadata and CSV / JSON file that contains all song information
 - Play most common music files
+- Backend to allow users to connect over the internet
