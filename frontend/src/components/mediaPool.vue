@@ -29,6 +29,7 @@
         <div v-else class="no-songs">
             <h3>No songs loaded</h3>
             <button @click="loadSongs()">Load songs</button>
+            <button @click="useAppleMusic()">Use AppleMusic (opens a web-browser)</button>
         </div>
     </div>
 </template>
@@ -379,6 +380,9 @@
                 this.update( { 'type': 'playback', 'status': false } );
                 this.$emit( 'com', { 'type': 'pause', 'song': song } );
             },
+            useAppleMusic() {
+                fetch( 'http://localhost:8081/useAppleMusic' );
+            }
         }
     }
 </script>

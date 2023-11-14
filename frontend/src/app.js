@@ -10,6 +10,7 @@ const indexer = require( './indexer.js' );
 const axios = require( 'axios' );
 const ip = require( 'ip' );
 const jwt = require( 'jsonwebtoken' );
+const shell = require( 'electron' ).shell;
 
 
 app.use( bodyParser.urlencoded( { extended: false } ) );
@@ -64,12 +65,19 @@ let currentDetails = {
 let connectedMain = {};
 // TODO: Add backend integration
 
+require( './appleMusicRoutes.js' )( app );
+
 app.get( '/', ( request, response ) => {
     response.sendFile( path.join( __dirname + '/client/showcase.html' ) );
 } );
 
 app.get( '/getLocalIP', ( req, res ) => {
     res.send( ip.address() );
+} );
+
+app.get( '/useAppleMusic', ( req, res ) => {
+    shell.openExternal( 'http://localhost:8081/apple-music' );
+    res.send( 'ok' );
 } );
 
 app.get( '/openSongs', ( req, res ) => {

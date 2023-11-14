@@ -1,0 +1,16 @@
+/*
+*				MusicPlayerV2 - style.css
+*
+*	Created by Janis Hutz 11/14/2023, Licensed under the GPL V3 License
+*			https://janishutz.com, development@janishutz.com
+*
+*
+*/
+
+body, html {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    font-family: sans-serif;
+}

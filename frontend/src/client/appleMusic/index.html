@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>MusicPlayerV2</title>
+        <script src="/apple-music/helpers/musickit.js"></script>
+    </head>
+    <body>
+        <div id="app">
+            <div v-if="!isLoggedIn">
+                <h1>Apple Music</h1>
+                <button @click="logInto()">Log in</button>
+            </div>
+            <div v-else>
+                
+            </div>
+        </div>
+        <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+        <script src="/apple-music/helpers/index.js"></script>
+        <link rel="stylesheet" href="/apple-music/helpers/style.css">
+    </body>
+</html>
