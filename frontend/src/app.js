@@ -9,6 +9,7 @@ const session = require( 'express-session' );
 const indexer = require( './indexer.js' );
 const axios = require( 'axios' );
 const ip = require( 'ip' );
+const jwt = require( 'jsonwebtoken' );
 
 
 app.use( bodyParser.urlencoded( { extended: false } ) );
@@ -227,6 +228,24 @@ app.get( '/getSongFile', ( req, res ) => {
     } else {
         res.status( 400 ).send( 'ERR_REQ_INCOMPLETE' );
     }
+} );
+
+
+app.get( '/getAppleMusicDevToken', ( req, res ) => {
+    // sign dev token
+    const privateKey = fs.readFileSync( path.join( __dirname + '/config/apple_private_key.p8' ) ).toString();
+    // TODO: Remove secret
+    const config = JSON.parse( fs.readFileSync( path.join( __dirname + '/config/apple-music-api.config.secret.json' ) ) );
+    const jwtToken = jwt.sign( {}, privateKey, {
+        algorithm: "ES256",
+        expiresIn: "180d",
+        issuer: config.teamID,
+        header: {
+            alg: "ES256",
+            kid: config.keyID
+        }
+    } );
+    res.send( jwtToken );
 } );
 
 

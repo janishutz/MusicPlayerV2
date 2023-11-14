@@ -5,7 +5,6 @@ const expressSession = require( 'express-session' );
 const fs = require( 'fs' );
 const bodyParser = require( 'body-parser' );
 const favicon = require( 'serve-favicon' );
-const static = require( 'express-static' );
 
 const authKey = '' + fs.readFileSync( path.join( __dirname + '/authorizationKey.txt' ) );
 

@@ -1,5 +1,5 @@
 <template>
-    <div class="home">
+    <div class="home" v-if="musicOrigin === 'local'">
         <div class="top-bar">
             <img src="@/assets/logo.png" alt="logo" class="logo">
             <div class="player-wrapper">
@@ -9,6 +9,9 @@
         <div class="pool-wrapper">
             <mediaPool @com="( info ) => { handleCom( info ) }" ref="pool"></mediaPool>
         </div>
+    </div>
+    <div v-else-if="musicOrigin === 'AppleMusic'" class="home">
+        <AppleMusic></AppleMusic>
     </div>
 </template>
 
@@ -54,6 +57,7 @@
 </style>
 
 <script>
+    import AppleMusic from '@/components/appleMusic.vue';
     import mediaPool from '@/components/mediaPool.vue';
     import Player from '@/components/player.vue';
 
@@ -62,11 +66,14 @@
         components: {
             mediaPool,
             Player,
+            AppleMusic,
         },
         data() {
             return {
                 hasLoadedSongs: false,
                 songQueue: [],
+                // musicOrigin: 'local',
+                musicOrigin: 'AppleMusic',
             }
         },
         methods: {
