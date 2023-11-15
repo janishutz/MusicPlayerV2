@@ -16,8 +16,9 @@ const app = Vue.createApp( {
             isPlaying: false,
             isShuffleEnabled: false,
             repeatMode: 'off',
-            audioLoaded: false,
-            // TODO: Set audio loaded to true
+            playbackPosBeautified: '',
+            durationBeautified: '',
+            isShowingRemainingTime: false,
 
             // slider
             offset: 0,
@@ -151,6 +152,126 @@ const app = Vue.createApp( {
         },
         calcPlaybackPos() {
             this.pos = Math.round( ( this.originalPos + parseInt( this.sliderPos ) ) / ( document.getElementById( 'progress-slider-' + this.name ).clientWidth - 5 ) * this.duration );
+        },
+        sendUpdate( update ) {
+            let data = {};
+            if ( update === 'pos' ) {
+                data = this.pos;
+            } else if ( update === 'playingSong' ) {
+                data = this.playingSong;
+            } else if ( update === 'isPlaying' ) {
+                data = this.isPlaying;
+            } else if ( update === 'songQueue' ) {
+                data = this.songQueue;
+            } else if ( update === 'queuePos' ) {
+                data = this.queuePos;
+            }
+            let fetchOptions = {
+                method: 'post',
+                body: JSON.stringify( { 'type': update, 'data': data } ),
+                headers: {
+                    'Content-Type': 'application/json',
+                    'charset': 'utf-8'
+                },
+            };
+            fetch( 'http://localhost:8081/statusUpdate', fetchOptions ).catch( err => {
+                console.error( err );
+            } );
+        },
+        control( action ) {
+            if ( action === 'play' ) {
+                this.musicKit.play();
+                this.progressTracker = setInterval( () => {
+                    this.pos = this.musicKit.currentPlaybackTime;
+
+                    const minuteCount = Math.floor( this.pos / 60 );
+                    this.playbackPosBeautified = minuteCount + ':';
+                    if ( ( '' + minuteCount ).length === 1 ) {
+                        this.playbackPosBeautified = '0' + minuteCount + ':';
+                    }
+                    const secondCount = Math.floor( this.pos - minuteCount * 60 );
+                    if ( ( '' + secondCount ).length === 1 ) {
+                        this.playbackPosBeautified += '0' + secondCount;
+                    } else {
+                        this.playbackPosBeautified += secondCount;
+                    }
+
+                    if ( this.isShowingRemainingTime ) {
+                        const minuteCounts = Math.floor( ( this.playingSong.duration - this.pos ) / 60 );
+                        this.durationBeautified = '-' + String( minuteCounts ) + ':';
+                        if ( ( '' + minuteCounts ).length === 1 ) {
+                            this.durationBeautified = '-0' + minuteCounts + ':';
+                        }
+                        const secondCounts = Math.floor( ( this.playingSong.duration - this.pos ) - minuteCounts * 60 );
+                        if ( ( '' + secondCounts ).length === 1 ) {
+                            this.durationBeautified += '0' + secondCounts;
+                        } else {
+                            this.durationBeautified += secondCounts;
+                        }
+                    }
+                }, 20 );
+                this.sendUpdate( 'pos' );
+                this.sendUpdate( 'isPlaying' );
+            } else if ( action === 'pause' ) {
+                this.musicKit.pause();
+                this.sendUpdate( 'pos' );
+                try {
+                    clearInterval( this.progressTracker );
+                    clearInterval( this.notifier );
+                } catch ( err ) {};
+                this.isPlaying = false;
+                this.sendUpdate( 'isPlaying' );
+            } else if ( action === 'replay10' ) {
+                this.musicKit.seekToTime( this.musicKit.currentPlaybackTime > 10 ? musicPlayer.currentPlaybackTime - 10 : 0 );
+                this.playbackPos = musicPlayer.currentTime;
+                this.sendUpdate( 'pos' );
+            } else if ( action === 'forward10' ) {
+                if ( musicPlayer.currentTime < ( musicPlayer.duration - 10 ) ) {
+                    musicPlayer.currentTime = musicPlayer.currentTime + 10;
+                    this.playbackPos = musicPlayer.currentTime;
+                    this.sendUpdate( 'pos' );
+                } else {
+                    if ( this.repeatMode !== 'one' ) {
+                        this.control( 'next' );
+                    } else {
+                        musicPlayer.currentTime = 0;
+                        this.playbackPos = musicPlayer.currentTime;
+                        this.sendUpdate( 'pos' );
+                    }
+                }
+            } else if ( action === 'reset' ) {
+                clearInterval( this.progressTracker );
+                this.playbackPos = 0;
+                musicPlayer.currentTime = 0;
+                this.sendUpdate( 'pos' );
+            } else if ( action === 'next' ) {
+                this.$emit( 'update', { 'type': 'next' } );
+            } else if ( action === 'previous' ) {
+                if ( this.playbackPos > 3 ) {
+                    this.playbackPos = 0;
+                    musicPlayer.currentTime = 0;
+                    this.sendUpdate( 'pos' );
+                } else {
+                    this.$emit( 'update', { 'type': 'previous' } );
+                }
+            } else if ( action === 'shuffleOff' ) {
+                this.$emit( 'update', { 'type': 'shuffleOff' } );
+                this.isShuffleEnabled = false;
+            } else if ( action === 'shuffleOn' ) {
+                this.$emit( 'update', { 'type': 'shuffle' } );
+                this.isShuffleEnabled = true;
+            } else if ( action === 'repeatOne' ) {
+                this.repeatMode = 'one';
+            } else if ( action === 'repeatAll' ) {
+                this.$emit( 'update', { 'type': 'repeat' } );
+                this.repeatMode = 'all';
+            } else if ( action === 'repeatOff' ) {
+                this.$emit( 'update', { 'type': 'repeatOff' } );
+                this.repeatMode = 'off';
+            } else if ( action === 'exitFancyView' ) {
+                this.isShowingFancyView = false;
+                this.$emit( 'update', { 'type': 'fancyView', 'status': false } );
+            }
         }
     },
     watch: {
