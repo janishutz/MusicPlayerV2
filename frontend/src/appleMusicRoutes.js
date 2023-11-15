@@ -17,4 +17,16 @@ module.exports = ( app ) => {
     app.get( '/apple-music/helpers/:file', ( req, res ) => {
         res.sendFile( path.join( __dirname + '/client/appleMusic/' + req.params.file ) );
     } );
+
+    app.get( '/icon-font.css', ( req, res ) => {
+        res.sendFile( path.join( __dirname + '/client/icon-font.css' ) );
+    } );
+
+    app.get( '/iconFont.woff2', ( req, res ) => {
+        res.sendFile( path.join( __dirname + '/client/iconFont.woff2' ) );
+    } );
+
+    app.get( '/logo.png', ( req, res ) => {
+        res.sendFile( path.join( __dirname + '/client/logo.png' ) );
+    } );
 }

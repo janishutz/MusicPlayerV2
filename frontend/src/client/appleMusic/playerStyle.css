@@ -1,0 +1,108 @@
+.song-info {
+    background-color: #8e9ced;
+    height: 13vh;
+    width: 50%;
+    margin-left: auto;
+    margin-right: auto;
+    position: relative;
+}
+
+.image {
+    width: 7vh;
+    height: 7vh;
+    object-fit: cover;
+    object-position: center;
+    font-size: 7vh;
+    margin-left: 1vh;
+    margin-top: 1vh;
+}
+
+.name {
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.song-info-wrapper {
+    display: flex;
+    flex-direction: row;
+}
+
+.song-info-wrapper h3 {
+    margin: 0;
+    margin-bottom: 0.5vh;
+    margin-top: 1vh;
+}
+
+.controls {
+    margin-left: 5%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.control-icon {
+    cursor: pointer;
+    font-size: 3vh;
+    user-select: none;
+}
+
+.play-pause {
+    font-size: 5vh;
+}
+
+.inactive {
+    color: gray;
+    cursor: default;
+}
+
+.player {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+}
+
+.playback-pos-info {
+    display: flex;
+    flex-direction: row;
+    width: 98%;
+    margin-left: 1%;
+    position: absolute;
+    bottom: 17px;
+}
+
+#showIP {
+    background-color: rgb(63, 63, 63);
+    display: none;
+    position: absolute;
+    min-height: 16vh;
+    padding: 2vh;
+    min-width: 20vw;
+    z-index: 10;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    font-size: 70%;
+    border-radius: 5px 10px 10px 10px;
+}
+
+#showIP h4, #showIP p {
+    margin: 0;
+}
+
+#settings:hover #showIP {
+    display: flex;
+}
+
+#showIP::before {
+    content: " ";
+    position: absolute;
+    bottom: 100%; /* At the bottom of the tooltip */
+    left: 0;
+    margin-left: 3px;
+    border-width: 10px;
+    border-style: solid;
+    border-color: transparent transparent rgb(63, 63, 63) transparent;
+}

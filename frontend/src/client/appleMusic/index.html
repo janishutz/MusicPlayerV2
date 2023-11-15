@@ -5,6 +5,9 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>MusicPlayerV2</title>
         <script src="/apple-music/helpers/musickit.js"></script>
+        <link rel="stylesheet" href="/icon-font.css">
+        <link rel="stylesheet" href="/apple-music/helpers/playerStyle.css">
+        <link rel="stylesheet" href="/apple-music/helpers/style.css">
     </head>
     <body>
         <div id="app">
@@ -12,12 +15,93 @@
                 <h1>Apple Music</h1>
                 <button @click="logInto()">Log in</button>
             </div>
-            <div v-else>
-                
+            <div v-else class="home">
+                <div v-if="!hasSelectedPlaylist" class="song-list-wrapper">
+                    <div v-for="playlist in playlists" class="song-list" @click="selectPlaylist( playlist.id )">
+                        <h3>{{ playlist.title }}</h3>
+                    </div>
+                </div>
+                <div v-else class="home">
+                    <div class="top-bar">
+                        <img src="/logo.png" alt="logo" class="logo">
+                        <div class="player-wrapper">
+                            <div class="player">
+                                <div class="controls">
+                                    <span class="material-symbols-outlined control-icon" :class="audioLoaded ? 'active': 'inactive'" @click="control( 'previous' )">skip_previous</span>
+                                    <span class="material-symbols-outlined control-icon" :class="audioLoaded ? 'active': 'inactive'" @click="control( 'replay10' )">replay_10</span>
+                                    <span class="material-symbols-outlined control-icon play-pause" v-if="!isPlaying && audioLoaded" @click="control( 'play' )">play_arrow</span>
+                                    <span class="material-symbols-outlined control-icon play-pause" v-else-if="isPlaying && audioLoaded" @click="control( 'pause' )">pause</span>
+                                    <span class="material-symbols-outlined control-icon play-pause" style="cursor: default;" v-else>play_disabled</span>
+                                    <span class="material-symbols-outlined control-icon" :class="audioLoaded ? 'active': 'inactive'" @click="control( 'forward10' )">forward_10</span>
+                                    <span class="material-symbols-outlined control-icon" :class="audioLoaded ? 'active': 'inactive'" @click="control( 'next' )" style="margin-right: 1vw;">skip_next</span>
+                                    <span class="material-symbols-outlined control-icon" :class="hasSelectedPlaylist ? 'active': 'inactive'" v-if="!isShuffleEnabled" @click="control( 'shuffleOn' )">shuffle</span>
+                                    <span class="material-symbols-outlined control-icon" :class="hasSelectedPlaylist ? 'active': 'inactive'" v-else @click="control( 'shuffleOff' )">shuffle_on</span>
+                                    <span class="material-symbols-outlined control-icon" :class="hasSelectedPlaylist ? 'active': 'inactive'" v-if="repeatMode === 'off'" @click="control( 'repeatOne' )">repeat</span>
+                                    <span class="material-symbols-outlined control-icon" :class="hasSelectedPlaylist ? 'active': 'inactive'" v-else-if="repeatMode === 'one'" @click="control( 'repeatAll' )">repeat_one_on</span>
+                                    <span class="material-symbols-outlined control-icon" :class="hasSelectedPlaylist ? 'active': 'inactive'" v-else-if="repeatMode === 'all'" @click="control( 'repeatOff' )">repeat_on</span>
+                                    <div class="control-icon" id="settings">
+                                        <span class="material-symbols-outlined">info</span>
+                                        <div id="showIP">
+                                            <h4>IP to connect to:</h4><br>
+                                            <p>{{ localIP }}:8081</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="song-info">
+                                    <audio v-if="audioLoaded" :src="'http://localhost:8081/getSongFile?filename=' + playingSong.filename" id="music-player"></audio>
+                                    <div class="song-info-wrapper">
+                                        <div v-if="audioLoaded" style="cursor: pointer;">
+                                            <span class="material-symbols-outlined image" v-if="!playingSong.hasCoverArt">music_note</span>
+                                            <img v-else :src="playingSong.coverArtURL" class="image">
+                                        </div>
+                                        <span class="material-symbols-outlined image" v-else>music_note</span>
+                                        <div class="name">
+                                            <h3>{{ playingSong.title ?? 'No song selected' }}</h3>
+                                            <p>{{ playingSong.artist }}</p>
+                                        </div>
+                                        <div class="image"></div>
+                                    </div>
+                                    <div class="playback-pos-info">
+                                        <div style="margin-right: auto;">{{ playbackPosBeautified }}</div>
+                                        <div @click="toggleShowMode()" style="cursor: pointer;">{{ durationBeautified }}</div>
+                                    </div>
+                                    <div class="slider">
+                                        <progress id="progress-slider" class="progress-slider" :value="sliderProgress" max="1000" @mousedown="( e ) => { setPos( e ) }" 
+                                            :class="active ? '' : 'slider-inactive'"></progress>
+                                        <div v-if="active" id="slider-knob" @mousedown="( e ) => { startMove( e ) }"
+                                            :style="'left: ' + ( parseInt( originalPos ) + parseInt( sliderPos ) ) + 'px;'">
+                                            <div id="slider-knob-style"></div>
+                                        </div>
+                                        <div v-else id="slider-knob" class="slider-inactive" style="left: 0;">
+                                            <div id="slider-knob-style"></div>
+                                        </div>
+                                        <div id="drag-support" @mousemove="e => { handleDrag( e ) }" @mouseup="() => { stopMove(); }"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="pool-wrapper">
+                        <div style="width: 100%;" class="song-list-wrapper">
+                            <div v-for="song in songQueue" class="song-list" :class="[ isPlaying ? ( currentlyPlaying === song.filename ? 'playing': 'not-playing' ) : 'not-playing', !isPlaying && currentlyPlaying === song.filename ? 'active-song': undefined ]">
+                                <img :src="song.coverArtURL" class="song-image">
+                                <div v-if="currentlyPlaying === song.filename && isPlaying" class="playing-symbols">
+                                    <div class="playing-symbols-wrapper">
+                                        <div class="playing-bar" id="bar-1"></div>
+                                        <div class="playing-bar" id="bar-2"></div>
+                                        <div class="playing-bar" id="bar-3"></div>
+                                    </div>
+                                </div>
+                                <span class="material-symbols-outlined play-icon" @click="play( song )">play_arrow</span>
+                                <span class="material-symbols-outlined pause-icon" @click="pause( song )">pause</span>
+                                <h3>{{ song.title }}</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
         <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
         <script src="/apple-music/helpers/index.js"></script>
-        <link rel="stylesheet" href="/apple-music/helpers/style.css">
     </body>
 </html>
