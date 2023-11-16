@@ -80,8 +80,11 @@ const app = Vue.createApp( {
                                 'duration': Math.round( e.item.attributes.durationInMillis / 1000 ),
                                 'filename': e.item.id,
                                 'coverArtOrigin': 'api',
-                                'coverArtURL': e.item.attributes.artwork.url,
                             }
+                            let url = e.item.attributes.artwork.url;
+                            url = url.replace( '{w}', e.item.attributes.artwork.width );
+                            url = url.replace( '{h}', e.item.attributes.artwork.height );
+                            this.songQueue[ item ][ 'coverArtURL' ] = url;
                         } );
                         this.apiGetRequest( 'https://api.music.apple.com/v1/me/library/playlists', this.playlistHandler );
                     } );
@@ -133,7 +136,25 @@ const app = Vue.createApp( {
                 this.musicKit.setQueue( { songs: tracks } ).then( () => {
                     try {
                         this.musicKit.play();
-                        this.songQueue = this.musicKit.player.queue.items;
+                        const songQueue = this.musicKit.player.queue.items;
+                        for ( let item in songQueue ) {
+                            this.songQueue[ item ] = {
+                                'artist': songQueue[ item ].attributes.artistName,
+                                'title': songQueue[ item ].attributes.name,
+                                'year': songQueue[ item ].attributes.releaseDate,
+                                // Think about bpm analysis
+                                // 'bpm': metadata[ 'common' ][ 'bpm' ],
+                                'genre': songQueue[ item ].attributes.genreNames,
+                                'duration': Math.round( songQueue[ item ].attributes.durationInMillis / 1000 ),
+                                'filename': songQueue[ item ].id,
+                                'coverArtOrigin': 'api',
+                            }
+                            let url = songQueue[ item ].attributes.artwork.url;
+                            url = url.replace( '{w}', songQueue[ item ].attributes.artwork.width );
+                            url = url.replace( '{h}', songQueue[ item ].attributes.artwork.height );
+                            this.songQueue[ item ][ 'coverArtURL' ] = url;
+                        }
+                        // TODO: Load additional data from file
                         this.hasSelectedPlaylist = true;
                         this.isPreparingToPlay = false;
                     } catch( err ) {
