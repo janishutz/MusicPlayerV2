@@ -443,6 +443,8 @@ export default {
                     this.localIP = ip;
                 } );
             }
+        } ).catch( err => {
+            this.localIP = 'ERROR fetching';
         } );
     }
 }

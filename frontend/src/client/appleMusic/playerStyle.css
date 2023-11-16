@@ -106,3 +106,31 @@
     border-style: solid;
     border-color: transparent transparent rgb(63, 63, 63) transparent;
 }
+
+/* Prepare to play */
+
+.preparingToPlay {
+    background-color: rgba(0, 0, 0, 0.7);
+    width: 100vw;
+    height: 100vh;
+    position: fixed;
+    align-items: center;
+    justify-content: center;
+    display: flex;
+    flex-direction: column;
+    top: 0;
+    left: 0;
+}
+
+.loading-spinner {
+    animation: spin 2s infinite linear;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate( 0deg );
+    }
+    to {
+        transform: rotate( 720deg );
+    }
+}

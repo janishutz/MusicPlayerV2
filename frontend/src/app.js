@@ -82,8 +82,8 @@ app.get( '/useAppleMusic', ( req, res ) => {
 
 app.get( '/openSongs', ( req, res ) => {
     // res.send( '{ "data": [ "/home/janis/Music/KB2022" ] }' );
-    res.send( '{ "data": [ "/mnt/storage/SORTED/Music/audio/KB2022" ] }' );
-    // res.send( { 'data': dialog.showOpenDialogSync( { properties: [ 'openDirectory' ], title: 'Open music library folder' } ) } );
+    // res.send( '{ "data": [ "/mnt/storage/SORTED/Music/audio/KB2022" ] }' );
+    res.send( { 'data': dialog.showOpenDialogSync( { properties: [ 'openDirectory' ], title: 'Open music library folder' } ) } );
 } );
 
 app.get( '/showcase.js', ( req, res ) => {

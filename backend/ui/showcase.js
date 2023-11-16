@@ -98,6 +98,16 @@ createApp( {
 
             source.onopen = () => {
                 this.hasLoaded = true;
+                if ( document.fonts.status === 'loaded' ) {
+                    document.getElementById( 'loading' ).classList.remove( 'loading' );
+                    document.getElementById( 'app' ).classList.add( 'loaded' );
+                } else {
+                    document.fonts.onloadingdone = () => {
+                        document.getElementById( 'loading' ).classList.remove( 'loading' );
+                        document.getElementById( 'app' ).classList.add( 'loaded' );
+                    };
+                }
+
             };
                 
             let self = this;

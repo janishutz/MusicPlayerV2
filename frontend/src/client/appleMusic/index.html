@@ -11,12 +11,25 @@
     </head>
     <body>
         <div id="app">
-            <div v-if="!isLoggedIn">
-                <h1>Apple Music</h1>
-                <button @click="logInto()">Log in</button>
+            <div v-if="isPreparingToPlay" class="preparingToPlay">
+                <span class="material-symbols-outlined loading-spinner">autorenew</span>
+                <h1>Loading player...</h1>
+            </div>
+            <div v-if="!isLoggedIn" class="start-page">
+                <div class="image-wrapper">
+                    <img src="/logo.png" alt="Music player icon" id="logo-main">
+                    <img src="/apple-music/helpers/appleMusicIcon.svg" alt="Apple Music Icon" id="apple-music-logo">
+                </div>
+                <h1>Apple Music integration</h1>
+                <button @click="logInto()" class="button">Log in</button>
             </div>
             <div v-else class="home">
                 <div v-if="!hasSelectedPlaylist" class="song-list-wrapper">
+                    <h1>Your playlists</h1>
+                    <div v-if="!hasLoadedPlaylists" style="display: flex; justify-content: center; align-items: center; flex-direction: column;">
+                        <span class="material-symbols-outlined loading-spinner">autorenew</span>
+                        <h3>Loading playlists...</h3>
+                    </div>
                     <div v-for="playlist in playlists" class="song-list" @click="selectPlaylist( playlist.id )">
                         <h3>{{ playlist.title }}</h3>
                     </div>
@@ -82,9 +95,9 @@
                     </div>
                     <div class="pool-wrapper">
                         <div style="width: 100%;" class="song-list-wrapper">
-                            <div v-for="song in songQueue" class="song-list" :class="[ isPlaying ? ( currentlyPlaying === song.filename ? 'playing': 'not-playing' ) : 'not-playing', !isPlaying && currentlyPlaying === song.filename ? 'active-song': undefined ]">
+                            <div v-for="song in songQueue" class="song-list" :class="[ isPlaying ? ( playingSong.filename === song.filename ? 'playing': 'not-playing' ) : 'not-playing', !isPlaying && playingSong.filename === song.filename ? 'active-song': undefined ]">
                                 <img :src="song.coverArtURL" class="song-image">
-                                <div v-if="currentlyPlaying === song.filename && isPlaying" class="playing-symbols">
+                                <div v-if="playingSong.filename === song.filename && isPlaying" class="playing-symbols">
                                     <div class="playing-symbols-wrapper">
                                         <div class="playing-bar" id="bar-1"></div>
                                         <div class="playing-bar" id="bar-2"></div>

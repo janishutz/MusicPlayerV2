@@ -19,6 +19,9 @@ const app = Vue.createApp( {
             playbackPosBeautified: '',
             durationBeautified: '',
             isShowingRemainingTime: false,
+            localIP: '',
+            hasLoadedPlaylists: false,
+            isPreparingToPlay: false,
 
             // slider
             offset: 0,
@@ -35,10 +38,13 @@ const app = Vue.createApp( {
             if ( !this.musicKit.isAuthorized ) {
                 this.musicKit.authorize().then( () => {
                     this.isLoggedIn = true;
+                    this.initMusicKit();
                 } );
             } else {
                 this.musicKit.authorize().then( () => {
+                    this.isLoggedIn = true;
                     this.musicKit.play();
+                    this.initMusicKit();
                 } );
             }
         },
@@ -60,6 +66,23 @@ const app = Vue.createApp( {
                             this.isLoggedIn = true;
                             this.config.userToken = this.musicKit.musicUserToken;
                         }
+                        this.musicKit.addEventListener( 'mediaItemDidChange', ( e ) => {
+                            // Assemble this.playingSong
+                            // Also add additional items to queue if there are new
+                            // items that weren't previously shown (limitation of MusicKitJS).
+                            this.playingSong = {
+                                'artist': e.item.attributes.artistName,
+                                'title': e.item.attributes.name,
+                                'year': e.item.attributes.releaseDate,
+                                // Think about bpm analysis
+                                // 'bpm': metadata[ 'common' ][ 'bpm' ],
+                                'genre': e.item.attributes.genreNames,
+                                'duration': Math.round( e.item.attributes.durationInMillis / 1000 ),
+                                'filename': e.item.id,
+                                'coverArtOrigin': 'api',
+                                'coverArtURL': e.item.attributes.artwork.url,
+                            }
+                        } );
                         this.apiGetRequest( 'https://api.music.apple.com/v1/me/library/playlists', this.playlistHandler );
                     } );
                 }
@@ -76,6 +99,7 @@ const app = Vue.createApp( {
                         playParams: d[ el ].attributes.playParams,
                     }
                 }
+                this.hasLoadedPlaylists = true;
             }
         },
         apiGetRequest( url, callback ) {
@@ -102,13 +126,16 @@ const app = Vue.createApp( {
             } else return false;
         },
         selectPlaylist( id ) {
+            this.isPreparingToPlay = true;
             this.musicKit.api.library.playlist( id ).then( playlist => {
                 const tracks = playlist.relationships.tracks.data.map( tracks => tracks.id );
 
                 this.musicKit.setQueue( { songs: tracks } ).then( () => {
                     try {
                         this.musicKit.play();
+                        this.songQueue = this.musicKit.player.queue.items;
                         this.hasSelectedPlaylist = true;
+                        this.isPreparingToPlay = false;
                     } catch( err ) {
                         this.hasSelectedPlaylist = false;
                         console.error( err );
@@ -223,32 +250,33 @@ const app = Vue.createApp( {
                 this.sendUpdate( 'isPlaying' );
             } else if ( action === 'replay10' ) {
                 this.musicKit.seekToTime( this.musicKit.currentPlaybackTime > 10 ? musicPlayer.currentPlaybackTime - 10 : 0 );
-                this.playbackPos = musicPlayer.currentTime;
+                this.pos = musicPlayer.currentTime;
                 this.sendUpdate( 'pos' );
             } else if ( action === 'forward10' ) {
-                if ( musicPlayer.currentTime < ( musicPlayer.duration - 10 ) ) {
-                    musicPlayer.currentTime = musicPlayer.currentTime + 10;
-                    this.playbackPos = musicPlayer.currentTime;
+                if ( this.musicKit.currentPlaybackTime < ( this.playingSong.duration - 10 ) ) {
+                    this.musicKit.seekToTime( this.musicKit.currentTime + 10 );
+                    this.pos = this.musicKit.currentPlaybackTime;
                     this.sendUpdate( 'pos' );
+                    // Get currently playing song and get duration from there
                 } else {
                     if ( this.repeatMode !== 'one' ) {
                         this.control( 'next' );
                     } else {
-                        musicPlayer.currentTime = 0;
-                        this.playbackPos = musicPlayer.currentTime;
+                        this.musicKit.seekToTime( 0 );
+                        this.pos = this.musicKit.currentPlaybackTime;
                         this.sendUpdate( 'pos' );
                     }
                 }
             } else if ( action === 'reset' ) {
                 clearInterval( this.progressTracker );
-                this.playbackPos = 0;
-                musicPlayer.currentTime = 0;
+                this.pos = 0;
+                this.musicKit.seekToTime( 0 );
                 this.sendUpdate( 'pos' );
             } else if ( action === 'next' ) {
                 this.$emit( 'update', { 'type': 'next' } );
             } else if ( action === 'previous' ) {
-                if ( this.playbackPos > 3 ) {
-                    this.playbackPos = 0;
+                if ( this.pos > 3 ) {
+                    this.pos = 0;
                     musicPlayer.currentTime = 0;
                     this.sendUpdate( 'pos' );
                 } else {
@@ -275,7 +303,7 @@ const app = Vue.createApp( {
         }
     },
     watch: {
-        position() {
+        pos() {
             if ( !this.isDragging ) {
                 this.sliderProgress = Math.ceil( this.position / this.duration * 1000 + 2 );
                 this.originalPos = Math.ceil( this.position / this.duration * ( document.getElementById( 'progress-slider-' + this.name ).scrollWidth - 5 ) );
@@ -290,5 +318,12 @@ const app = Vue.createApp( {
         } else {
             this.initMusicKit();
         }
+        fetch( '/getLocalIP' ).then( res => {
+            if ( res.status === 200 ) {
+                res.text().then( ip => {
+                    this.localIP = ip;
+                } );
+            }
+        } );
     },
 } ).mount( '#app' );
