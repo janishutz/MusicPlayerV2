@@ -22,17 +22,19 @@ createApp( {
     computed: {
         songQueue() {
             let ret = [];
+            let pos = 0;
             for ( let song in this.songs ) {
-                if ( parseInt( song ) >= this.queuePos ) {
+                if ( pos >= this.queuePos ) {
                     ret.push( this.songs[ song ] );
                 }
+                pos += 1;
             }
             return ret;
         },
         getTimeUntil() {
             return ( song ) => {
                 let timeRemaining = 0;
-                for ( let i = this.queuePos; i < this.songs.length; i++ ) {
+                for ( let i = this.queuePos; i < Object.keys( this.songs ).length - 1; i++ ) {
                     if ( this.songs[ i ] == song ) {
                         break;
                     }
@@ -267,7 +269,7 @@ createApp( {
         },
         animateBeat () {
             $( '.beat-manual' ).stop();
-            const duration = Math.ceil( 60 / this.playingSong.bpm * 500 ) - 50;
+            const duration = Math.ceil( 60 / ( this.playingSong.bpm ?? 180 ) * 500 ) - 50;
             $( '.beat-manual' ).fadeIn( 50 );
             setTimeout( () => {
                 $( '.beat-manual' ).fadeOut( duration );

@@ -18,17 +18,19 @@ createApp( {
     computed: {
         songQueue() {
             let ret = [];
+            let pos = 0;
             for ( let song in this.songs ) {
-                if ( parseInt( song ) >= this.queuePos ) {
+                if ( pos >= this.queuePos ) {
                     ret.push( this.songs[ song ] );
                 }
+                pos += 1;
             }
             return ret;
         },
         getTimeUntil() {
             return ( song ) => {
                 let timeRemaining = 0;
-                for ( let i = this.queuePos; i < this.songs.length; i++ ) {
+                for ( let i = this.queuePos; i < Object.keys( this.songs ).length; i++ ) {
                     if ( this.songs[ i ] == song ) {
                         break;
                     }

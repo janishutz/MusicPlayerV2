@@ -30,7 +30,7 @@
                         <span class="material-symbols-outlined loading-spinner">autorenew</span>
                         <h3>Loading playlists...</h3>
                     </div>
-                    <div v-for="playlist in playlists" class="song-list" @click="selectPlaylist( playlist.id )">
+                    <div v-for="playlist in playlists" class="song-list" @click="selectPlaylist( playlist.id )" style="cursor: pointer;">
                         <h3>{{ playlist.title }}</h3>
                     </div>
                 </div>
@@ -62,10 +62,7 @@
                                 </div>
                                 <div class="song-info">
                                     <div class="song-info-wrapper">
-                                        <div v-if="hasSelectedPlaylist" style="cursor: pointer;">
-                                            <span class="material-symbols-outlined image" v-if="!playingSong.hasCoverArt">music_note</span>
-                                            <img v-else :src="playingSong.coverArtURL" class="image">
-                                        </div>
+                                        <img v-if="hasSelectedPlaylist" :src="playingSong.coverArtURL" class="image">
                                         <span class="material-symbols-outlined image" v-else>music_note</span>
                                         <div class="name">
                                             <h3>{{ playingSong.title ?? 'No song selected' }}</h3>
@@ -79,8 +76,8 @@
                                     </div>
                                     <div class="slider">
                                         <progress id="progress-slider" class="progress-slider" :value="sliderProgress" max="1000" @mousedown="( e ) => { setPos( e ) }" 
-                                            :class="active ? '' : 'slider-inactive'"></progress>
-                                        <div v-if="active" id="slider-knob" @mousedown="( e ) => { startMove( e ) }"
+                                            :class="hasSelectedPlaylist ? '' : 'slider-inactive'"></progress>
+                                        <div v-if="hasSelectedPlaylist" id="slider-knob" @mousedown="( e ) => { startMove( e ) }"
                                             :style="'left: ' + ( parseInt( originalPos ) + parseInt( sliderPos ) ) + 'px;'">
                                             <div id="slider-knob-style"></div>
                                         </div>
@@ -95,9 +92,9 @@
                     </div>
                     <div class="pool-wrapper">
                         <div style="width: 100%;" class="song-list-wrapper">
-                            <div v-for="song in songQueue" class="song-list" :class="[ isPlaying ? ( playingSong.filename === song.filename ? 'playing': 'not-playing' ) : 'not-playing', !isPlaying && playingSong.filename === song.filename ? 'active-song': undefined ]">
+                            <div v-for="song in songQueue" class="song-list" :class="[ isPlaying ? ( playingSong.queuePos == song.queuePos ? 'playing': 'not-playing' ) : 'not-playing', !isPlaying && playingSong.filename === song.filename ? 'active-song': undefined ]">
                                 <img :src="song.coverArtURL" class="song-image">
-                                <div v-if="playingSong.filename === song.filename && isPlaying" class="playing-symbols">
+                                <div v-if="playingSong.queuePos == song.queuePos && isPlaying" class="playing-symbols">
                                     <div class="playing-symbols-wrapper">
                                         <div class="playing-bar" id="bar-1"></div>
                                         <div class="playing-bar" id="bar-2"></div>
@@ -105,7 +102,7 @@
                                     </div>
                                 </div>
                                 <span class="material-symbols-outlined play-icon" @click="play( song )">play_arrow</span>
-                                <span class="material-symbols-outlined pause-icon" @click="pause( song )">pause</span>
+                                <span class="material-symbols-outlined pause-icon" @click="control( 'pause' )">pause</span>
                                 <h3>{{ song.title }}</h3>
                             </div>
                         </div>
