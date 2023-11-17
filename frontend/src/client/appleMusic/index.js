@@ -58,49 +58,45 @@ const app = Vue.createApp( {
                                 build: '2'
                             },
                             storefrontId: 'CH',
-                        } );
-                        this.config.devToken = token;
-                        this.musicKit = MusicKit.getInstance();
-                        if ( this.musicKit.isAuthorized ) {
-                            this.isLoggedIn = true;
-                            this.config.userToken = this.musicKit.musicUserToken;
-                        }
-                        this.musicKit.addEventListener( 'playbackStateDidChange', ( e ) => {
-                            console.log( 'Playback state changed: ', e );
-                        } );
-                        this.musicKit.addEventListener( 'queueItemsDidChange', ( event ) => {
-                            console.log( 'Queue items changed:', event );
-                        } );
-                        this.musicKit.addEventListener( 'playbackError', ( event ) => {
-                            console.log( 'Playback Error:', event );
-                        } );
-                        this.musicKit.addEventListener( 'mediaItemDidChange', ( e ) => {
-                            // Assemble this.playingSong
-                            // TODO: Also add additional items to queue if there are new
-                            // items that weren't previously shown (limitation of MusicKitJS).
-                            this.playingSong = {
-                                'artist': e.item.attributes.artistName,
-                                'title': e.item.attributes.name,
-                                'year': e.item.attributes.releaseDate,
-                                // Think about bpm analysis
-                                // 'bpm': metadata[ 'common' ][ 'bpm' ],
-                                'genre': e.item.attributes.genreNames,
-                                'duration': Math.round( e.item.attributes.durationInMillis / 1000 ),
-                                'filename': this.songQueue[ this.musicKit.player.nowPlayingItemIndex ].filename,
-                                'coverArtOrigin': 'api',
-                                'hasCoverArt': true,
-                                'queuePos': this.musicKit.player.nowPlayingItemIndex,
+                        } ).then( () => {
+                            this.config.devToken = token;
+                            this.musicKit = MusicKit.getInstance();
+                            if ( this.musicKit.isAuthorized ) {
+                                this.isLoggedIn = true;
+                                this.config.userToken = this.musicKit.musicUserToken;
                             }
-                            let url = e.item.attributes.artwork.url;
-                            url = url.replace( '{w}', e.item.attributes.artwork.width );
-                            url = url.replace( '{h}', e.item.attributes.artwork.height );
-                            this.playingSong[ 'coverArtURL' ] = url;
-                            this.queuePos = this.musicKit.player.nowPlayingItemIndex;
-                            this.sendUpdate( 'playingSong' );
-                            this.sendUpdate( 'pos' );
-                            this.sendUpdate( 'queuePos' );
+                            this.musicKit.shuffleMode = MusicKit.PlayerShuffleMode.off;
+                            this.musicKit.addEventListener( 'nowPlayingItemDidChange', ( e ) => {
+                                this.control( 'play' );
+                                // Assemble this.playingSong
+                                // TODO: Also add additional items to queue if there are new
+                                // items that weren't previously shown (limitation of MusicKitJS).
+                                if ( e.item ) {
+                                    this.playingSong = {
+                                        'artist': e.item.attributes.artistName,
+                                        'title': e.item.attributes.name,
+                                        'year': e.item.attributes.releaseDate,
+                                        // Think about bpm analysis
+                                        // 'bpm': metadata[ 'common' ][ 'bpm' ],
+                                        'genre': e.item.attributes.genreNames,
+                                        'duration': Math.round( e.item.attributes.durationInMillis / 1000 ),
+                                        'filename': this.songQueue[ this.musicKit.nowPlayingItemIndex ].filename,
+                                        'coverArtOrigin': 'api',
+                                        'hasCoverArt': true,
+                                        'queuePos': this.musicKit.nowPlayingItemIndex,
+                                    }
+                                    let url = e.item.attributes.artwork.url;
+                                    url = url.replace( '{w}', e.item.attributes.artwork.width );
+                                    url = url.replace( '{h}', e.item.attributes.artwork.height );
+                                    this.playingSong[ 'coverArtURL' ] = url;
+                                    this.queuePos = this.musicKit.nowPlayingItemIndex;
+                                    this.sendUpdate( 'playingSong' );
+                                    this.sendUpdate( 'pos' );
+                                    this.sendUpdate( 'queuePos' );
+                                }
+                            } );
+                            this.apiGetRequest( 'https://api.music.apple.com/v1/me/library/playlists', this.playlistHandler );
                         } );
-                        this.apiGetRequest( 'https://api.music.apple.com/v1/me/library/playlists', this.playlistHandler );
                     } );
                 }
             } );
@@ -147,14 +143,14 @@ const app = Vue.createApp( {
             this.musicKit.setQueue( { playlist: id } ).then( () => {
                 try {
                     this.control( 'play' );
-                    const songQueue = this.musicKit.player.queue.items;
+                    const songQueue = this.musicKit.queue.items;
                     for ( let item in songQueue ) {
                         this.songQueue[ item ] = {
                             'artist': songQueue[ item ].attributes.artistName,
                             'title': songQueue[ item ].attributes.name,
                             'year': songQueue[ item ].attributes.releaseDate,
                             'genre': songQueue[ item ].attributes.genreNames,
-                            'duration': Math.round( songQueue[ item ].attributes.durationInMillis / 1000 ),
+                            'duration': Math.round( songQueue[ item ].durationInMillis / 1000 ),
                             'filename': songQueue[ item ].id,
                             'coverArtOrigin': 'api',
                             'hasCoverArt': true,
@@ -205,6 +201,7 @@ const app = Vue.createApp( {
                 this.calcProgressPos();
                 this.calcPlaybackPos();
                 this.musicKit.seekToTime( this.pos );
+                this.sendUpdate( 'pos' );
             }
         },
         calcProgressPos() {
@@ -224,7 +221,7 @@ const app = Vue.createApp( {
             } else if ( update === 'songQueue' ) {
                 data = this.songQueue;
             } else if ( update === 'queuePos' ) {
-                this.queuePos = this.musicKit.player.nowPlayingItemIndex >= 0 ? this.musicKit.player.nowPlayingItemIndex : 0;
+                this.queuePos = this.musicKit.nowPlayingItemIndex >= 0 ? this.musicKit.nowPlayingItemIndex : 0;
                 data = this.queuePos;
             }
             let fetchOptions = {
@@ -239,18 +236,30 @@ const app = Vue.createApp( {
                 console.error( err );
             } );
         },
+        // TODO: Reload queue if shuffle enabled
         control( action ) {
             if ( action === 'play' ) {
+                if( !this.musicKit || !this.isPlaying ) {
+                    this.musicKit.play().then( () => {
+                        this.sendUpdate( 'pos' );
+                    } ).catch( err => {
+                        console.log( 'player failed to start' );
+                        console.log( err );
+                    } );
+                } else {
+                    this.musicKit.pause().then( () => {
+                        this.musicKit.play().catch( err => {
+                            console.log( 'player failed to start' );
+                            console.log( err );
+                        } );
+                    } );
+                }
                 this.isPlaying = true;
-                this.musicKit.player.play().catch( err => {
-                    console.log( 'player failed to start' );
-                    console.log( err );
-                } );
                 try { 
                     clearInterval( this.progressTracker );
                 } catch( err ) {};
                 this.progressTracker = setInterval( () => {
-                    this.pos = parseInt( this.musicKit.player.currentPlaybackTime );
+                    this.pos = parseInt( this.musicKit.currentPlaybackTime );
 
                     const minuteCount = Math.floor( this.pos / 60 );
                     this.playbackPosBeautified = minuteCount + ':';
@@ -277,7 +286,7 @@ const app = Vue.createApp( {
                             this.durationBeautified += secondCounts;
                         }
                     }
-                }, 20 );
+                }, 200 );
                 this.sendUpdate( 'pos' );
                 this.sendUpdate( 'isPlaying' );
             } else if ( action === 'pause' ) {
@@ -290,13 +299,13 @@ const app = Vue.createApp( {
                 this.isPlaying = false;
                 this.sendUpdate( 'isPlaying' );
             } else if ( action === 'replay10' ) {
-                this.musicKit.seekToTime( this.musicKit.player.currentPlaybackTime > 10 ? musicPlayer.player.currentPlaybackTime - 10 : 0 );
-                this.pos = this.musicKit.player.currentPlaybackTime;
+                this.musicKit.seekToTime( this.musicKit.currentPlaybackTime > 10 ? musicPlayer.player.currentPlaybackTime - 10 : 0 );
+                this.pos = this.musicKit.currentPlaybackTime;
                 this.sendUpdate( 'pos' );
             } else if ( action === 'forward10' ) {
-                if ( this.musicKit.player.currentPlaybackTime < ( this.playingSong.duration - 10 ) ) {
-                    this.musicKit.seekToTime( this.musicKit.player.currentPlaybackTime + 10 );
-                    this.pos = this.musicKit.player.currentPlaybackTime;
+                if ( this.musicKit.currentPlaybackTime < ( this.playingSong.duration - 10 ) ) {
+                    this.musicKit.seekToTime( this.musicKit.currentPlaybackTime + 10 );
+                    this.pos = this.musicKit.currentPlaybackTime;
                     this.sendUpdate( 'pos' );
                     // Get currently playing song and get duration from there
                 } else {
@@ -314,47 +323,53 @@ const app = Vue.createApp( {
                 this.musicKit.seekToTime( 0 );
                 this.sendUpdate( 'pos' );
             } else if ( action === 'next' ) {
-                this.sendUpdate( 'queuePos' );
-                this.musicKit.skipToNextItem();
-                this.control( 'play' );
+                this.musicKit.skipToNextItem().then( () => {
+                    this.sendUpdate( 'queuePos' );
+                } );
             } else if ( action === 'previous' ) {
                 if ( this.pos > 3 ) {
                     this.pos = 0;
-                    this.musicKit.seekToTime( 0 );
-                    this.sendUpdate( 'pos' );
-                    this.sendUpdate( 'queuePos' );
-                    this.control( 'play' );
+                    this.musicKit.seekToTime( 0 ).then( () => {
+                        this.sendUpdate( 'pos' );
+                        this.sendUpdate( 'queuePos' );
+                        this.control( 'play' );
+                    } );
                 } else {
-                    this.musicKit.skipToPreviousItem();
-                    this.control( 'play' );
+                    this.musicKit.skipToPreviousItem().then( () => {
+                        this.sendUpdate( 'queuePos' );
+                    } );
                 }
             } else if ( action === 'shuffleOff' ) {
                 this.isShuffleEnabled = false;
-                this.musicKit.PlayerShuffleMode = 'off';
+                this.musicKit.shuffleMode = MusicKit.PlayerShuffleMode.off;
             } else if ( action === 'shuffleOn' ) {
-                this.musicKit.PlayerShuffleMode = 'songs';
+                this.musicKit.shuffleMode = MusicKit.PlayerShuffleMode.songs;
                 this.isShuffleEnabled = true;
             } else if ( action === 'repeatOne' ) {
                 this.repeatMode = 'one';
-                this.musicKit.PlayerRepeatMode = 'one';
+                this.musicKit.repeatMode = MusicKit.PlayerRepeatMode.one;
             } else if ( action === 'repeatAll' ) {
-                this.musicKit.PlayerRepeatMode = 'all';
+                this.musicKit.repeatMode = MusicKit.PlayerRepeatMode.all;
                 this.repeatMode = 'all';
             } else if ( action === 'repeatOff' ) {
-                this.musicKit.PlayerRepeatMode = 'none';
+                this.musicKit.repeatMode = MusicKit.PlayerRepeatMode.none;
                 this.repeatMode = 'off';
             }
         },
         play( song ) {
+            // TODO: Look into this... seems to cancel the playlist and then autoplay similar music
+            // TODO: Also look at stability of player
             let foundSong = 0;
             for ( let s in this.songQueue ) {
                 if ( this.songQueue[ s ] === song ) {
                     foundSong = s;
                 }
             }
-            this.control( 'stop' );
-            this.musicKit.player.changeToMediaAtIndex( foundSong );
-            this.control( 'play' );
+            this.musicKit.play().then( () => {
+                this.musicKit.changeToMediaAtIndex( foundSong ).catch( ( err ) => {
+                    console.log( err );
+                } );
+            } );
         },
     },
     watch: {

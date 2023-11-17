@@ -54,6 +54,9 @@ createApp( {
     },
     methods: {
         startTimeTracker () {
+            try {
+                clearInterval( this.timeTracker );
+            } catch ( err ) {}
             this.timeTracker = setInterval( () => {
                 this.pos = ( new Date().getTime() - this.playingSong.startTime ) / 1000 + this.oldPos;
                 this.progressBar = ( this.pos / this.playingSong.duration ) * 1000;
