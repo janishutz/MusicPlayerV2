@@ -135,6 +135,7 @@ const sendUpdate = ( update ) => {
         currentDetails[ 'playingSong' ][ 'startTime' ] = new Date().getTime();
         for ( let client in connectedClients ) {
             connectedClients[ client ].write( 'data: ' + JSON.stringify( { 'type': 'playingSong', 'data': currentDetails[ 'playingSong' ] } ) + '\n\n' );
+            connectedClients[ client ].write( 'data: ' + JSON.stringify( { 'type': 'pos', 'data': currentDetails[ 'pos' ] } ) + '\n\n' );
         }
     } else if ( update === 'playingSong' ) {
         currentDetails[ update ][ 'startTime' ] = new Date().getTime();
@@ -142,9 +143,6 @@ const sendUpdate = ( update ) => {
         currentDetails[ 'playingSong' ][ 'startTime' ] = new Date().getTime();
         for ( let client in connectedClients ) {
             connectedClients[ client ].write( 'data: ' + JSON.stringify( { 'type': 'playingSong', 'data': currentDetails[ 'playingSong' ] } ) + '\n\n' );
-        }
-
-        for ( let client in connectedClients ) {
             connectedClients[ client ].write( 'data: ' + JSON.stringify( { 'type': 'pos', 'data': currentDetails[ 'pos' ] } ) + '\n\n' );
         }
     }
@@ -166,6 +164,10 @@ const sendUpdate = ( update ) => {
             } );
         } else if ( update === 'pos' ) {
             axios.post( remoteURL + '/statusUpdate', { 'type': 'playingSong', 'data': currentDetails[ 'playingSong' ], 'authKey': authKey } ).catch( err => {
+                console.error( err );
+            } );
+
+            axios.post( remoteURL + '/statusUpdate', { 'type': 'pos', 'data': currentDetails[ 'pos' ], 'authKey': authKey } ).catch( err => {
                 console.error( err );
             } );
         }
