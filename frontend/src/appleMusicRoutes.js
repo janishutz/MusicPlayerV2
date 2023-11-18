@@ -8,6 +8,8 @@
 */
 
 const path = require( 'path' );
+const fs = require( 'fs' );
+const csv = require( 'csv-parser' );
 const dialog = require( 'electron' ).dialog;
 
 const analyzeFile = ( filepath ) => {
@@ -27,6 +29,8 @@ const analyzeFile = ( filepath ) => {
             } );
         } else if ( filepath.includes( '.json' ) ) {
             resolve( JSON.parse( fs.readFileSync( filepath ) ) );
+        } else {
+            reject( 'NO_CSV_OR_JSON_FILE' );
         }
     } );
 }
@@ -58,14 +62,22 @@ module.exports = ( app ) => {
             title: 'Open file with additional data on the songs',
             filters: [
                 { 
-                    name: 'CSV', extensions: [ '.csv' ],
-                    name: 'JSON', extensions: [ '.json' ]
+                    name: 'All supported files (.csv, .json)', 
+                    extensions: [ 'csv', 'json' ],
+                },
+                { 
+                    name: 'JSON', 
+                    extensions: [ 'json' ],
+                },
+                { 
+                    name: 'CSV', 
+                    extensions: [ 'csv' ],
                 }
-            ]
-        } );
+            ],
+        } )[ 0 ];
         analyzeFile( filepath ).then( analyzedFile => {
-            res.send( analyzeFile );
-        } ).catch( err => {
+            res.send( analyzedFile );
+        } ).catch( () => {
             res.status( 500 ).send( 'no csv / json file' );
         } )
     } );

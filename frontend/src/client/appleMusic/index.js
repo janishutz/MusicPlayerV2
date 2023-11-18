@@ -22,7 +22,8 @@ const app = Vue.createApp( {
             localIP: '',
             hasLoadedPlaylists: false,
             isPreparingToPlay: false,
-            filenameForAdditionalInfo: '',
+            additionalSongInfo: {},
+            hasFinishedInit: false,
 
             // slider
             offset: 0,
@@ -69,23 +70,12 @@ const app = Vue.createApp( {
                             this.musicKit.shuffleMode = MusicKit.PlayerShuffleMode.off;
                             this.musicKit.addEventListener( 'nowPlayingItemDidChange', ( e ) => {
                                 this.control( 'play' );
+                                this.hasFinishedInit = true;
                                 // Assemble this.playingSong
                                 // TODO: Also add additional items to queue if there are new
                                 // items that weren't previously shown (limitation of MusicKitJS).
                                 if ( e.item ) {
-                                    this.playingSong = {
-                                        'artist': e.item.attributes.artistName,
-                                        'title': e.item.attributes.name,
-                                        'year': e.item.attributes.releaseDate,
-                                        // Think about bpm analysis
-                                        // 'bpm': metadata[ 'common' ][ 'bpm' ],
-                                        'genre': e.item.attributes.genreNames,
-                                        'duration': Math.round( e.item.attributes.durationInMillis / 1000 ),
-                                        'filename': this.songQueue[ this.musicKit.nowPlayingItemIndex ].filename,
-                                        'coverArtOrigin': 'api',
-                                        'hasCoverArt': true,
-                                        'queuePos': this.musicKit.nowPlayingItemIndex,
-                                    }
+                                    this.playingSong = this.songQueue[ this.musicKit.nowPlayingItemIndex ];
                                     let url = e.item.attributes.artwork.url;
                                     url = url.replace( '{w}', e.item.attributes.artwork.width );
                                     url = url.replace( '{h}', e.item.attributes.artwork.height );
@@ -144,18 +134,38 @@ const app = Vue.createApp( {
             } else return false;
         },
         getAdditionalSongInfo() {
-            // TODO: Implement
-            if ( this.filenameForAdditionalInfo ) {
-
+            if ( Object.keys( this.additionalSongInfo ).length < 1 ) {
+                fetch( '/apple-music/getAdditionalData' ).then( res => {
+                    if ( res.status === 200 ) {
+                        res.json().then( json => {
+                            this.additionalSongInfo = json;
+                            this.handleAdditionalData();
+                        } );
+                    }
+                } );
+            }
+        },
+        handleAdditionalData () {
+            if ( Object.keys( this.additionalSongInfo ).length > 0 ) {
+                for ( let item in this.songQueue ) {
+                    if ( this.additionalSongInfo[ item ] ) {
+                        for ( let d in this.additionalSongInfo[ item ] ) {
+                            if ( !this.songQueue[ item ][ d ] ) {
+                                this.songQueue[ item ][ d ] = this.additionalSongInfo[ item ][ d ];
+                            }
+                        }
+                    }
+                }
+                this.playingSong = this.songQueue[ this.musicKit.nowPlayingItemIndex ];
+                this.sendUpdate( 'songQueue' );
+                this.sendUpdate( 'playingSong' );
             }
         },
         selectPlaylist( id ) {
             this.isPreparingToPlay = true;
             this.musicKit.setQueue( { playlist: id } ).then( () => {
                 try {
-                    this.control( 'play' );
                     this.loadPlaylist();
-                    // TODO: Load additional data from file
                     this.hasSelectedPlaylist = true;
                     this.isPreparingToPlay = false;
                 } catch( err ) {
@@ -251,8 +261,9 @@ const app = Vue.createApp( {
                 url = url.replace( '{w}', songQueue[ item ].attributes.artwork.width );
                 url = url.replace( '{h}', songQueue[ item ].attributes.artwork.height );
                 this.songQueue[ item ][ 'coverArtURL' ] = url;
+                this.handleAdditionalData();
+                this.sendUpdate( 'songQueue' );
             }
-            this.sendUpdate( 'songQueue' );
         },
         control( action ) {
             if ( action === 'play' ) {

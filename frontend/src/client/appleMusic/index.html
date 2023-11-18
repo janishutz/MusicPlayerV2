@@ -40,18 +40,19 @@
                         <div class="player-wrapper">
                             <div class="player">
                                 <div class="controls">
-                                    <span class="material-symbols-outlined control-icon" :class="hasSelectedPlaylist ? 'active': 'inactive'" @click="control( 'previous' )">skip_previous</span>
-                                    <span class="material-symbols-outlined control-icon" :class="hasSelectedPlaylist ? 'active': 'inactive'" @click="control( 'replay10' )">replay_10</span>
+                                    <span class="material-symbols-outlined control-icon" :class="hasFinishedInit ? 'active': 'inactive'" @click="control( 'previous' )">skip_previous</span>
+                                    <span class="material-symbols-outlined control-icon" :class="hasFinishedInit ? 'active': 'inactive'" @click="control( 'replay10' )">replay_10</span>
                                     <span class="material-symbols-outlined control-icon play-pause" v-if="!isPlaying && hasSelectedPlaylist" @click="control( 'play' )">play_arrow</span>
                                     <span class="material-symbols-outlined control-icon play-pause" v-else-if="isPlaying && hasSelectedPlaylist" @click="control( 'pause' )">pause</span>
                                     <span class="material-symbols-outlined control-icon play-pause" style="cursor: default;" v-else>play_disabled</span>
-                                    <span class="material-symbols-outlined control-icon" :class="hasSelectedPlaylist ? 'active': 'inactive'" @click="control( 'forward10' )">forward_10</span>
-                                    <span class="material-symbols-outlined control-icon" :class="hasSelectedPlaylist ? 'active': 'inactive'" @click="control( 'next' )" style="margin-right: 1vw;">skip_next</span>
-                                    <span class="material-symbols-outlined control-icon" :class="hasSelectedPlaylist ? 'active': 'inactive'" v-if="!isShuffleEnabled" @click="control( 'shuffleOn' )">shuffle</span>
-                                    <span class="material-symbols-outlined control-icon" :class="hasSelectedPlaylist ? 'active': 'inactive'" v-else @click="control( 'shuffleOff' )">shuffle_on</span>
-                                    <span class="material-symbols-outlined control-icon" :class="hasSelectedPlaylist ? 'active': 'inactive'" v-if="repeatMode === 'off'" @click="control( 'repeatOne' )">repeat</span>
-                                    <span class="material-symbols-outlined control-icon" :class="hasSelectedPlaylist ? 'active': 'inactive'" v-else-if="repeatMode === 'one'" @click="control( 'repeatAll' )">repeat_one_on</span>
-                                    <span class="material-symbols-outlined control-icon" :class="hasSelectedPlaylist ? 'active': 'inactive'" v-else-if="repeatMode === 'all'" @click="control( 'repeatOff' )">repeat_on</span>
+                                    <span class="material-symbols-outlined control-icon" :class="hasFinishedInit ? 'active': 'inactive'" @click="control( 'forward10' )">forward_10</span>
+                                    <span class="material-symbols-outlined control-icon" :class="hasFinishedInit ? 'active': 'inactive'" @click="control( 'next' )" style="margin-right: 1vw;">skip_next</span>
+                                    <span class="material-symbols-outlined control-icon" :class="hasFinishedInit ? 'active': 'inactive'" v-if="!isShuffleEnabled" @click="control( 'shuffleOn' )">shuffle</span>
+                                    <span class="material-symbols-outlined control-icon" :class="hasFinishedInit ? 'active': 'inactive'" v-else @click="control( 'shuffleOff' )">shuffle_on</span>
+                                    <span class="material-symbols-outlined control-icon" :class="hasFinishedInit ? 'active': 'inactive'" v-if="repeatMode === 'off'" @click="control( 'repeatOne' )">repeat</span>
+                                    <span class="material-symbols-outlined control-icon" :class="hasFinishedInit ? 'active': 'inactive'" v-else-if="repeatMode === 'one'" @click="control( 'repeatAll' )">repeat_one_on</span>
+                                    <span class="material-symbols-outlined control-icon" :class="hasFinishedInit ? 'active': 'inactive'" v-else-if="repeatMode === 'all'" @click="control( 'repeatOff' )">repeat_on</span>
+                                    <span class="material-symbols-outlined control-icon" :class="hasSelectedPlaylist ? 'active': 'inactive'" @click="getAdditionalSongInfo()" title="Load additional song information">upload</span>
                                     <div class="control-icon" id="settings">
                                         <span class="material-symbols-outlined">info</span>
                                         <div id="showIP">
@@ -62,7 +63,7 @@
                                 </div>
                                 <div class="song-info">
                                     <div class="song-info-wrapper">
-                                        <img v-if="hasSelectedPlaylist" :src="playingSong.coverArtURL" class="image">
+                                        <img v-if="hasFinishedInit" :src="playingSong.coverArtURL" class="image">
                                         <span class="material-symbols-outlined image" v-else>music_note</span>
                                         <div class="name">
                                             <h3>{{ playingSong.title ?? 'No song selected' }}</h3>
@@ -76,8 +77,8 @@
                                     </div>
                                     <div class="slider">
                                         <progress id="progress-slider" class="progress-slider" :value="sliderProgress" max="1000" @mousedown="( e ) => { setPos( e ) }" 
-                                            :class="hasSelectedPlaylist ? '' : 'slider-inactive'"></progress>
-                                        <div v-if="hasSelectedPlaylist" id="slider-knob" @mousedown="( e ) => { startMove( e ) }"
+                                            :class="hasFinishedInit ? '' : 'slider-inactive'"></progress>
+                                        <div v-if="hasFinishedInit" id="slider-knob" @mousedown="( e ) => { startMove( e ) }"
                                             :style="'left: ' + ( parseInt( originalPos ) + parseInt( sliderPos ) ) + 'px;'">
                                             <div id="slider-knob-style"></div>
                                         </div>

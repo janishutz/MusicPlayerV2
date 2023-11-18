@@ -138,7 +138,13 @@ const sendUpdate = ( update ) => {
             connectedClients[ client ].write( 'data: ' + JSON.stringify( { 'type': 'pos', 'data': currentDetails[ 'pos' ] } ) + '\n\n' );
         }
     } else if ( update === 'playingSong' ) {
-        currentDetails[ update ][ 'startTime' ] = new Date().getTime();
+        if ( !currentDetails[ 'playingSong' ] ) {
+            currentDetails[ 'playingSong' ] = {};
+        }
+        currentDetails[ 'playingSong' ][ 'startTime' ] = new Date().getTime();
+        for ( let client in connectedClients ) {
+            connectedClients[ client ].write( 'data: ' + JSON.stringify( { 'type': 'pos', 'data': currentDetails[ 'pos' ] } ) + '\n\n' );
+        }
     } else if ( update === 'isPlaying' ) {
         currentDetails[ 'playingSong' ][ 'startTime' ] = new Date().getTime();
         for ( let client in connectedClients ) {
