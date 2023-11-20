@@ -88,6 +88,17 @@ const app = Vue.createApp( {
                                     setTimeout( () => {
                                         this.sendUpdate( 'pos' );
                                     }, 500 );
+                                    const minuteCounts = Math.floor( ( this.playingSong.duration ) / 60 );
+                                    this.durationBeautified = String( minuteCounts ) + ':';
+                                    if ( ( '' + minuteCounts ).length === 1 ) {
+                                        this.durationBeautified = '0' + minuteCounts + ':';
+                                    }
+                                    const secondCounts = Math.floor( ( this.playingSong.duration ) - minuteCounts * 60 );
+                                    if ( ( '' + secondCounts ).length === 1 ) {
+                                        this.durationBeautified += '0' + secondCounts;
+                                    } else {
+                                        this.durationBeautified += secondCounts;
+                                    }
                                 }
                             } );
                             this.apiGetRequest( 'https://api.music.apple.com/v1/me/library/playlists', this.playlistHandler );
@@ -405,6 +416,9 @@ const app = Vue.createApp( {
                 console.log( err );
             } );
         },
+        toggleShowMode() {
+            this.isShowingRemainingTime = !this.isShowingRemainingTime;
+        }
     },
     watch: {
         pos() {

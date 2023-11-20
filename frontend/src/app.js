@@ -122,7 +122,7 @@ app.get( '/mainNotifier', ( req, res ) => {
         } );
         res.status( 200 );
         res.flushHeaders();
-        let det = { 'type': 'basics', 'data': currentDetails };
+        let det = { 'type': 'basics', 'data': connectedClients };
         res.write( `data: ${ JSON.stringify( det ) }\n\n` );
         connectedMain = res;
     } else {
@@ -197,18 +197,24 @@ app.post( '/statusUpdate', ( req, res ) => {
     }
 } );
 
-
+// STATUS UPDATE from the client display to send to main ui
+const allowedMainUpdates = [ 'disconnect', 'fullScreenStatus', 'visibility' ];
 app.get( '/clientStatusUpdate/:status', ( req, res ) => {
-    if ( req.params.status === 'disconnect' ) {
-
-    } else if ( req.params.status === 'fullScreenExit' ) {
-
-    } else if ( req.params.status === 'inactive' ) {
-
-    } else if ( req.params.status === 'reactivated' ) {
-
+    if ( allowedTypes.includes( req.body.type ) ) {
+        const ipRetrieved = req.headers[ 'x-forwarded-for' ];
+        const ip = ipRetrieved ? ipRetrieved.split( /, / )[ 0 ] : req.connection.remoteAddress;
+        sendClientUpdate( req.body.type, req.body.data, ip );
+        res.send( 'ok' );
+    } else {
+        res.status( 400 ).send( 'ERR_UNKNOWN_TYPE' );
     }
 } );
+
+const sendClientUpdate = ( update, data, ip ) => {
+    for ( let main in connectedMain ) {
+        connectedMain[ main ].write( 'data: ' + JSON.stringify( { 'type': update, 'ip': ip, 'data': data } ) + '\n\n' );
+    }
+}
 
 app.get( '/indexDirs', ( req, res ) => {
     if ( req.query.dir ) {
