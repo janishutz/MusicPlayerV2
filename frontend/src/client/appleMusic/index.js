@@ -25,6 +25,11 @@ const app = Vue.createApp( {
             additionalSongInfo: {},
             hasFinishedInit: false,
 
+            // For use with playlists that are partially from apple music and 
+            // local drive
+            isUsingCustomPlaylist: false,
+            rawLoadedPlaylistData: {},
+
             // slider
             offset: 0,
             isDragging: false,
@@ -74,6 +79,9 @@ const app = Vue.createApp( {
                                 // Assemble this.playingSong
                                 // TODO: Also add additional items to queue if there are new
                                 // items that weren't previously shown (limitation of MusicKitJS).
+                                // TODO: Load from disk and stop MusicKit playback if next item in queue is 
+                                // to be loaded from disk
+                                // TODO: Consideration: array with offsets to check if songs is correct
                                 if ( e.item ) {
                                     this.playingSong = this.songQueue[ this.musicKit.nowPlayingItemIndex ];
                                     let url = e.item.attributes.artwork.url;
@@ -167,7 +175,8 @@ const app = Vue.createApp( {
                         }
                     }
                 }
-                this.playingSong = this.songQueue[ this.musicKit.nowPlayingItemIndex ];
+                // TODO: update all those items to use custom queue manager for queue pos
+                this.playingSong = this.songQueue[ this.queuePos ];
                 this.sendUpdate( 'songQueue' );
                 this.sendUpdate( 'playingSong' );
             }
@@ -267,6 +276,7 @@ const app = Vue.createApp( {
                     'coverArtOrigin': 'api',
                     'hasCoverArt': true,
                     'queuePos': item,
+                    'origin': 'apple-music',
                 }
                 let url = songQueue[ item ].attributes.artwork.url;
                 url = url.replace( '{w}', songQueue[ item ].attributes.artwork.width );
@@ -401,13 +411,17 @@ const app = Vue.createApp( {
                 this.repeatMode = 'off';
             }
         },
-        play( song ) {
-            let foundSong = 0;
-            for ( let s in this.songQueue ) {
-                if ( this.songQueue[ s ] === song ) {
-                    foundSong = s;
+        play( song, specificID ) {
+            let foundSong = specificID ?? 0;
+            if ( !specificID ) {
+                for ( let s in this.songQueue ) {
+                    if ( this.songQueue[ s ] === song ) {
+                        foundSong = s;
+                    }
                 }
             }
+
+            // TODO: Update as well
             this.musicKit.changeToMediaItem( this.musicKit.queue.items[ foundSong ] ).then( () => {
                 this.sendUpdate( 'queuePos' );
                 this.pos = 0;
@@ -418,6 +432,107 @@ const app = Vue.createApp( {
         },
         toggleShowMode() {
             this.isShowingRemainingTime = !this.isShowingRemainingTime;
+        },
+        exportCurrentPlaylist() {
+            let fetchOptions = {
+                method: 'post',
+                body: JSON.stringify( this.songQueue ),
+                headers: {
+                    'Content-Type': 'application/json',
+                    'charset': 'utf-8'
+                },
+            };
+            fetch( '/savePlaylist', fetchOptions ).then( res => {
+                if ( res.status === 200 ) {
+                    console.log( 'saved' );
+                }
+            } );
+        },
+        selectPlaylistFromDisk() {
+            this.isPreparingToPlay = true;
+            let playlistSongs = [];
+            fetch( '/loadPlaylist' ).then( res => {
+                res.json().then( data => {
+                    this.rawLoadedPlaylistData = data;
+                    for ( let song in data ) {
+                        if ( data[ song ].origin === 'apple-music' ) {
+                            playlistSongs.push( data[ song ].filename );
+                        }
+                    }
+                    this.musicKit.setQueue( { songs: playlistSongs } ).then( () => {
+                        this.isUsingCustomPlaylist = true;
+                        try {
+                            this.loadCustomPlaylist();
+                            this.hasSelectedPlaylist = true;
+                            this.isPreparingToPlay = false;
+                        } catch( err ) {
+                            this.hasSelectedPlaylist = false;
+                            console.error( err );
+                            alert( 'We were unable to play. Please ensure that DRM (yeah sorry it is Apple Music, we cannot do anything about that) is enabled and working' );
+                        }
+                    } ).catch( err => {
+                        console.error( 'ERROR whilst settings Queue', err );
+                    } );
+                } );
+            } );
+        },
+        loadCustomPlaylist() {
+            const songQueue = this.musicKit.queue.items;
+            let offset = 0;
+            ( async() => {
+                for ( let item in this.rawLoadedPlaylistData ) {
+                    if ( this.rawLoadedPlaylistData[ item ].origin === 'apple-music' ) {
+                        this.songQueue[ item ] = {
+                            'artist': songQueue[ item - offset ].attributes.artistName,
+                            'title': songQueue[ item - offset ].attributes.name,
+                            'year': songQueue[ item - offset ].attributes.releaseDate,
+                            'genre': songQueue[ item - offset ].attributes.genreNames,
+                            'duration': Math.round( songQueue[ item - offset ].attributes.durationInMillis / 1000 ),
+                            'filename': songQueue[ item - offset ].id,
+                            'coverArtOrigin': 'api',
+                            'hasCoverArt': true,
+                            'queuePos': item,
+                            'origin': 'apple-music',
+                        }
+                        let url = songQueue[ item - offset ].attributes.artwork.url;
+                        url = url.replace( '{w}', songQueue[ item - offset ].attributes.artwork.width );
+                        url = url.replace( '{h}', songQueue[ item - offset ].attributes.artwork.height );
+                        this.songQueue[ item ][ 'coverArtURL' ] = url;
+                    } else {
+                        offset += 1;
+                        const queryParameters = { 
+                            term: ( this.rawLoadedPlaylistData[ item ].artist ?? '' ) + ' ' + ( this.rawLoadedPlaylistData[ item ].title ?? '' ), 
+                            types: [ 'songs' ],
+                        };
+                        // TODO: Make sure that playback duration is correct (get from backend with analysis?)
+                        // TODO: Make storefront adjustable
+                        const result = await this.musicKit.api.music( '/v1/catalog/ch/search', queryParameters );
+                        if ( result.data ) {
+                            if ( result.data.results.songs ) {
+                                const dat = result.data.results.songs.data[ 0 ]
+                                this.songQueue[ item ] = {
+                                    'artist': dat.attributes.artistName,
+                                    'title': dat.attributes.name,
+                                    'year': dat.attributes.releaseDate,
+                                    'genre': dat.attributes.genreNames,
+                                    'duration': Math.round( dat.attributes.durationInMillis / 1000 ),
+                                    'filename': this.rawLoadedPlaylistData[ item ].filename,
+                                    'coverArtOrigin': 'api',
+                                    'hasCoverArt': true,
+                                    'queuePos': item,
+                                    'origin': 'apple-music',
+                                }
+                                let url = dat.attributes.artwork.url;
+                                url = url.replace( '{w}', dat.attributes.artwork.width );
+                                url = url.replace( '{h}', dat.attributes.artwork.height );
+                                this.songQueue[ item ][ 'coverArtURL' ] = url;
+                            }
+                        }
+                    }
+                    this.handleAdditionalData();
+                    this.sendUpdate( 'songQueue' );
+                }
+            } )();
         }
     },
     watch: {

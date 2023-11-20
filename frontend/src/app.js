@@ -11,6 +11,7 @@ const axios = require( 'axios' );
 const ip = require( 'ip' );
 const jwt = require( 'jsonwebtoken' );
 const shell = require( 'electron' ).shell;
+const beautify = require( 'json-beautify' );
 
 
 app.use( bodyParser.urlencoded( { extended: false } ) );
@@ -230,6 +231,26 @@ app.get( '/indexDirs', ( req, res ) => {
     } else {
         res.status( 400 ).send( 'ERR_REQ_INCOMPLETE' );
     }
+} );
+
+app.get( '/loadPlaylist', ( req, res ) => {
+    res.send( JSON.parse( fs.readFileSync( dialog.showOpenDialogSync( { properties: [ 'openFile' ], title: 'Open file with playlist' } )[ 0 ] ) ) );
+} );
+
+app.post( '/savePlaylist', ( req, res ) => {
+    fs.writeFileSync( dialog.showSaveDialogSync( { 
+        properties: [ 'createDirectory' ], 
+        title: 'Save the playlist as a json file', 
+        filters: [
+            {
+                extensions: [ 'json' ],
+                name: 'JSON files',
+            }
+        ],
+        defaultPath: 'songs.json'
+    } ), beautify( req.body, null, 2, 50 ) );
+    console.log( req.body );
+    res.send( 'ok' );
 } );
 
 app.get( '/getSongCover', ( req, res ) => {
