@@ -1,3 +1,17 @@
+/*
+*				MusicPlayerV2 - index.js
+*
+*	Created by Janis Hutz 11/20/2023, Licensed under the GPL V3 License
+*			https://janishutz.com, development@janishutz.com
+*
+*
+*/
+
+/*
+    Quick side note here: This is terribly ugly code, but I was in a hurry to finish it, 
+    so I had no time to clean it up. I will do that at some point -jh
+*/
+
 const app = Vue.createApp( {
     data() {
         return {
@@ -29,6 +43,8 @@ const app = Vue.createApp( {
             // local drive
             isUsingCustomPlaylist: false,
             rawLoadedPlaylistData: {},
+            basePath: '',
+            audioPlayer: null,
 
             // slider
             offset: 0,
@@ -73,42 +89,6 @@ const app = Vue.createApp( {
                                 this.config.userToken = this.musicKit.musicUserToken;
                             }
                             this.musicKit.shuffleMode = MusicKit.PlayerShuffleMode.off;
-                            this.musicKit.addEventListener( 'nowPlayingItemDidChange', ( e ) => {
-                                this.control( 'play' );
-                                this.hasFinishedInit = true;
-                                // Assemble this.playingSong
-                                // TODO: Also add additional items to queue if there are new
-                                // items that weren't previously shown (limitation of MusicKitJS).
-                                // TODO: Load from disk and stop MusicKit playback if next item in queue is 
-                                // to be loaded from disk
-                                // TODO: Consideration: array with offsets to check if songs is correct
-                                if ( e.item ) {
-                                    this.playingSong = this.songQueue[ this.musicKit.nowPlayingItemIndex ];
-                                    let url = e.item.attributes.artwork.url;
-                                    url = url.replace( '{w}', e.item.attributes.artwork.width );
-                                    url = url.replace( '{h}', e.item.attributes.artwork.height );
-                                    this.playingSong[ 'coverArtURL' ] = url;
-                                    this.queuePos = this.musicKit.nowPlayingItemIndex;
-                                    this.sendUpdate( 'playingSong' );
-                                    this.sendUpdate( 'pos' );
-                                    this.sendUpdate( 'isPlaying' );
-                                    this.sendUpdate( 'queuePos' );
-                                    setTimeout( () => {
-                                        this.sendUpdate( 'pos' );
-                                    }, 500 );
-                                    const minuteCounts = Math.floor( ( this.playingSong.duration ) / 60 );
-                                    this.durationBeautified = String( minuteCounts ) + ':';
-                                    if ( ( '' + minuteCounts ).length === 1 ) {
-                                        this.durationBeautified = '0' + minuteCounts + ':';
-                                    }
-                                    const secondCounts = Math.floor( ( this.playingSong.duration ) - minuteCounts * 60 );
-                                    if ( ( '' + secondCounts ).length === 1 ) {
-                                        this.durationBeautified += '0' + secondCounts;
-                                    } else {
-                                        this.durationBeautified += secondCounts;
-                                    }
-                                }
-                            } );
                             this.apiGetRequest( 'https://api.music.apple.com/v1/me/library/playlists', this.playlistHandler );
                         } );
                     } );
@@ -223,7 +203,11 @@ const app = Vue.createApp( {
                 this.originalPos = e.offsetX;
                 this.calcProgressPos();
                 this.calcPlaybackPos();
-                this.musicKit.seekToTime( this.pos );
+                if ( this.playingSong.origin === 'apple-music' ) {
+                    this.musicKit.seekToTime( this.pos );
+                } else {
+                    this.audioPlayer.currentTime = this.pos;
+                }
                 this.sendUpdate( 'pos' );
             }
         },
@@ -245,7 +229,6 @@ const app = Vue.createApp( {
             } else if ( update === 'songQueue' ) {
                 data = this.songQueue;
             } else if ( update === 'queuePos' ) {
-                this.queuePos = this.musicKit.nowPlayingItemIndex >= 0 ? this.musicKit.nowPlayingItemIndex : 0;
                 data = this.queuePos;
             } else if ( update === 'posReset' ) {
                 data = 0;
@@ -288,58 +271,83 @@ const app = Vue.createApp( {
         },
         control( action ) {
             if ( action === 'play' ) {
-                if( !this.musicKit || !this.isPlaying ) {
-                    this.musicKit.play().then( () => {
-                        this.sendUpdate( 'pos' );
-                    } ).catch( err => {
-                        console.log( 'player failed to start' );
-                        console.log( err );
-                    } );
+                if ( !this.playingSong.origin ) {
+                    this.play( this.songQueue[ 0 ] );
+                    this.isPlaying = true;
                 } else {
-                    this.musicKit.pause().then( () => {
-                        this.musicKit.play().catch( err => {
-                            console.log( 'player failed to start' );
-                            console.log( err );
-                        } );
-                    } );
-                }
-                this.isPlaying = true;
-                try { 
-                    clearInterval( this.progressTracker );
-                } catch( err ) {};
-                this.progressTracker = setInterval( () => {
-                    this.pos = parseInt( this.musicKit.currentPlaybackTime );
-
-                    const minuteCount = Math.floor( this.pos / 60 );
-                    this.playbackPosBeautified = minuteCount + ':';
-                    if ( ( '' + minuteCount ).length === 1 ) {
-                        this.playbackPosBeautified = '0' + minuteCount + ':';
-                    }
-                    const secondCount = Math.floor( this.pos - minuteCount * 60 );
-                    if ( ( '' + secondCount ).length === 1 ) {
-                        this.playbackPosBeautified += '0' + secondCount;
-                    } else {
-                        this.playbackPosBeautified += secondCount;
-                    }
-
-                    if ( this.isShowingRemainingTime ) {
-                        const minuteCounts = Math.floor( ( this.playingSong.duration - this.pos ) / 60 );
-                        this.durationBeautified = '-' + String( minuteCounts ) + ':';
-                        if ( ( '' + minuteCounts ).length === 1 ) {
-                            this.durationBeautified = '-0' + minuteCounts + ':';
-                        }
-                        const secondCounts = Math.floor( ( this.playingSong.duration - this.pos ) - minuteCounts * 60 );
-                        if ( ( '' + secondCounts ).length === 1 ) {
-                            this.durationBeautified += '0' + secondCounts;
+                    if ( this.playingSong.origin === 'apple-music' ) {
+                        if( !this.musicKit || !this.isPlaying ) {
+                            this.musicKit.play().then( () => {
+                                this.sendUpdate( 'pos' );
+                            } ).catch( err => {
+                                console.log( 'player failed to start' );
+                                console.log( err );
+                            } );
                         } else {
-                            this.durationBeautified += secondCounts;
+                            this.musicKit.pause().then( () => {
+                                this.musicKit.play().catch( err => {
+                                    console.log( 'player failed to start' );
+                                    console.log( err );
+                                } );
+                            } );
                         }
+                        this.audioPlayer.pause();
+                    } else {
+                        this.audioPlayer.play();
+                        this.musicKit.pause();
                     }
-                }, 200 );
-                this.sendUpdate( 'pos' );
-                this.sendUpdate( 'isPlaying' );
+                    this.isPlaying = true;
+                    try { 
+                        clearInterval( this.progressTracker );
+                    } catch( err ) {};
+                    this.progressTracker = setInterval( () => {
+                        if ( this.playingSong.origin === 'apple-music' ) {
+                            this.pos = parseInt( this.musicKit.currentPlaybackTime );
+                        } else {
+                            this.pos = parseInt( this.audioPlayer.currentTime );
+                        }
+
+                        if ( this.pos > this.playingSong.duration - 1 ) {
+                            this.control( 'next' );
+                        }
+
+                        const minuteCount = Math.floor( this.pos / 60 );
+                        this.playbackPosBeautified = minuteCount + ':';
+                        if ( ( '' + minuteCount ).length === 1 ) {
+                            this.playbackPosBeautified = '0' + minuteCount + ':';
+                        }
+                        const secondCount = Math.floor( this.pos - minuteCount * 60 );
+                        if ( ( '' + secondCount ).length === 1 ) {
+                            this.playbackPosBeautified += '0' + secondCount;
+                        } else {
+                            this.playbackPosBeautified += secondCount;
+                        }
+
+                        // TODO: Check playback duration with backend analysis
+
+                        if ( this.isShowingRemainingTime ) {
+                            const minuteCounts = Math.floor( ( this.playingSong.duration - this.pos ) / 60 );
+                            this.durationBeautified = '-' + String( minuteCounts ) + ':';
+                            if ( ( '' + minuteCounts ).length === 1 ) {
+                                this.durationBeautified = '-0' + minuteCounts + ':';
+                            }
+                            const secondCounts = Math.floor( ( this.playingSong.duration - this.pos ) - minuteCounts * 60 );
+                            if ( ( '' + secondCounts ).length === 1 ) {
+                                this.durationBeautified += '0' + secondCounts;
+                            } else {
+                                this.durationBeautified += secondCounts;
+                            }
+                        }
+                    }, 50 );
+                    this.sendUpdate( 'pos' );
+                    this.sendUpdate( 'isPlaying' );
+                }
             } else if ( action === 'pause' ) {
-                this.musicKit.pause();
+                if ( this.playingSong.origin === 'apple-music' ) {
+                    this.musicKit.pause();
+                } else {
+                    this.audioPlayer.pause();
+                }
                 this.sendUpdate( 'pos' );
                 try {
                     clearInterval( this.progressTracker );
@@ -348,63 +356,99 @@ const app = Vue.createApp( {
                 this.isPlaying = false;
                 this.sendUpdate( 'isPlaying' );
             } else if ( action === 'replay10' ) {
-                this.musicKit.seekToTime( this.musicKit.currentPlaybackTime > 10 ? musicPlayer.player.currentPlaybackTime - 10 : 0 );
-                this.pos = this.musicKit.currentPlaybackTime;
+                if ( this.playingSong.origin === 'apple-music' ) {
+                    this.musicKit.seekToTime( this.musicKit.currentPlaybackTime > 10 ? this.musicKit.currentPlaybackTime - 10 : 0 );
+                    this.pos = this.musicKit.currentPlaybackTime;
+                } else {
+                    this.audioPlayer.currentTime = this.audioPlayer.currentTime > 10 ? this.audioPlayer.currentTime - 10 : 0;
+                    this.pos = this.audioPlayer.currentTime;
+                }
                 this.sendUpdate( 'pos' );
             } else if ( action === 'forward10' ) {
-                if ( this.musicKit.currentPlaybackTime < ( this.playingSong.duration - 10 ) ) {
-                    this.musicKit.seekToTime( this.musicKit.currentPlaybackTime + 10 );
-                    this.pos = this.musicKit.currentPlaybackTime;
-                    this.sendUpdate( 'pos' );
-                    // Get currently playing song and get duration from there
-                } else {
-                    if ( this.repeatMode !== 'one' ) {
-                        this.control( 'next' );
-                    } else {
-                        this.musicKit.seekToTime( 0 );
+                if ( this.playingSong.origin === 'apple-music' ) {
+                    if ( this.musicKit.currentPlaybackTime < ( this.playingSong.duration - 10 ) ) {
+                        this.musicKit.seekToTime( this.musicKit.currentPlaybackTime + 10 );
                         this.pos = this.musicKit.currentPlaybackTime;
                         this.sendUpdate( 'pos' );
+                    } else {
+                        if ( this.repeatMode !== 'one' ) {
+                            this.control( 'next' );
+                        } else {
+                            this.musicKit.seekToTime( 0 );
+                            this.pos = this.musicKit.currentPlaybackTime;
+                            this.sendUpdate( 'pos' );
+                        }
+                    }
+                } else {
+                    if ( this.audioPlayer.currentTime < ( this.playingSong.duration - 10 ) ) {
+                        this.audioPlayer.currentTime = this.audioPlayer.currentTime + 10;
+                        this.pos = this.audioPlayer.currentTime;
+                        this.sendUpdate( 'pos' );
+                    } else {
+                        if ( this.repeatMode !== 'one' ) {
+                            this.control( 'next' );
+                        } else {
+                            this.audioPlayer.currentTime = 0;
+                            this.pos = this.audioPlayer.currentTime;
+                            this.sendUpdate( 'pos' );
+                        }
                     }
                 }
             } else if ( action === 'reset' ) {
                 clearInterval( this.progressTracker );
                 this.pos = 0;
-                this.musicKit.seekToTime( 0 );
+                if ( this.playingSong.origin === 'apple-music' ) {
+                    this.musicKit.seekToTime( 0 );
+                } else {
+                    this.audioPlayer.currentTime = 0;
+                }
                 this.sendUpdate( 'pos' );
             } else if ( action === 'next' ) {
-                this.musicKit.skipToNextItem().then( () => {
-                    this.sendUpdate( 'queuePos' );
-                    this.pos = 0;
-                    this.sendUpdate( 'posReset' );
-                } );
+                if ( this.queuePos < parseInt( Object.keys( this.songQueue ).length ) - 1 ) {
+                    this.queuePos = parseInt( this.queuePos ) + 1;
+                    this.play( this.songQueue[ this.queuePos ] );
+                } else {
+                    if ( this.repeatMode === 'all' ) {
+                        this.queuePos = 0;
+                        this.play( this.songQueue[ 0 ] );
+                    } else {
+                        this.control( 'pause' );
+                    }
+                }
             } else if ( action === 'previous' ) {
                 if ( this.pos > 3 ) {
                     this.pos = 0;
-                    this.musicKit.seekToTime( 0 ).then( () => {
+                    if ( this.isUsingCustomPlaylist ) {
+                        this.audioPlayer.currentTime = 0;
                         this.sendUpdate( 'pos' );
-                        this.sendUpdate( 'queuePos' );
-                        this.control( 'play' );
-                    } );
+                    } else {
+                        this.musicKit.seekToTime( 0 ).then( () => {
+                            this.sendUpdate( 'pos' );
+                            this.control( 'play' );
+                        } );
+                    }
                 } else {
-                    this.musicKit.skipToPreviousItem().then( () => {
-                        this.sendUpdate( 'queuePos' );
-                        this.pos = 0;
-                        this.sendUpdate( 'posReset' );
-                    } );
+                    if ( this.queuePos > 0 ) {
+                        this.queuePos = parseInt( this.queuePos ) - 1;
+                        this.play( this.songQueue[ this.queuePos ] );
+                    } else {
+                        this.queuePos = parseInt( Object.keys( this.songQueue ).length ) - 1;
+                        this.play[ this.songQueue[ this.queuePos ] ];
+                    }
                 }
+
             } else if ( action === 'shuffleOff' ) {
+                // TODO: Make shuffle function
                 this.isShuffleEnabled = false;
-                this.musicKit.shuffleMode = MusicKit.PlayerShuffleMode.off;
-                this.loadPlaylist();
+                // this.loadPlaylist();
+                alert( 'not implemented yet' );
             } else if ( action === 'shuffleOn' ) {
-                this.musicKit.shuffleMode = MusicKit.PlayerShuffleMode.songs;
                 this.isShuffleEnabled = true;
-                this.loadPlaylist();
+                alert( 'not implemented yet' );
+                // this.loadPlaylist();
             } else if ( action === 'repeatOne' ) {
                 this.repeatMode = 'one';
-                this.musicKit.repeatMode = MusicKit.PlayerRepeatMode.one;
             } else if ( action === 'repeatAll' ) {
-                this.musicKit.repeatMode = MusicKit.PlayerRepeatMode.all;
                 this.repeatMode = 'all';
             } else if ( action === 'repeatOff' ) {
                 this.musicKit.repeatMode = MusicKit.PlayerRepeatMode.none;
@@ -421,14 +465,37 @@ const app = Vue.createApp( {
                 }
             }
 
-            // TODO: Update as well
-            this.musicKit.changeToMediaItem( this.musicKit.queue.items[ foundSong ] ).then( () => {
-                this.sendUpdate( 'queuePos' );
-                this.pos = 0;
-                this.sendUpdate( 'posReset' );
-            } ).catch( ( err ) => {
-                console.log( err );
-            } );
+            this.queuePos = foundSong;
+            this.sendUpdate( 'queuePos' );
+            this.pos = 0;
+            this.sendUpdate( 'posReset' );
+            this.playingSong = song;
+            this.sendUpdate( 'playingSong' );
+            if ( song.origin === 'apple-music' ) { 
+                this.musicKit.setQueue( { 'song': song.filename } ).then( () => {
+                    setTimeout( () => {
+                        this.control( 'play' );
+                    }, 500 );
+                } ).catch( ( err ) => {
+                    console.log( err );
+                } );
+            } else {
+                setTimeout( () => {
+                    this.control( 'play' );
+                }, 500 );
+            }
+            const minuteCounts = Math.floor( ( this.playingSong.duration ) / 60 );
+            this.durationBeautified = String( minuteCounts ) + ':';
+            if ( ( '' + minuteCounts ).length === 1 ) {
+                this.durationBeautified = '0' + minuteCounts + ':';
+            }
+            const secondCounts = Math.floor( ( this.playingSong.duration ) - minuteCounts * 60 );
+            if ( ( '' + secondCounts ).length === 1 ) {
+                this.durationBeautified += '0' + secondCounts;
+            } else {
+                this.durationBeautified += secondCounts;
+            }
+            this.hasFinishedInit = true;
         },
         toggleShowMode() {
             this.isShowingRemainingTime = !this.isShowingRemainingTime;
@@ -453,10 +520,11 @@ const app = Vue.createApp( {
             let playlistSongs = [];
             fetch( '/loadPlaylist' ).then( res => {
                 res.json().then( data => {
-                    this.rawLoadedPlaylistData = data;
-                    for ( let song in data ) {
-                        if ( data[ song ].origin === 'apple-music' ) {
-                            playlistSongs.push( data[ song ].filename );
+                    this.rawLoadedPlaylistData = data.data;
+                    this.basePath = data.path.slice( 0, data.path.lastIndexOf( '/' ) );
+                    for ( let song in this.rawLoadedPlaylistData ) {
+                        if ( this.rawLoadedPlaylistData[ song ].origin === 'apple-music' ) {
+                            playlistSongs.push( this.rawLoadedPlaylistData[ song ].filename );
                         }
                     }
                     this.musicKit.setQueue( { songs: playlistSongs } ).then( () => {
@@ -493,6 +561,7 @@ const app = Vue.createApp( {
                             'hasCoverArt': true,
                             'queuePos': item,
                             'origin': 'apple-music',
+                            'offset': offset,
                         }
                         let url = songQueue[ item - offset ].attributes.artwork.url;
                         url = url.replace( '{w}', songQueue[ item - offset ].attributes.artwork.width );
@@ -504,23 +573,28 @@ const app = Vue.createApp( {
                             term: ( this.rawLoadedPlaylistData[ item ].artist ?? '' ) + ' ' + ( this.rawLoadedPlaylistData[ item ].title ?? '' ), 
                             types: [ 'songs' ],
                         };
-                        // TODO: Make sure that playback duration is correct (get from backend with analysis?)
                         // TODO: Make storefront adjustable
                         const result = await this.musicKit.api.music( '/v1/catalog/ch/search', queryParameters );
+                        let json;
+                        try {
+                            const res = await fetch( '/getMetadata?file=' + this.basePath + '/' + this.rawLoadedPlaylistData[ item ].filename );
+                            json = await res.json();
+                        } catch( err ) {}
                         if ( result.data ) {
                             if ( result.data.results.songs ) {
-                                const dat = result.data.results.songs.data[ 0 ]
+                                const dat = result.data.results.songs.data[ 0 ];
+                                console.log( json );
                                 this.songQueue[ item ] = {
                                     'artist': dat.attributes.artistName,
                                     'title': dat.attributes.name,
                                     'year': dat.attributes.releaseDate,
                                     'genre': dat.attributes.genreNames,
-                                    'duration': Math.round( dat.attributes.durationInMillis / 1000 ),
+                                    'duration': json ? Math.round( json.duration ) : undefined,
                                     'filename': this.rawLoadedPlaylistData[ item ].filename,
                                     'coverArtOrigin': 'api',
                                     'hasCoverArt': true,
                                     'queuePos': item,
-                                    'origin': 'apple-music',
+                                    'origin': 'local',
                                 }
                                 let url = dat.attributes.artwork.url;
                                 url = url.replace( '{w}', dat.attributes.artwork.width );
@@ -532,6 +606,21 @@ const app = Vue.createApp( {
                     this.handleAdditionalData();
                     this.sendUpdate( 'songQueue' );
                 }
+            } )();
+            setTimeout( () => {
+                this.audioPlayer = document.getElementById( 'audio-player' );
+            }, 1000 );
+        },
+        search() {
+            ( async() => {
+                const searchTerm = prompt( 'Enter search term...' )
+                const queryParameters = { 
+                    term: ( searchTerm ), 
+                    types: [ 'songs' ],
+                };
+                // TODO: Make storefront adjustable
+                const result = await this.musicKit.api.music( '/v1/catalog/ch/search', queryParameters );
+                console.log( result );
             } )();
         }
     },

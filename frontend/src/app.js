@@ -234,7 +234,12 @@ app.get( '/indexDirs', ( req, res ) => {
 } );
 
 app.get( '/loadPlaylist', ( req, res ) => {
-    res.send( JSON.parse( fs.readFileSync( dialog.showOpenDialogSync( { properties: [ 'openFile' ], title: 'Open file with playlist' } )[ 0 ] ) ) );
+    const selFile = dialog.showOpenDialogSync( { properties: [ 'openFile' ], title: 'Open file with playlist' } )[ 0 ];
+    res.send( { 'data': JSON.parse( fs.readFileSync( selFile ) ), 'path': selFile } );
+} );
+
+app.get( '/getMetadata', async ( req, res ) => {
+    res.send( await indexer.analyzeFile( req.query.file ) );
 } );
 
 app.post( '/savePlaylist', ( req, res ) => {
@@ -249,7 +254,6 @@ app.post( '/savePlaylist', ( req, res ) => {
         ],
         defaultPath: 'songs.json'
     } ), beautify( req.body, null, 2, 50 ) );
-    console.log( req.body );
     res.send( 'ok' );
 } );
 

@@ -38,6 +38,7 @@
                 <div v-else class="home">
                     <div class="top-bar">
                         <img src="/logo.png" alt="logo" class="logo">
+                        <audio :src="'/getSongFile?filename=' + basePath + '/' + playingSong.filename" preload="metadata" id="audio-player"></audio>
                         <div class="player-wrapper">
                             <div class="player">
                                 <div class="controls">
@@ -53,8 +54,8 @@
                                     <span class="material-symbols-outlined control-icon" :class="hasFinishedInit ? 'active': 'inactive'" v-if="repeatMode === 'off'" @click="control( 'repeatOne' )">repeat</span>
                                     <span class="material-symbols-outlined control-icon" :class="hasFinishedInit ? 'active': 'inactive'" v-else-if="repeatMode === 'one'" @click="control( 'repeatAll' )">repeat_one_on</span>
                                     <span class="material-symbols-outlined control-icon" :class="hasFinishedInit ? 'active': 'inactive'" v-else-if="repeatMode === 'all'" @click="control( 'repeatOff' )">repeat_on</span>
-                                    <span class="material-symbols-outlined control-icon" :class="hasSelectedPlaylist ? 'active': 'inactive'" @click="getAdditionalSongInfo()" title="Load additional song information">upload</span>
-                                    <span class="material-symbols-outlined control-icon" :class="hasSelectedPlaylist ? 'active': 'inactive'" @click="exportCurrentPlaylist()" title="Export current playlist">ios_share</span>
+                                    <span class="material-symbols-outlined control-icon" :class="hasSelectedPlaylist ? 'active': 'inactive'" @click="getAdditionalSongInfo()" title="Load additional song information" style="margin-left: 1vw;">upload</span>
+                                    <span class="material-symbols-outlined control-icon" :class="hasSelectedPlaylist ? 'active': 'inactive'" @click="exportCurrentPlaylist()" title="Export current playlist" style="margin-right: 1vw;">ios_share</span>
                                     <div class="control-icon" id="settings">
                                         <span class="material-symbols-outlined">info</span>
                                         <div id="showIP">
@@ -62,6 +63,7 @@
                                             <p>{{ localIP }}:8081</p>
                                         </div>
                                     </div>
+                                    <button @click="search()">S</button>
                                 </div>
                                 <div class="song-info">
                                     <div class="song-info-wrapper">

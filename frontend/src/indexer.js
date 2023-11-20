@@ -74,6 +74,24 @@ const parseExistingData = ( dat, dir ) => {
     } );
 }
 
+module.exports.analyzeFile = async ( filepath ) => {
+    let metadata = await musicMetadata.parseFile( filepath );
+    return {
+        'artist': metadata[ 'common' ][ 'artist' ],
+        'title': metadata[ 'common' ][ 'title' ],
+        'year': metadata[ 'common' ][ 'year' ],
+        'bpm': metadata[ 'common' ][ 'bpm' ],
+        'genre': metadata[ 'common' ][ 'genre' ],
+        'duration': Math.round( metadata[ 'format' ][ 'duration' ] ),
+        'isLossless': metadata[ 'format' ][ 'lossless' ],
+        'sampleRate': metadata[ 'format' ][ 'sampleRate' ],
+        'bitrate': metadata[ 'format' ][ 'bitrate' ],
+        'numberOfChannels': metadata[ 'format' ][ 'numberOfChannels' ],
+        'container': metadata[ 'format' ][ 'container' ],
+        'filename': filepath,
+    }
+}
+
 hasCompletedFetching = {};
 let files = {};
 const parseDir = ( dat, req, existingData ) => {
