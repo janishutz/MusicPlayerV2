@@ -155,7 +155,6 @@ const app = Vue.createApp( {
                         }
                     }
                 }
-                // TODO: update all those items to use custom queue manager for queue pos
                 this.playingSong = this.songQueue[ this.queuePos ];
                 this.sendUpdate( 'songQueue' );
                 this.sendUpdate( 'playingSong' );
@@ -322,8 +321,6 @@ const app = Vue.createApp( {
                         } else {
                             this.playbackPosBeautified += secondCount;
                         }
-
-                        // TODO: Check playback duration with backend analysis
 
                         if ( this.isShowingRemainingTime ) {
                             const minuteCounts = Math.floor( ( this.playingSong.duration - this.pos ) / 60 );
