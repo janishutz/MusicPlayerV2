@@ -288,10 +288,30 @@ createApp( {
             }
         
             return flux;
+        },
+        notifier() {
+            console.log( 'notifier enabled' );
+            // Detect if window is currently in focus
+            window.onblur = () => {
+                console.log( 'left browser or page' );
+            }
+
+            // Detect key events
+            window.addEventListener( 'keypress', keyEvent => {
+                console.log( keyEvent.key );
+            } );
+
+            // Detect if browser window becomes hidden (also with blur event)
+            document.addEventListener( 'visibilitychange', visibilityEvent => {
+                if ( document.visibilityState === 'hidden' ) {
+                    console.log( 'left page' );
+                }
+            } );
         }
     },
     mounted() {
         this.connect();
+        this.notifier();
         // if ( this.visualizationSettings === 'mic' ) {
         //     this.micAudioHandler();
         // }
