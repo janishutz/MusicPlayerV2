@@ -17,6 +17,7 @@ createApp( {
             micAnalyzer: null,
             beatDetected: false,
             colorThief: null,
+            lastDispatch: new Date().getTime() - 5000,
         };
     },
     computed: {
@@ -290,23 +291,41 @@ createApp( {
             return flux;
         },
         notifier() {
-            console.log( 'notifier enabled' );
+            if ( parseInt( this.lastDispatch ) + 5000 < new Date().getTime() ) {
+
+            }
+            Notification.requestPermission();
+
+            console.warn( '[ notifier ]: Status is now enabled \n\n-> Any leaving or tampering with the website will send a notification to the host' );
             // Detect if window is currently in focus
             window.onblur = () => {
-                console.log( 'left browser or page' );
+                this.sendNotification( 'blur' );
             }
 
-            // Detect key events
-            window.addEventListener( 'keypress', keyEvent => {
-                console.log( keyEvent.key );
+            // Detect if browser window becomes hidden (also with blur event)
+            document.onvisibilitychange = () => {
+                if ( document.visibilityState === 'hidden' ) {
+                    this.sendNotification( 'visibility' );
+                }
+            };
+        },
+        sendNotification( notification ) {
+            let fetchOptions = {
+                method: 'post',
+                body: JSON.stringify( { 'type': notification } ),
+                headers: {
+                    'Content-Type': 'application/json',
+                    'charset': 'utf-8'
+                },
+            };
+            fetch( '/clientStatusUpdate', fetchOptions ).catch( err => {
+                console.error( err );
             } );
 
-            // Detect if browser window becomes hidden (also with blur event)
-            document.addEventListener( 'visibilitychange', visibilityEvent => {
-                if ( document.visibilityState === 'hidden' ) {
-                    console.log( 'left page' );
-                }
-            } );
+            new Notification( 'YOU ARE UNDER SURVEILLANCE', { 
+                body: 'Please return to the original webpage immediately!',
+                requireInteraction: true,
+             } )
         }
     },
     mounted() {

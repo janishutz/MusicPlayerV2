@@ -11,6 +11,14 @@
     </head>
     <body>
         <div id="app">
+            <div v-if="isShowingWarning" class="warning">
+                <h3>WARNING!</h3>
+                <p>A client display is being tampered with!</p>
+                <p>A desktop notification with a warning has already been dispatched.</p>
+                <button @click="dismissNotification()">Ok</button>
+
+                <div class="flash"></div>
+            </div>
             <div v-if="isPreparingToPlay" class="preparingToPlay">
                 <span class="material-symbols-outlined loading-spinner">autorenew</span>
                 <h1>Loading player...</h1>

@@ -38,6 +38,7 @@ const app = Vue.createApp( {
             isPreparingToPlay: false,
             additionalSongInfo: {},
             hasFinishedInit: false,
+            isShowingWarning: false,
 
             // For use with playlists that are partially from apple music and 
             // local drive
@@ -290,7 +291,9 @@ const app = Vue.createApp( {
                                 } );
                             } );
                         }
-                        this.audioPlayer.pause();
+                        try {
+                            this.audioPlayer.pause();
+                        } catch ( err ) {}
                     } else {
                         this.audioPlayer.play();
                         this.musicKit.pause();
@@ -619,6 +622,43 @@ const app = Vue.createApp( {
                 const result = await this.musicKit.api.music( '/v1/catalog/ch/search', queryParameters );
                 console.log( result );
             } )();
+        },
+        connectToNotifier() {
+            let source = new EventSource( '/mainNotifier', { withCredentials: true } );
+            source.onmessage = ( e ) => {
+                let data;
+                try {
+                    data = JSON.parse( e.data );
+                } catch ( err ) {
+                    data = { 'type': e.data };
+                }
+                if ( data.type === 'blur' ) {
+                    this.isShowingWarning = true;
+                } else if ( data.type === 'visibility' ) {
+                    this.isShowingWarning = true;
+                }
+            };
+
+            source.onopen = () => {
+                console.log( 'client notifier connected successfully' );
+            };
+
+            let self = this;
+                
+            source.addEventListener( 'error', function( e ) {
+                if ( e.eventPhase == EventSource.CLOSED ) source.close();
+
+                if ( e.target.readyState == EventSource.CLOSED ) {
+                    console.log( 'disconnected' );
+                }
+                
+                setTimeout( () => {
+                    self.connectToNotifier();
+                }, 1000 );
+            }, false );
+        },
+        dismissNotification() {
+            this.isShowingWarning = false;
         }
     },
     watch: {
@@ -653,6 +693,7 @@ const app = Vue.createApp( {
         } else {
             this.initMusicKit();
         }
+        this.connectToNotifier();
         fetch( '/getLocalIP' ).then( res => {
             if ( res.status === 200 ) {
                 res.text().then( ip => {

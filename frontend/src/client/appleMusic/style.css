@@ -313,3 +313,47 @@ body, html {
 .slider-inactive {
     cursor: default !important;
 }
+
+
+.warning {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 40vw;
+    height: 50vh;
+    font-size: 2vh;
+    background-color: rgb(255, 0, 0);
+    color: white;
+    position: fixed;
+    right: 1vh;
+    top: 1vh;
+    flex-direction: column;
+    z-index: 100;
+}
+
+.warning h3 {
+    font-size: 4vh;
+}
+
+.warning .flash {
+    background-color: rgba(255, 0, 0, 0.4);
+    animation: flashing linear infinite 1s;
+    width: 100vw;
+    height: 100vh;
+    top: 0;
+    left: 0;
+    position: fixed;
+    z-index: -1;
+}
+
+@keyframes flashing {
+    0% {
+        opacity: 0;
+    }
+    50% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0;
+    }
+}

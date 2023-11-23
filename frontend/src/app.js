@@ -115,7 +115,7 @@ app.get( '/clientDisplayNotifier', ( req, res ) => {
 app.get( '/mainNotifier', ( req, res ) => {
     const ipRetrieved = req.headers[ 'x-forwarded-for' ];
     const ip = ipRetrieved ? ipRetrieved.split( /, / )[ 0 ] : req.connection.remoteAddress;
-    if ( ip === '::ffff:127.0.0.1' ) {
+    if ( ip === '::ffff:127.0.0.1' || ip === '::1' ) {
         res.writeHead( 200, {
             'Content-Type': 'text/event-stream',
             'Cache-Control': 'no-cache',
@@ -123,7 +123,7 @@ app.get( '/mainNotifier', ( req, res ) => {
         } );
         res.status( 200 );
         res.flushHeaders();
-        let det = { 'type': 'basics', 'data': connectedClients };
+        let det = { 'type': 'basics' };
         res.write( `data: ${ JSON.stringify( det ) }\n\n` );
         connectedMain = res;
     } else {
@@ -199,22 +199,23 @@ app.post( '/statusUpdate', ( req, res ) => {
 } );
 
 // STATUS UPDATE from the client display to send to main ui
-const allowedMainUpdates = [ 'disconnect', 'fullScreenStatus', 'visibility' ];
-app.get( '/clientStatusUpdate/:status', ( req, res ) => {
-    if ( allowedTypes.includes( req.body.type ) ) {
+// Send update if page is closed
+const allowedMainUpdates = [ 'blur', 'visibility' ];
+app.post( '/clientStatusUpdate', ( req, res ) => {
+    if ( allowedMainUpdates.includes( req.body.type ) ) {
         const ipRetrieved = req.headers[ 'x-forwarded-for' ];
         const ip = ipRetrieved ? ipRetrieved.split( /, / )[ 0 ] : req.connection.remoteAddress;
-        sendClientUpdate( req.body.type, req.body.data, ip );
+        sendClientUpdate( req.body.type, ip );
         res.send( 'ok' );
     } else {
         res.status( 400 ).send( 'ERR_UNKNOWN_TYPE' );
     }
 } );
 
-const sendClientUpdate = ( update, data, ip ) => {
-    for ( let main in connectedMain ) {
-        connectedMain[ main ].write( 'data: ' + JSON.stringify( { 'type': update, 'ip': ip, 'data': data } ) + '\n\n' );
-    }
+const sendClientUpdate = ( update, ip ) => {
+    try {
+        connectedMain.write( 'data: ' + JSON.stringify( { 'type': update, 'ip': ip } ) + '\n\n' );
+    } catch ( err ) {}
 }
 
 app.get( '/indexDirs', ( req, res ) => {
