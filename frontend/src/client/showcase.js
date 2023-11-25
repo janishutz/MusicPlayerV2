@@ -154,11 +154,19 @@ createApp( {
                 setTimeout( () => {
                     if ( !self.isReconnecting ) {
                         self.isReconnecting = true;
-                        self.connect();
-                        self.isReconnecting = false;
+                        self.tryReconnect();
                     }
                 }, 1000 );
             }, false );
+        },
+        tryReconnect() {
+            const int = setInterval( () => {
+                if ( !this.isReconnecting ) {
+                    clearInterval( int );
+                } else {
+                    connectToSSESource();
+                }
+            }, 1000 );
         },
         handleBackground() {
             let colourDetails = [];

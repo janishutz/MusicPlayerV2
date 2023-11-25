@@ -78,6 +78,7 @@ const connectToSSESource = () => {
         };
 
         source.onopen = () => {
+            isReconnecting = false;
             console.log( '[ BACKEND INTEGRATION ] Connection to notifier successful' );
         };
             
@@ -86,13 +87,9 @@ const connectToSSESource = () => {
 
             setTimeout( () => {
                 if ( !isReconnecting ) {
-                    if ( errorCount > 5 ) {
-                        isSSEAuth = false;
-                    }
                     isReconnecting = true;
                     console.log( '[ BACKEND INTEGRATION ] Disconnected from notifier, reconnecting...' );
-                    connectToSSESource();
-                    isReconnecting = false;
+                    tryReconnect();
                 }
             }, 1000 );
         }, false );
@@ -107,6 +104,22 @@ const connectToSSESource = () => {
             }
         } );
     }
+}
+
+const tryReconnect = () => {
+    const int = setInterval( () => {
+        if ( !isReconnecting ) {
+            clearInterval( int );
+        } else {
+            if ( errorCount > 5 ) {
+                isSSEAuth = false;
+                errorCount = 0;
+            } else {
+                errorCount += 1;
+            }
+            connectToSSESource();
+        }
+    }, 1000 );
 }
 
 let authKey = conf.authKey ?? '';
