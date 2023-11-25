@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta http-equiv="X-UA-Compatible" content="IE=7">
+        <meta http-equiv="X-UA-Compatible" content="ie=edge">
+        <title>Showcase - MusicPlayerV2</title>
+        <link rel="stylesheet" href="/fancy/showcase.css">
+        <link rel="stylesheet" href="/fancy/backgroundAnim.css">
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    </head>
+    <body>
+        <div class="info">Designed and developed by Janis Hutz <a href="https://janishutz.com" target="_blank" style="text-decoration: none; color: white;">https://janishutz.com</a></div>
+        <div class="content" id="app">
+            <div v-if="hasLoaded" style="width: 100%">
+                <div class="current-song-wrapper">
+                    <span class="material-symbols-outlined fancy-view-song-art" v-if="!playingSong.hasCoverArt">music_note</span>
+                    <img v-else-if="playingSong.hasCoverArt && playingSong.coverArtOrigin === 'api'" :src="playingSong.coverArtURL" class="fancy-view-song-art" id="current-image" crossorigin="anonymous">
+                    <img v-else :src="'/getSongCover?filename=' + playingSong.filename" class="fancy-view-song-art" id="current-image">
+                    <div class="current-song">
+                        <progress max="1000" id="progress" :value="progressBar"></progress>
+                        <h1>{{ playingSong.title }}</h1>
+                        <p class="dancing-style" v-if="playingSong.dancingStyle">{{ playingSong.dancingStyle }}</p>
+                        <p>{{ playingSong.artist }}</p>
+                    </div>
+                </div>
+                <div class="mode-selector-wrapper">
+                    <select v-model="visualizationSettings" @change="setVisualization()">
+                        <option value="mic">Microphone (Mic access required)</option>
+                        <option value="bpm">BPM (might not be 100% accurate)</option>
+                        <option value="off">No visualization except background</option>
+                    </select>
+                </div>
+                <div class="song-list-wrapper">
+                    <div v-for="song in songQueue" class="song-list">
+                        <span class="material-symbols-outlined song-image" v-if="!song.hasCoverArt && ( playingSong.filename !== song.filename || isPlaying )">music_note</span>
+                        <img v-else-if="song.hasCoverArt && ( playingSong.filename !== song.filename || isPlaying ) && song.coverArtOrigin === 'api'" :src="song.coverArtURL" class="song-image">
+                        <img v-else-if="song.hasCoverArt && ( playingSong.filename !== song.filename || isPlaying ) && song.coverArtOrigin !== 'api'" :src="'/getSongCover?filename=' + song.filename" class="song-image">
+                        <div v-if="playingSong.filename === song.filename && isPlaying" class="playing-symbols">
+                            <div class="playing-symbols-wrapper">
+                                <div class="playing-bar" id="bar-1"></div>
+                                <div class="playing-bar" id="bar-2"></div>
+                                <div class="playing-bar" id="bar-3"></div>
+                            </div>
+                        </div>
+                        <span class="material-symbols-outlined pause-icon" v-if="!isPlaying && playingSong.filename === song.filename">pause</span>
+                        <div class="song-details-wrapper">
+                            <h3>{{ song.title }}</h3>
+                            <p>{{ song.artist }}</p>
+                        </div>
+                        <div class="time-until">
+                            {{ getTimeUntil( song ) }}
+                        </div>
+                    </div>
+                    <!-- <img :src="" alt=""> -->
+                </div>
+            </div>
+            <div v-else>
+                <h1>Loading...</h1>
+            </div>
+            <div class="background" id="background">
+                <div class="beat"></div>
+                <div class="beat-manual"></div>
+            </div>
+        </div>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.1/jquery.min.js"></script>
+        <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.3.0/color-thief.umd.js"></script>
+        <script src="/fancy/showcase.js"></script>
+    </body>
+</html>

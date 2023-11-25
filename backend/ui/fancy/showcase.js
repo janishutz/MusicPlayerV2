@@ -18,6 +18,7 @@ createApp( {
             beatDetected: false,
             colorThief: null,
             lastDispatch: new Date().getTime() - 5000,
+            isReconnecting: false,
         };
     },
     computed: {

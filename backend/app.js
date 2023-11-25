@@ -4,7 +4,7 @@ const path = require( 'path' );
 const expressSession = require( 'express-session' );
 const fs = require( 'fs' );
 const bodyParser = require( 'body-parser' );
-const favicon = require( 'serve-favicon' );
+// const favicon = require( 'serve-favicon' );
 
 const authKey = '' + fs.readFileSync( path.join( __dirname + '/authorizationKey.txt' ) );
 
@@ -37,6 +37,98 @@ app.get( '/showcase.js', ( request, response ) => {
 app.get( '/showcase.css', ( request, response ) => {
     response.sendFile( path.join( __dirname + '/ui/showcase.css' ) );
 } );
+
+app.post( '/authSSE', ( req, res ) => {
+    if ( req.body.authKey === authKey ) {
+        req.session.isAuth = true;
+        res.send( 'ok' );
+    } else {
+        res.send( 'hello' );
+    }
+} );
+
+app.post( '/fancy/auth', ( req, res ) => {
+    if ( req.body.key === authKey ) {
+        req.session.isAuth = true;
+        res.redirect( '/fancy' );
+    } else {
+        res.send( 'wrong' );
+    }
+} );
+
+app.get( '/fancy', ( req, res ) => {
+    if ( req.session.isAuth ) {
+        res.sendFile( path.join( __dirname + '/ui/fancy/showcase.html' ) );
+    } else {
+        res.sendFile( path.join( __dirname + '/ui/fancy/auth.html' ) );
+    }
+} );
+
+app.get( '/fancy/showcase.js', ( req, res ) => {
+    if ( req.session.isAuth ) {
+        res.sendFile( path.join( __dirname + '/ui/fancy/showcase.js' ) );
+    } else {
+        res.redirect( '/' );
+    }
+} );
+
+app.get( '/fancy/showcase.css', ( req, res ) => {
+    if ( req.session.isAuth ) {
+        res.sendFile( path.join( __dirname + '/ui/fancy/showcase.css' ) );
+    } else {
+        res.redirect( '/' );
+    }
+} );
+
+app.get( '/fancy/backgroundAnim.css', ( req, res ) => {
+    if ( req.session.isAuth ) {
+        res.sendFile( path.join( __dirname + '/ui/fancy/backgroundAnim.css' ) );
+    } else {
+        res.redirect( '/' );
+    }
+} );
+
+let connectedMain = {};
+
+app.get( '/mainNotifier', ( req, res ) => {
+    const ipRetrieved = req.headers[ 'x-forwarded-for' ];
+    const ip = ipRetrieved ? ipRetrieved.split( /, / )[ 0 ] : req.connection.remoteAddress;
+    if ( req.session.isAuth ) {
+        res.writeHead( 200, {
+            'Content-Type': 'text/event-stream',
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive',
+        } );
+        res.status( 200 );
+        res.flushHeaders();
+        let det = { 'type': 'basics' };
+        res.write( `data: ${ JSON.stringify( det ) }\n\n` );
+        connectedMain = res;
+    } else {
+        res.send( 'wrong' );
+    }
+} );
+
+// STATUS UPDATE from the client display to send to main ui
+// Send update if page is closed
+const allowedMainUpdates = [ 'blur', 'visibility' ];
+app.post( '/clientStatusUpdate', ( req, res ) => {
+    if ( allowedMainUpdates.includes( req.body.type ) ) {
+        const ipRetrieved = req.headers[ 'x-forwarded-for' ];
+        const ip = ipRetrieved ? ipRetrieved.split( /, / )[ 0 ] : req.connection.remoteAddress;
+        sendClientUpdate( req.body.type, ip );
+        res.send( 'ok' );
+    } else {
+        res.status( 400 ).send( 'ERR_UNKNOWN_TYPE' );
+    }
+} );
+
+const sendClientUpdate = ( update, ip ) => {
+    try {
+        connectedMain.write( 'data: ' + JSON.stringify( { 'type': update, 'ip': ip } ) + '\n\n' );
+    } catch ( err ) {}
+}
+
 
 app.post( '/connect', ( request, response ) => {
     if ( request.body.authKey === authKey ) {

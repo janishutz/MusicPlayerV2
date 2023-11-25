@@ -12,6 +12,7 @@ const ip = require( 'ip' );
 const jwt = require( 'jsonwebtoken' );
 const shell = require( 'electron' ).shell;
 const beautify = require( 'json-beautify' );
+const EventSource = require( 'eventsource' );
 
 
 app.use( bodyParser.urlencoded( { extended: false } ) );
@@ -41,11 +42,71 @@ const connect = () => {
         } ).catch( err => {
             console.error( err );
         } );
+        connectToSSESource();
         return 'connecting';
     } else {
         return 'noAuthKey';
     }
 };
+
+let isSSEAuth = false;
+let sessionToken = '';
+let errorCount = 0;
+let isReconnecting = false;
+
+const connectToSSESource = () => {
+    if ( isSSEAuth ) {
+        let source = new EventSource( remoteURL + '/mainNotifier', { 
+            https: true, 
+            withCredentials: true,
+            headers: {
+                'Cookie': sessionToken
+            }
+        } );
+        source.onmessage = ( e ) => {
+            let data;
+            try {
+                data = JSON.parse( e.data );
+            } catch ( err ) {
+                data = { 'type': e.data };
+            }
+            if ( data.type === 'blur' ) {
+                sendClientUpdate( data.type, data.ip );
+            } else if ( data.type === 'visibility' ) {
+                sendClientUpdate( data.type, data.ip );
+            }
+        };
+
+        source.onopen = () => {
+            console.log( '[ BACKEND INTEGRATION ] Connection to notifier successful' );
+        };
+            
+        source.addEventListener( 'error', function( e ) {
+            if ( e.eventPhase == EventSource.CLOSED ) source.close();
+
+            setTimeout( () => {
+                if ( !isReconnecting ) {
+                    if ( errorCount > 5 ) {
+                        isSSEAuth = false;
+                    }
+                    isReconnecting = true;
+                    console.log( '[ BACKEND INTEGRATION ] Disconnected from notifier, reconnecting...' );
+                    connectToSSESource();
+                }
+            }, 1000 );
+        }, false );
+    } else {
+        axios.post( remoteURL + '/authSSE', { 'authKey': authKey } ).then( res => {
+            if ( res.status == 200 ) {
+                sessionToken = res.headers[ 'set-cookie' ][ 0 ].slice( 0, res.headers[ 'set-cookie' ][ 0 ].indexOf( ';' ) );
+                isSSEAuth = true;
+                connectToSSESource();
+            } else {
+                connectToSSESource();
+            }
+        } );
+    }
+}
 
 let authKey = conf.authKey ?? '';
 

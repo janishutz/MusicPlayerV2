@@ -13,6 +13,7 @@ createApp( {
             colourPalette: [],
             progressBar: 0,
             timeTracker: null,
+            isReconnecting: false,
         };
     },
     computed: {
@@ -125,7 +126,10 @@ createApp( {
                 }
 
                 setTimeout( () => {
-                    self.connect();
+                    if ( !self.isReconnecting ) {
+                        self.isReconnecting = true;
+                        self.connect();
+                    }
                 }, 1000 );
             }, false );
         },
