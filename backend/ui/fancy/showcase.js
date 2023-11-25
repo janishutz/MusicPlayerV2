@@ -139,6 +139,7 @@ createApp( {
             };
 
             source.onopen = () => {
+                this.isReconnecting = false;
                 this.hasLoaded = true;
             };
 

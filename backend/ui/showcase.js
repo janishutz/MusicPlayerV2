@@ -103,6 +103,7 @@ createApp( {
             };
 
             source.onopen = () => {
+                this.isReconnecting = false;
                 this.hasLoaded = true;
                 if ( document.fonts.status === 'loaded' ) {
                     document.getElementById( 'loading' ).classList.remove( 'loading' );

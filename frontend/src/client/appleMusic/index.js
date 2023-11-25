@@ -641,6 +641,7 @@ const app = Vue.createApp( {
             };
 
             source.onopen = () => {
+                this.isReconnecting = false;
                 console.log( 'client notifier connected successfully' );
             };
 
