@@ -150,6 +150,9 @@ app.get( '/clientDisplayNotifier', ( req, res ) => {
     let det = { 'type': 'basics', 'data': currentDetails };
     res.write( `data: ${ JSON.stringify( det ) }\n\n` );
     connectedClients[ req.session.id ] = res;
+    req.on( 'close', () => {
+        connectedClients.splice( Object.keys( connectedClients ).indexOf( req.session.id ), 1 );
+    } );
 } );
 
 const sendUpdate = ( update ) => {
