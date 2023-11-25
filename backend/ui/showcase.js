@@ -129,6 +129,7 @@ createApp( {
                     if ( !self.isReconnecting ) {
                         self.isReconnecting = true;
                         self.connect();
+                        self.isReconnecting = false;
                     }
                 }, 1000 );
             }, false );

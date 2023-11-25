@@ -92,6 +92,7 @@ const connectToSSESource = () => {
                     isReconnecting = true;
                     console.log( '[ BACKEND INTEGRATION ] Disconnected from notifier, reconnecting...' );
                     connectToSSESource();
+                    isReconnecting = false;
                 }
             }, 1000 );
         }, false );

@@ -46,6 +46,7 @@ const app = Vue.createApp( {
             rawLoadedPlaylistData: {},
             basePath: '',
             audioPlayer: null,
+            isReconnecting: false,
 
             // slider
             offset: 0,
@@ -653,7 +654,11 @@ const app = Vue.createApp( {
                 }
                 
                 setTimeout( () => {
-                    self.connectToNotifier();
+                    if ( !self.isReconnecting ) {
+                        self.isReconnecting = true;
+                        self.connect();
+                        self.isReconnecting = false;
+                    }
                 }, 1000 );
             }, false );
         },
