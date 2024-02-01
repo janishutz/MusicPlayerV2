@@ -2,3 +2,4 @@
 node_modules
 *.secret.json
 apple_private_key.p8
+musicplayerv2-server.zip
