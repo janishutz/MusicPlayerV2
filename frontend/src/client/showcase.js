@@ -18,6 +18,7 @@ createApp( {
             beatDetected: false,
             colorThief: null,
             lastDispatch: new Date().getTime() - 5000,
+            isReconnecting: false,
         };
     },
     computed: {
@@ -148,16 +149,14 @@ createApp( {
                 if ( e.eventPhase == EventSource.CLOSED ) source.close();
 
                 if ( e.target.readyState == EventSource.CLOSED ) {
-                    console.log( 'disconnected' );
+                    setTimeout( () => {
+                        if ( !self.isReconnecting ) {
+                            console.log( 'disconnected' );
+                            self.isReconnecting = true;
+                            self.tryReconnect();
+                        }
+                    }, 1000 );
                 }
-
-                // TODO: Notify about disconnect
-                setTimeout( () => {
-                    if ( !self.isReconnecting ) {
-                        self.isReconnecting = true;
-                        self.tryReconnect();
-                    }
-                }, 1000 );
             }, false );
         },
         tryReconnect() {
@@ -165,7 +164,7 @@ createApp( {
                 if ( !this.isReconnecting ) {
                     clearInterval( int );
                 } else {
-                    connectToSSESource();
+                    this.connect();
                 }
             }, 1000 );
         },

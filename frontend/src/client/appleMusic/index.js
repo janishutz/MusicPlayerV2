@@ -651,15 +651,16 @@ const app = Vue.createApp( {
                 if ( e.eventPhase == EventSource.CLOSED ) source.close();
 
                 if ( e.target.readyState == EventSource.CLOSED ) {
-                    console.log( 'disconnected' );
+                    setTimeout( () => {
+                        if ( !self.isReconnecting ) {
+                            console.log( 'disconnected' );
+                            console.log( 'reconnecting...' );
+                            self.isReconnecting = true;
+                            self.tryReconnect();
+                        }
+                    }, 1000 );
                 }
                 
-                setTimeout( () => {
-                    if ( !self.isReconnecting ) {
-                        self.isReconnecting = true;
-                        self.tryReconnect();
-                    }
-                }, 1000 );
             }, false );
         },
         tryReconnect() {
@@ -667,7 +668,7 @@ const app = Vue.createApp( {
                 if ( !this.isReconnecting ) {
                     clearInterval( int );
                 } else {
-                    connectToSSESource();
+                    this.connectToNotifier();
                 }
             }, 1000 );
         },
