@@ -12,7 +12,7 @@ const fs = require( 'fs' );
 const path = require( 'path' );
 
 // TODO: deploy non-secret version
-const settings = JSON.parse( fs.readFileSync( path.join( __dirname + '/config/apple-music-api.config.secret.json' ) ) );
+const settings = JSON.parse( fs.readFileSync( path.join( __dirname + '/config/apple-music-api.config.json' ) ) );
 
 const music = new MusicKit( {
     key: fs.readFileSync( path.join( __dirname + '/config/apple_private_key.p8' ) ).toString(),

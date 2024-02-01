@@ -361,7 +361,7 @@ app.get( '/getAppleMusicDevToken', ( req, res ) => {
     // sign dev token
     const privateKey = fs.readFileSync( path.join( __dirname + '/config/apple_private_key.p8' ) ).toString();
     // TODO: Remove secret
-    const config = JSON.parse( fs.readFileSync( path.join( __dirname + '/config/apple-music-api.config.secret.json' ) ) );
+    const config = JSON.parse( fs.readFileSync( path.join( __dirname + '/config/apple-music-api.config.json' ) ) );
     const jwtToken = jwt.sign( {}, privateKey, {
         algorithm: "ES256",
         expiresIn: "180d",
