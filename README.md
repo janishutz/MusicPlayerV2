@@ -22,6 +22,10 @@
     <img alt="App Version" src="https://img.shields.io/github/package-json/v/simplePCBuilding/MusicPlayerV2.svg?label=Development Version">
 </div>
 
+<div id="donate" align="center">
+    <a href="https://store.janishutz.com/donate" target="_blank"><img src="https://store-cdn.janishutz.com/static/support-me.jpg" width="150px"></a>
+</div>
+
 A music player, specifically created for displaying song information from a CSV or JSON file on multiple different displays that are connected
 to the same network, just from the browser. 
 
