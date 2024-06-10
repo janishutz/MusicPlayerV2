@@ -134,6 +134,46 @@
     .clr-open {
         border: black solid 1px !important;
     }
+
+    #themeSelector {
+        position: fixed;
+        top: 10px;
+        right: 10px;
+        background: none;
+        border: none;
+        color: var( --primary-color );
+        cursor: pointer;
+    }
+</style>
+
+<style>
+    .fancy-button {
+        text-decoration: none;
+        color: white;
+        padding: 20px;
+        border-radius: 20px;
+        border: none;
+        background: linear-gradient( 45deg, rgb(0, 33, 139), rgb(151, 0, 0) );
+        font-size: larger;
+        transition: all 0.5s;
+        background-size: 150%;
+        cursor: pointer;
+    }
+
+    .fancy-button:hover {
+        border-radius: 5px;
+        background-position: 50%;
+    }
+
+    .fancy-button-inactive {
+        background: linear-gradient( 45deg, rgba(0, 33, 139, 0.6), rgba(151, 0, 0, 0.6) );
+        cursor: not-allowed;
+    }
+
+    .fancy-button-inactive:hover {
+        border-radius: 20px;
+        background-position: 0px;
+    }
 </style>
 
 <script setup lang="ts">

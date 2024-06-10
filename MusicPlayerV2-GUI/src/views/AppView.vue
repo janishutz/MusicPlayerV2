@@ -2,19 +2,11 @@
     <div class="home-view">
         <img src="https://github.com/simplePCBuilding/MusicPlayerV2/raw/master/assets/logo.png" alt="MusicPlayer Logo" class="logo">
         <h1>MusicPlayer</h1>
-        <button @click="login()" class="fancy-button">Log in</button>
     </div>
 </template>
 
 <script setup lang="ts">
-import router from '@/router';
 
-    const login = () => {
-        alert( 'Logging in...' );
-        // TODO: Actually implement with sdk, then check if user has subscription for product, if so, have them proceed to /app
-        // else: proceed to /purchase where they get linked to https://store.janishutz.com/product/com.janishutz.MusicPlayer
-        router.push( '/app' );
-    }
 </script>
 
 <style scoped>

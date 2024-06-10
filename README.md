@@ -25,6 +25,8 @@
 A music player, specifically created for displaying song information from a CSV or JSON file on multiple different displays that are connected
 to the same network, just from the browser. 
 
+The [hosted version](https://music.janishutz.com) of this MusicPlayer, which is fully set up for you will be subscription-based and can be paid for on my [store](https://store.janishutz.com/product/com.janishutz.MusicPlayer). Not available yet though!
+
 # Features
 - Electron App that runs on all major Desktop OS (Linux, MacOS & Windows)
 - Show all song information over the local network on any amount of client displays
