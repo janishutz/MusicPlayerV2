@@ -1,22 +1,25 @@
 <template>
     <div>
-        <div :class="'player' + ( $props.isShowingFullScreenPlayer ? '' : ' player-hidden' )">
+        <div :class="'playlist-view' + ( isShowingFullScreenPlayer ? '' : ' hidden' )">
+            <span class="material-symbols-outlined close-fullscreen" @click="controlUI( 'hide' )">close</span>
+            <playlistView></playlistView>
+        </div>
+        <div :class="'player' + ( isShowingFullScreenPlayer ? '' : ' player-hidden' )">
             <!-- TODO: Make cover art of song or otherwise MusicPlayer Logo -->
-            <img src="https://github.com/simplePCBuilding/MusicPlayerV2/raw/master/assets/logo.png" alt="MusicPlayer Logo" class="logo-player">
-            <p class="song-name">{{ currentlyPlayingSongName }}</p>
+            <img src="https://github.com/simplePCBuilding/MusicPlayerV2/raw/master/assets/logo.png" alt="MusicPlayer Logo" class="logo-player" @click="controlUI( 'show' )">
+            <p class="song-name" @click="controlUI( 'show' )">{{ currentlyPlayingSongName }}</p>
             <div class="controls-wrapper">
-                <span class="material-symbols-outlined controls" @click="control( 'previous' )">skip_previous</span>
-                <span class="material-symbols-outlined controls" @click="control( '10s-back' )">replay_10</span>
+                <span class="material-symbols-outlined controls next-previous" @click="control( 'previous' )" id="previous">skip_previous</span>
+                <span class="material-symbols-outlined controls forward-back" @click="control( 'back' )" :style="'rotate: -' + 360 * clickCountBack + 'deg;'">replay_10</span>
                 <span class="material-symbols-outlined controls" v-if="!isPlaying" @click="playPause()" id="play-pause">pause</span>
                 <span class="material-symbols-outlined controls" v-else @click="playPause()" id="play-pause">play_arrow</span>
-                <span class="material-symbols-outlined controls" @click="control( '10s-forward' )">forward_10</span>
-                <span class="material-symbols-outlined controls" @click="control( 'next' )">skip_next</span>
+                <span class="material-symbols-outlined controls forward-back" @click="control( 'forward' )" :style="'rotate: ' + 360 * clickCountForward + 'deg;'">forward_10</span>
+                <span class="material-symbols-outlined controls next-previous" @click="control( 'next' )" id="next">skip_next</span>
 
                 <span class="material-symbols-outlined controls" @click="control( 'repeat' )" style="margin-left: 20px;">repeat{{ repeatMode }}</span>
                 <span class="material-symbols-outlined controls" @click="control( 'shuffle' )">shuffle{{ shuffleMode }}</span>
             </div>
         </div>
-        <playlistView :class="'playlist-view' + ( $props.isShowingFullScreenPlayer ? '' : ' hidden' )"></playlistView>
     </div>
 </template>
 
@@ -31,6 +34,11 @@
     const repeatMode = ref( '' );
     const shuffleMode = ref( '' );
     const currentlyPlayingSongName = ref( 'Not playing' );
+    const clickCountForward = ref( 0 );
+    const clickCountBack = ref( 0 );
+    const isShowingFullScreenPlayer = ref( false );
+
+    const emits = defineEmits( [ 'playerStateChange' ] );
 
     const playPause = () => {
         isPlaying.value = !isPlaying.value;
@@ -52,16 +60,26 @@
             } else {
                 shuffleMode.value = '';
             }
+        } else if ( action === 'forward' ) {
+            clickCountForward.value += 1;
+        } else if ( action === 'back' ) {
+            clickCountBack.value += 1;
         }
     }
 
 
-    const props = defineProps( {
-        'isShowingFullScreenPlayer': {
-            'default': false,
-            'required': true,
-            'type': Boolean
+    const controlUI = ( action: string ) => {
+        if ( action === 'show' ) {
+            isShowingFullScreenPlayer.value = true;
+            emits( 'playerStateChange', 'show' );
+        } else if ( action === 'hide' ) {
+            isShowingFullScreenPlayer.value = false;
+            emits( 'playerStateChange', 'hide' );
         }
+    }
+
+    defineExpose( {
+        controlUI,
     } );
 </script>
 
@@ -76,13 +94,20 @@
     }
 
     .song-name {
+        cursor: pointer;
         margin-left: 10px;
-        margin-right: auto;
+        width: 100%;
+        height: 100%;
+        text-align: justify;
         font-weight: bold;
         font-size: 1.25rem;
+        display: flex;
+        align-items: center;
+        flex-direction: row;
     }
 
     .logo-player {
+        cursor: pointer;
         height: 80%;
         margin-left: 30px;
     }
@@ -103,6 +128,8 @@
     .controls {
         cursor: pointer;
         font-size: 1.75rem;
+        user-select: none;
+        transition: all 0.5s ease-in-out;
     }
 
     .controls-wrapper {
@@ -115,5 +142,43 @@
 
     #play-pause {
         font-size: 2.5rem;
+    }
+
+    .controls:hover {
+        transform: scale(1.25);
+    }
+
+    .forward-back {
+        transition: all 0.4s ease-in-out;
+    }
+
+    .next-previous {
+        transform: translateX(0px);
+        transition: all 0s;
+    }
+
+    .next-previous:hover {
+        transform: scale(1);
+    }
+
+    #previous:active {
+        transform: translateX(-10px);
+    }
+
+    #next:active {
+        transform: translateX(10px);
+    }
+
+    .close-fullscreen {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        font-size: 2.5rem;
+        color: var( --primary-color );
+        cursor: pointer;
+    }
+
+    .hidden .close-fullscreen {
+        display: none;
     }
 </style>

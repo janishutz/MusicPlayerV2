@@ -1,10 +1,10 @@
 <template>
     <div class="app-view">
         <div class="home-view" v-if="isLoggedIntoAppleMusic">
-            <libraryView></libraryView>
-            <playerView class="player-view" :is-showing-full-screen-player="isShowingFullScreenPlayer"></playerView>
+            <libraryView class="library-view"></libraryView>
+            <playerView :class="'player-view' + ( isShowingFullScreenPlayer ? ' full-screen-player' : '' )" @player-state-change="( state ) => { handlePlayerStateChange( state ) }"></playerView>
         </div>
-        <div v-else class="home-view">
+        <div v-else class="login-view">
             <img src="@/assets/appleMusicIcon.svg" alt="Apple Music Icon">
             <button class="fancy-button" style="margin-top: 20px;">Log into Apple Music</button>
         </div>
@@ -18,15 +18,32 @@
     
     const isLoggedIntoAppleMusic = ref( true );
     const isShowingFullScreenPlayer = ref( false );
+
+    const handlePlayerStateChange = ( newState: string ) => {
+        if ( newState === 'hide' ) {
+            isShowingFullScreenPlayer.value = false;
+        } else {
+            isShowingFullScreenPlayer.value = true;
+        }
+    }
 </script>
 
 <style scoped>
+    .library-view {
+        height: calc( 90vh - 10px );
+        width: 100vw;
+    }
+
     .app-view {
         height: 100vh;
         width: 100vw;
     }
 
     .home-view {
+        height: 100vh;
+    }
+
+    .login-view {
         height: 100vh;
         display: flex;
         justify-content: center;
@@ -45,5 +62,13 @@
         bottom: 10px;
         left: 10px;
         background-color: var( --secondary-color );
+        transition: all 1s;
+    }
+
+    .full-screen-player {
+        height: 100vh;
+        width: 100vw;
+        left: 0;
+        bottom: 0;
     }
 </style>

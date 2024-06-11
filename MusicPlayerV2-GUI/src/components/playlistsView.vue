@@ -1,5 +1,5 @@
 <template>
     <div>
-        <h1>Your playlists</h1>
+        <h3>Your playlists</h3>
     </div>
 </template>
