@@ -62,7 +62,7 @@
         bottom: 10px;
         left: 10px;
         background-color: var( --secondary-color );
-        transition: all 1s;
+        transition: all 0.75s ease-in-out;
     }
 
     .full-screen-player {

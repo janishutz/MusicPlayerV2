@@ -1,0 +1,32 @@
+{
+  "name": "musicplayer-v2-backend",
+  "version": "1.0.0",
+  "description": "The backend for MusicPlayerV2",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/simplePCBuilding/MusicPlayerV2.git"
+  },
+  "author": "Janis Hutz",
+  "license": "GPL-3.0-or-later",
+  "bugs": {
+    "url": "https://github.com/simplePCBuilding/MusicPlayerV2/issues"
+  },
+  "homepage": "https://github.com/simplePCBuilding/MusicPlayerV2#readme",
+  "devDependencies": {
+    "typescript": "^5.4.5"
+  },
+  "dependencies": {
+    "@types/body-parser": "^1.19.5",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/jsonwebtoken": "^9.0.6",
+    "body-parser": "^1.20.2",
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.2"
+  }
+}

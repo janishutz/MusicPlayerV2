@@ -11,7 +11,7 @@
             <div class="controls-wrapper">
                 <span class="material-symbols-outlined controls next-previous" @click="control( 'previous' )" id="previous">skip_previous</span>
                 <span class="material-symbols-outlined controls forward-back" @click="control( 'back' )" :style="'rotate: -' + 360 * clickCountBack + 'deg;'">replay_10</span>
-                <span class="material-symbols-outlined controls" v-if="!isPlaying" @click="playPause()" id="play-pause">pause</span>
+                <span class="material-symbols-outlined controls" v-if="isPlaying" @click="playPause()" id="play-pause">pause</span>
                 <span class="material-symbols-outlined controls" v-else @click="playPause()" id="play-pause">play_arrow</span>
                 <span class="material-symbols-outlined controls forward-back" @click="control( 'forward' )" :style="'rotate: ' + 360 * clickCountForward + 'deg;'">forward_10</span>
                 <span class="material-symbols-outlined controls next-previous" @click="control( 'next' )" id="next">skip_next</span>
@@ -29,6 +29,7 @@
 
     import { ref } from 'vue';
     import playlistView from '@/components/playlistView.vue';
+    import MusicKitJSWrapper from '@/scripts/player';
 
     const isPlaying = ref( false );
     const repeatMode = ref( '' );
@@ -37,12 +38,18 @@
     const clickCountForward = ref( 0 );
     const clickCountBack = ref( 0 );
     const isShowingFullScreenPlayer = ref( false );
+    const player = new MusicKitJSWrapper();
 
     const emits = defineEmits( [ 'playerStateChange' ] );
 
     const playPause = () => {
         isPlaying.value = !isPlaying.value;
         // TODO: Execute function on player
+        if ( isPlaying.value ) {
+            player.play();
+        } else {
+            player.pause();
+        }
     }
 
     const control = ( action: string ) => {
@@ -176,6 +183,11 @@
         font-size: 2.5rem;
         color: var( --primary-color );
         cursor: pointer;
+        transition: all 0.5s ease-in-out;
+    }
+
+    .close-fullscreen:hover {
+        transform: scale( 1.25 );
     }
 
     .hidden .close-fullscreen {

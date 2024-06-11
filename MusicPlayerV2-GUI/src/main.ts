@@ -9,4 +9,6 @@ const app = createApp(App)
 app.use(createPinia())
 app.use(router)
 
+localStorage.setItem( 'url', 'http://localhost:8081' );
+
 app.mount('#app')
