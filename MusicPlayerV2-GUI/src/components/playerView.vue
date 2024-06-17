@@ -1,9 +1,5 @@
 <template>
     <div>
-        <div :class="'playlist-view' + ( isShowingFullScreenPlayer ? '' : ' hidden' )">
-            <span class="material-symbols-outlined close-fullscreen" @click="controlUI( 'hide' )">close</span>
-            <playlistView></playlistView>
-        </div>
         <div :class="'player' + ( isShowingFullScreenPlayer ? '' : ' player-hidden' )">
             <!-- TODO: Make cover art of song or otherwise MusicPlayer Logo -->
             <img src="https://github.com/simplePCBuilding/MusicPlayerV2/raw/master/assets/logo.png" alt="MusicPlayer Logo" class="logo-player" @click="controlUI( 'show' )">
@@ -19,6 +15,10 @@
                 <span class="material-symbols-outlined controls" @click="control( 'repeat' )" style="margin-left: 20px;">repeat{{ repeatMode }}</span>
                 <span class="material-symbols-outlined controls" @click="control( 'shuffle' )">shuffle{{ shuffleMode }}</span>
             </div>
+        </div>
+        <div :class="'playlist-view' + ( isShowingFullScreenPlayer ? '' : ' hidden' )">
+            <span class="material-symbols-outlined close-fullscreen" @click="controlUI( 'hide' )">close</span>
+            <playlistView></playlistView>
         </div>
     </div>
 </template>
@@ -98,6 +98,7 @@
         justify-content: center;
         align-items: center;
         flex-direction: row;
+        transition: all 1s;
     }
 
     .song-name {
