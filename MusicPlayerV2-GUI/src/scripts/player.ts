@@ -1,8 +1,15 @@
+type Origin = 'apple-music' | 'disk';
+
 interface Song {
     /**
      * The ID. Either the apple music ID, or if from local disk, an ID starting in local_
      */
     id: string;
+
+    /**
+     * Origin of the song
+     */
+    origin: Origin;
 
     /**
      * The cover image as a URL
@@ -49,6 +56,9 @@ class MusicKitJSWrapper {
     config: Config;
     musicKit: any;
     isLoggedIn: boolean;
+    isPreparedToPlay: boolean;
+    repeatMode: string;
+    isShuffleEnabled: boolean;
 
     constructor () {
         this.playingSongID = 0;
@@ -58,6 +68,9 @@ class MusicKitJSWrapper {
             devToken: '',
             userToken: '',
         };
+        this.isShuffleEnabled = false;
+        this.repeatMode = '';
+        this.isPreparedToPlay = false;
         this.isLoggedIn = false;
 
         const self = this;
@@ -149,7 +162,7 @@ class MusicKitJSWrapper {
      * @returns {void}
      */
     play (): void {
-
+        this.musicKit.play();
     }
 
     /**
@@ -157,7 +170,7 @@ class MusicKitJSWrapper {
      * @returns {void}
      */
     pause (): void {
-
+        this.musicKit.pause()
     }
 
     /**
@@ -165,7 +178,12 @@ class MusicKitJSWrapper {
      * @returns {void}
      */
     skip (): void {
-
+        if ( this.playingSongID < this.queue.length - 1 ) {
+            this.playingSongID += 1;
+        } else {
+            this.playingSongID = 0;
+            this.pause();
+        }
     }
 
 
@@ -174,7 +192,11 @@ class MusicKitJSWrapper {
      * @returns {void}
      */
     previous (): void {
-
+        if ( this.playingSongID > 0 ) {
+            this.playingSongID -= 1;
+        } else {
+            this.playingSongID = this.queue.length - 1;
+        }
     }
 
     /**
@@ -183,17 +205,20 @@ class MusicKitJSWrapper {
      * @returns {void}
      */
     goToPos ( pos: number ): void {
-
+        // TODO: Implement for non-apple-music too
+        if ( this.playlist[ this.playingSongID ].origin === 'apple-music' ) {
+            this.musicKit.seekToTime( pos );
+        }
     }
 
-    // TODO: think about queue handling
     /**
      * Set, if the queue should be shuffled
      * @param {boolean} enable True to enable shuffle, false to disable
      * @returns {void}
      */
     shuffle ( enable: boolean ): void {
-
+        this.isShuffleEnabled = enable;
+        this.preparePlaying( false );
     }
 
     /**
@@ -202,7 +227,7 @@ class MusicKitJSWrapper {
      * @returns {void}
      */
     repeat ( repeatType: string ): void {
-
+        this.repeatMode = repeatType;
     }
 
     /**
@@ -211,7 +236,21 @@ class MusicKitJSWrapper {
      * @returns {void}
      */
     setPlaylist ( pl: Song[] ): void {
+        this.playlist = pl;
+        this.pause();
+        this.playingSongID = 0;
+        this.queue = [];
+    }
 
+    /**
+     * Prepare to play songs. Should be called whenever the playlist is changed or at beginning
+     * @param {boolean?} reset (OPTIONAL) Reset the players or keep playing, but shuffle playlist?
+     * @returns {void}
+     */
+    preparePlaying ( reset?: boolean ): void {
+        this.queue = [];
+        this.isPreparedToPlay = true;
+        // TODO: finish
     }
 
     /**
@@ -220,7 +259,8 @@ class MusicKitJSWrapper {
      * @returns {void}
      */
     setCurrentlyPlayingSongID ( id: string ): void {
-
+        // TODO: Implement playlist etc handling
+        this.setPlayingSong( id, 'apple-music' );
     }
 
     /**
@@ -239,7 +279,7 @@ class MusicKitJSWrapper {
      * @returns {void}
      */
     removeSong ( id: string ): void {
-
+        // TODO: Remove from queue too
     }
 
     /**
@@ -288,6 +328,26 @@ class MusicKitJSWrapper {
      */
     getPlayingIndex (): number {
         return this.playingSongID;
+    }
+
+    /**
+     * Set the currently playing song by Apple Music ID or disk path
+     * @param {string} id The ID of the song or disk path
+     * @param {Origin} origin The origin of the song.
+     * @returns {void}
+     */
+    setPlayingSong ( id: string, origin: Origin ): void {
+        if ( origin === 'apple-music' ) {
+            this.musicKit.setQueue( { 'song': id } ).then( () => {
+                setTimeout( () => {
+                    this.play();
+                }, 500 );
+            } ).catch( ( err ) => {
+                console.log( err );
+            } );
+        } else {
+            // TODO: Implement
+        }
     }
 }
 
