@@ -1,3 +1,6 @@
+// IMPORTANT: Old, unfinished version that doesn't ship! See ./music-player.ts for the actual code!
+
+
 type Origin = 'apple-music' | 'disk';
 
 interface Song {

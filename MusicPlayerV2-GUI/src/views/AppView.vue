@@ -1,13 +1,15 @@
 <template>
     <div class="app-view">
         <div class="home-view" v-if="isLoggedIntoAppleMusic">
-            <libraryView class="library-view"></libraryView>
-            <playerView :class="'player-view' + ( isShowingFullScreenPlayer ? ' full-screen-player' : '' )" @player-state-change="( state ) => { handlePlayerStateChange( state ) }"></playerView>
+            <libraryView class="library-view" :playlists="playlists"></libraryView>
         </div>
         <div v-else class="login-view">
             <img src="@/assets/appleMusicIcon.svg" alt="Apple Music Icon">
-            <button class="fancy-button" style="margin-top: 20px;">Log into Apple Music</button>
+            <button class="fancy-button" style="margin-top: 20px;" @click="logIntoAppleMusic()">Log into Apple Music</button>
+            <button class="fancy-button" title="This allows you to use local playlists only. Cover images for your songs will be fetched from the apple music api as good as possible" @click="skipLogin()">Continue without logging in</button>
         </div>
+        <playerView :class="'player-view' + ( isLoggedIntoAppleMusic ? ( isShowingFullScreenPlayer ? ' full-screen-player' : '' ) : ' player-hidden' )" @player-state-change="( state ) => { handlePlayerStateChange( state ) }"
+            ref="player"></playerView>
     </div>
 </template>
 
@@ -16,8 +18,10 @@
     import libraryView from '@/components/libraryView.vue';
     import { ref } from 'vue';
     
-    const isLoggedIntoAppleMusic = ref( true );
+    const isLoggedIntoAppleMusic = ref( false );
     const isShowingFullScreenPlayer = ref( false );
+    const player = ref( playerView );
+    const playlists = ref( [] );
 
     const handlePlayerStateChange = ( newState: string ) => {
         if ( newState === 'hide' ) {
@@ -26,21 +30,44 @@
             isShowingFullScreenPlayer.value = true;
         }
     }
+
+    let loginChecker = 0;
+
+    const logIntoAppleMusic = () => {
+        loginChecker = setInterval( () => {
+            if ( player.value.getAuth()[ 0 ] ) {
+                isLoggedIntoAppleMusic.value = true;
+                player.value.getPlaylists( ( data ) => {
+                    console.log( data.data.data );
+                    playlists.value = data.data.data;
+                } );
+                clearInterval( loginChecker );
+            } else if ( player.value.getAuth()[ 1 ] ) {
+                clearInterval( loginChecker );
+                alert( 'An error occurred when logging you in. Please try again!' );
+            }
+        }, 500 );
+    }
+
+    const skipLogin = () => {
+        isLoggedIntoAppleMusic.value = true;
+        player.value.skipLogin();
+    }
 </script>
 
 <style scoped>
     .library-view {
         height: calc( 90vh - 10px );
-        width: 100vw;
+        width: 100%;
     }
 
     .app-view {
-        height: 100vh;
-        width: 100vw;
+        height: 100%;
+        width: 100%;
     }
 
     .home-view {
-        height: 100vh;
+        height: 100%;
     }
 
     .login-view {
@@ -70,5 +97,9 @@
         width: 100vw;
         left: 0;
         bottom: 0;
+    }
+
+    .player-hidden {
+        display: none;
     }
 </style>

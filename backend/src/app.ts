@@ -26,15 +26,16 @@ const run = () => {
         // sign dev token
         const privateKey = fs.readFileSync( path.join( __dirname + '/config/apple_private_key.p8' ) ).toString();
         // TODO: Remove secret
-        const config = JSON.parse( '' + fs.readFileSync( path.join( __dirname + '/config/apple-music-api.config.json' ) ) );
-        const jwtToken = jwt.sign( {}, privateKey, {
+        const config = JSON.parse( '' + fs.readFileSync( path.join( __dirname + '/config/apple-music-api.config.secret.json' ) ) );
+        const now = new Date().getTime();
+        const tomorrow = now + 24 * 3600 * 1000;
+        const jwtToken = jwt.sign( {
+            'iss': config.teamID,
+            'iat': Math.floor( now / 1000 ),
+            'exp': Math.floor( tomorrow / 1000 ),
+        }, privateKey, {
             algorithm: "ES256",
-            expiresIn: "180d",
-            issuer: config.teamID,
-            header: {
-                alg: "ES256",
-                kid: config.keyID
-            }
+            keyid: config.keyID
         } );
         res.send( jwtToken );
     } );

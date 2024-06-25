@@ -29,7 +29,7 @@
 
     import { ref } from 'vue';
     import playlistView from '@/components/playlistView.vue';
-    import MusicKitJSWrapper from '@/scripts/player';
+    import MusicKitJSWrapper from '@/scripts/music-player';
 
     const isPlaying = ref( false );
     const repeatMode = ref( '' );
@@ -46,9 +46,9 @@
         isPlaying.value = !isPlaying.value;
         // TODO: Execute function on player
         if ( isPlaying.value ) {
-            player.play();
+            player.control( 'play' );
         } else {
-            player.pause();
+            player.control( 'pause' );
         }
     }
 
@@ -85,8 +85,28 @@
         }
     }
 
+    const getPlaylists = ( cb: ( data: object ) => void ) => {
+        player.getUserPlaylists( cb );
+    }
+
+    const logIntoAppleMusic = () => {
+        player.logIn();
+    }
+
+    const getAuth = (): boolean[] => {
+        return player.getAuth();
+    }
+
+    const skipLogin = () => {
+        player.init();
+    }
+
     defineExpose( {
+        logIntoAppleMusic,
+        getPlaylists,
         controlUI,
+        getAuth,
+        skipLogin,
     } );
 </script>
 
