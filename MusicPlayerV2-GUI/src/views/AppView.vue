@@ -1,7 +1,7 @@
 <template>
     <div class="app-view">
         <div class="home-view" v-if="isLoggedIntoAppleMusic">
-            <libraryView class="library-view" :playlists="playlists"></libraryView>
+            <libraryView class="library-view" :playlists="playlists" @selected-playlist="( id ) => { selectPlaylist( id ) }"></libraryView>
         </div>
         <div v-else class="login-view">
             <img src="@/assets/appleMusicIcon.svg" alt="Apple Music Icon">
@@ -38,7 +38,6 @@
             if ( player.value.getAuth()[ 0 ] ) {
                 isLoggedIntoAppleMusic.value = true;
                 player.value.getPlaylists( ( data ) => {
-                    console.log( data.data.data );
                     playlists.value = data.data.data;
                 } );
                 clearInterval( loginChecker );
@@ -52,6 +51,10 @@
     const skipLogin = () => {
         isLoggedIntoAppleMusic.value = true;
         player.value.skipLogin();
+    }
+
+    const selectPlaylist = ( id: string ) => {
+        player.value.selectPlaylist( id );
     }
 </script>
 

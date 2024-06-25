@@ -1,46 +1,4 @@
-type Origin = 'apple-music' | 'disk';
-
-interface Song {
-    /**
-     * The ID. Either the apple music ID, or if from local disk, an ID starting in local_
-     */
-    id: string;
-
-    /**
-     * Origin of the song
-     */
-    origin: Origin;
-
-    /**
-     * The cover image as a URL
-     */
-    cover: string;
-
-    /**
-     * The artist of the song
-     */
-    artist: string;
-
-    /**
-     * The name of the song
-     */
-    title: string;
-
-    /**
-     * Duration of the song in milliseconds
-     */
-    duration: number;
-
-    /**
-     * (OPTIONAL) The genres this song belongs to. Can be displayed on the showcase screen, but requires settings there
-     */
-    genres?: string[];
-
-    /**
-     * (OPTIONAL) This will be displayed in brackets on the showcase screens
-     */
-    additionalInfo?: string;
-}
+import type { Song } from "./song";
 
 interface Config {
     devToken: string;
@@ -61,6 +19,7 @@ class MusicKitJSWrapper {
     repeatMode: RepeatMode;
     isShuffleEnabled: boolean;
     hasEncounteredAuthError: boolean;
+    queuePos: number;
 
     constructor () {
         this.playingSongID = 0;
@@ -75,6 +34,7 @@ class MusicKitJSWrapper {
         this.isPreparedToPlay = false;
         this.isLoggedIn = false;
         this.hasEncounteredAuthError = false;
+        this.queuePos = 0;
 
         const self = this;
 
@@ -187,6 +147,39 @@ class MusicKitJSWrapper {
         this.setShuffle( this.isShuffleEnabled );
     }
 
+    setPlaylistByID ( id: string ): Promise<void> {
+        return new Promise( ( resolve, reject ) => {
+            this.musicKit.setQueue( { playlist: id } ).then( () => {
+                const pl = this.musicKit.queue.items;
+                const songs: Song[] = [];
+                for ( const item in pl ) {
+                    let url = pl[ item ].attributes.artwork.url;
+                    url = url.replace( '{w}', pl[ item ].attributes.artwork.width );
+                    url = url.replace( '{h}', pl[ item ].attributes.artwork.height );
+                    const song: Song = {
+                        artist: pl[ item ].attributes.artistName,
+                        cover: url,
+                        duration: pl[ item ].attributes.durationInMillis / 1000,
+                        id: pl[ item ].id,
+                        origin: 'apple-music',
+                        title: pl[ item ].attributes.name,
+                        genres: pl[ item ].attributes.genreNames            
+                    }
+                    songs.push( song );
+                }
+                this.playlist = songs;
+                this.setShuffle( this.isShuffleEnabled );
+                this.queuePos = 0;
+                this.playingSongID = this.queue[ 0 ];
+                this.prepare( this.playingSongID );
+                resolve();
+            } ).catch( err => {
+                console.error( err );
+                reject( err );
+            } );
+        } );
+    }
+
     /**
      * Prepare a specific song in the queue for playing and start playing
      * @param {number} playlistID The ID of the song in the playlist to prepare to play
@@ -196,6 +189,17 @@ class MusicKitJSWrapper {
         if ( this.playlist.length > 0 ) {
             this.playingSongID = playlistID;
             this.isPreparedToPlay = true;
+            if ( this.playlist[ this.playingSongID ].origin === 'apple-music' ) {
+                this.musicKit.setQueue( { 'song': this.playlist[ this.playingSongID ].id } ).then( () => {
+                    setTimeout( () => {
+                        this.control( 'play' );
+                    }, 500 );
+                } ).catch( ( err ) => {
+                    console.log( err );
+                } );
+            } else {
+                // TODO: Implement
+            }
             return true;
         } else {
             return false;
@@ -205,48 +209,54 @@ class MusicKitJSWrapper {
     /**
      * Control the player
      * @param {ControlAction} action Action to take on the player
-     * @returns {void}
+     * @returns {boolean} returns a boolean indicating if there was a change in song.
      */
-    control ( action: ControlAction ): void {
+    control ( action: ControlAction ): boolean {
         switch ( action ) {
             case "play":
                 if ( this.isPreparedToPlay ) {
                     if ( this.playlist[ this.playingSongID ].origin === 'apple-music' ) {
                         this.musicKit.play();
+                        return false;
                     } else {
+                        return false;
                         // TODO: Implement
                     }
                 } else {
-                    return;
+                    return false;
                 }
-                break;
             case "pause":
                 if ( this.isPreparedToPlay ) {
                     if ( this.playlist[ this.playingSongID ].origin === 'apple-music' ) {
                         this.musicKit.pause();
+                        return false;
                     } else {
+                        return false;
                         // TODO: Implement
                     }
                 } else {
-                    return;
+                    return false;
                 }
-                break;
             case "back-10":
                 if ( this.playlist[ this.playingSongID ].origin === 'apple-music' ) {
                     this.musicKit.seekToTime( this.musicKit.currentPlaybackTime > 10 ? this.musicKit.currentPlaybackTime - 10 : 0 );
+                    return false;
                 } else {
+                    return false;
                     // TODO: Implement
                 }
-                break;
             case "skip-10":
                 if ( this.playlist[ this.playingSongID ].origin === 'apple-music' ) {
                     if ( this.musicKit.currentPlaybackTime < ( this.playlist[ this.playingSongID ].duration - 10 ) ) {
                         this.musicKit.seekToTime( this.musicKit.currentPlaybackTime + 10 );
+                        return false;
                     } else {
                         if ( this.repeatMode !== 'once' ) {
                             this.control( 'next' );
+                            return true;
                         } else {
                             this.musicKit.seekToTime( 0 );
+                            return false;
                         }
                     }
                 } else {
@@ -264,18 +274,47 @@ class MusicKitJSWrapper {
                     //         this.sendUpdate( 'pos' );
                     //     }
                     // }
+                    return false;
                 }
-                break;
             case "next":
-                //
-                break;
+                if ( this.queuePos < this.queue.length ) {
+                    this.queuePos += 1;
+                    this.prepare( this.queue[ this.queuePos ] );
+                    return true;
+                } else {
+                    this.queuePos = 0;
+                    this.control( 'pause' );
+                    return true;
+                }
             case "previous":
+                if ( this.queuePos > 0 ) {
+                    this.queuePos -= 1;
+                    this.prepare( this.queue[ this.queuePos ] );
+                    return true;
+                } else {
+                    this.queuePos = this.queue.length - 1;
+                    return true;
+                }
         }
     }
 
     setShuffle ( enabled: boolean ) {
         this.isShuffleEnabled = enabled;
-        // TODO: Shuffle playlist
+        this.queue = [];
+        if ( enabled ) {
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            for ( const _ in this.playlist ) {
+                let val = Math.floor( Math.random() * this.playlist.length );
+                while ( this.queue.includes( val ) ) {
+                    val = Math.floor( Math.random() * this.playlist.length );
+                }
+                this.queue.push( val );
+            }
+        } else {
+            for ( const song in this.playlist ) {
+                this.queue.push( parseInt( song ) );
+            }
+        }
     }
 
     setRepeatMode ( mode: RepeatMode ) {
@@ -349,6 +388,15 @@ class MusicKitJSWrapper {
             this.apiGetRequest( 'https://api.music.apple.com/v1/me/library/playlists', cb );
             return true;
         } else {
+            return false;
+        }
+    }
+
+    getPlaying (  ): boolean {
+        if ( this.playlist[ this.playingSongID ].origin === 'apple-music' ) {
+            return this.musicKit.isPlaying;
+        } else {
+            // TODO: Implement
             return false;
         }
     }
