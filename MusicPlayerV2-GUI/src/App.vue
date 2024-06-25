@@ -36,6 +36,7 @@
         --footer-background: rgb(233, 233, 233);
         --accent-background: rgb(195, 235, 243);
         --loading-color: rgb(167, 167, 167);
+        --slider-color: rgb(119, 132, 255);
     }
 
     :root.dark {
@@ -50,6 +51,7 @@
         --footer-background: rgb(53, 53, 53);
         --accent-background: rgb(24, 12, 58);
         --loading-color: rgb(65, 65, 65);
+        --slider-color: rgb(119, 132, 255);
     }
 
     @media ( prefers-color-scheme: dark ) {
@@ -65,6 +67,7 @@
             --footer-background: rgb(53, 53, 53);
             --accent-background: rgb(24, 12, 58);
             --loading-color: rgb(65, 65, 65);
+            --slider-color: rgb(119, 132, 255);
         }
     }
 

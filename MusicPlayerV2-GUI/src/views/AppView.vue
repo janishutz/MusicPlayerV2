@@ -86,7 +86,7 @@
     }
 
     .player-view {
-        height: 10vh;
+        height: 13vh;
         width: calc( 100vw - 20px );
         position: fixed;
         bottom: 10px;

@@ -189,6 +189,12 @@ class MusicKitJSWrapper {
         if ( this.playlist.length > 0 ) {
             this.playingSongID = playlistID;
             this.isPreparedToPlay = true;
+            for ( const el in this.queue ) {
+                if ( this.queue[ el ] === playlistID ) {
+                    this.queuePos = parseInt( el );
+                    break;
+                }
+            }
             if ( this.playlist[ this.playingSongID ].origin === 'apple-music' ) {
                 this.musicKit.setQueue( { 'song': this.playlist[ this.playingSongID ].id } ).then( () => {
                     setTimeout( () => {
@@ -303,13 +309,16 @@ class MusicKitJSWrapper {
         this.queue = [];
         if ( enabled ) {
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            for ( const _ in this.playlist ) {
-                let val = Math.floor( Math.random() * this.playlist.length );
-                while ( this.queue.includes( val ) ) {
-                    val = Math.floor( Math.random() * this.playlist.length );
-                }
-                this.queue.push( val );
+            const d = [];
+            for ( const el in this.playlist ) {
+                d.push( parseInt( el ) );
             }
+            this.queue = d.map( value => ( { value, sort: Math.random() } ) )
+            .sort( ( a, b ) => a.sort - b.sort )
+            .map( ( { value } ) => value );
+            this.queue.splice( this.queue.indexOf( this.playingSongID ), 1 );
+            this.queue.push( this.playingSongID );
+            this.queue.reverse();
         } else {
             for ( const song in this.playlist ) {
                 this.queue.push( parseInt( song ) );
