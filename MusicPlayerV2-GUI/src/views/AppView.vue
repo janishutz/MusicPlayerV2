@@ -1,14 +1,15 @@
 <template>
     <div class="app-view">
-        <div class="home-view" v-if="isLoggedIntoAppleMusic">
-            <libraryView class="library-view" :playlists="playlists" @selected-playlist="( id ) => { selectPlaylist( id ) }"></libraryView>
+        <div class="home-view" v-if="isReady">
+            <libraryView class="library-view" :playlists="playlists" @selected-playlist="( id ) => { selectPlaylist( id ) }" 
+                :is-logged-in="isLoggedIntoAppleMusic" @custom-playlist="( pl ) => selectCustomPlaylist( pl )"></libraryView>
         </div>
         <div v-else class="login-view">
             <img src="@/assets/appleMusicIcon.svg" alt="Apple Music Icon">
             <button class="fancy-button" style="margin-top: 20px;" @click="logIntoAppleMusic()">Log into Apple Music</button>
             <button class="fancy-button" title="This allows you to use local playlists only. Cover images for your songs will be fetched from the apple music api as good as possible" @click="skipLogin()">Continue without logging in</button>
         </div>
-        <playerView :class="'player-view' + ( isLoggedIntoAppleMusic ? ( isShowingFullScreenPlayer ? ' full-screen-player' : '' ) : ' player-hidden' )" @player-state-change="( state ) => { handlePlayerStateChange( state ) }"
+        <playerView :class="'player-view' + ( isReady ? ( isShowingFullScreenPlayer ? ' full-screen-player' : '' ) : ' player-hidden' )" @player-state-change="( state ) => { handlePlayerStateChange( state ) }"
             ref="player"></playerView>
     </div>
 </template>
@@ -17,8 +18,10 @@
     import playerView from '@/components/playerView.vue';
     import libraryView from '@/components/libraryView.vue';
     import { ref } from 'vue';
+import type { ReadFile } from '@/scripts/song';
     
     const isLoggedIntoAppleMusic = ref( false );
+    const isReady = ref( false );
     const isShowingFullScreenPlayer = ref( false );
     const player = ref( playerView );
     const playlists = ref( [] );
@@ -37,6 +40,7 @@
         loginChecker = setInterval( () => {
             if ( player.value.getAuth()[ 0 ] ) {
                 isLoggedIntoAppleMusic.value = true;
+                isReady.value = true;
                 player.value.getPlaylists( ( data ) => {
                     playlists.value = data.data.data;
                 } );
@@ -49,12 +53,17 @@
     }
 
     const skipLogin = () => {
-        isLoggedIntoAppleMusic.value = true;
+        isReady.value = true;
+        isLoggedIntoAppleMusic.value = false;
         player.value.skipLogin();
     }
 
     const selectPlaylist = ( id: string ) => {
         player.value.selectPlaylist( id );
+    }
+
+    const selectCustomPlaylist = ( playlist: ReadFile[] ) => {
+        player.value.selectCustomPlaylist( playlist );
     }
 </script>
 

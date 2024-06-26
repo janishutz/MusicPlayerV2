@@ -60,7 +60,6 @@ class SQLDB {
                 console.log( '[ SQL ] Connected to database successfully' );
                 self.sqlConnection.on( 'error', ( err ) => {
                     if ( err.code === 'ECONNRESET' ) {
-                        console.error( '[ SQL ] Reconnecting to database, because connection was reset!' );
                         self.isRecovering = true;
                         setTimeout( () => {
                             self.disconnect();
@@ -84,7 +83,7 @@ class SQLDB {
             if ( error ) throw error;
             if ( results[ 0 ][ '@@default_storage_engine' ] !== 'InnoDB' ) throw 'DB HAS TO USE InnoDB!';
         } );
-        this.sqlConnection.query( 'CREATE TABLE jh_store_users ( account_id INT ( 10 ) NOT NULL AUTO_INCREMENT, email TINYTEXT NOT NULL, data VARCHAR( 55000 ), uid TINYTEXT, lang TINYTEXT, username TINYTEXT, stripe_user_id TINYTEXT, settings VARCHAR( 5000 ), PRIMARY KEY ( account_id ) ) ENGINE=INNODB;', ( error ) => {
+        this.sqlConnection.query( 'CREATE TABLE music_users ( account_id INT ( 10 ) NOT NULL AUTO_INCREMENT, email TINYTEXT NOT NULL, uid TINYTEXT, lang TINYTEXT, username TINYTEXT, settings VARCHAR( 5000 ), PRIMARY KEY ( account_id ) ) ENGINE=INNODB;', ( error ) => {
             if ( error ) if ( error.code !== 'ER_TABLE_EXISTS_ERROR' ) throw error;
             return 'DONE';
         } );

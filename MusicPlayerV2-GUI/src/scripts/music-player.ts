@@ -1,4 +1,4 @@
-import type { Song } from "./song";
+import type { SearchResult, Song, SongMove } from "./song";
 
 interface Config {
     devToken: string;
@@ -20,6 +20,7 @@ class MusicKitJSWrapper {
     isShuffleEnabled: boolean;
     hasEncounteredAuthError: boolean;
     queuePos: number;
+    audioPlayer: HTMLAudioElement;
 
     constructor () {
         this.playingSongID = 0;
@@ -35,6 +36,7 @@ class MusicKitJSWrapper {
         this.isLoggedIn = false;
         this.hasEncounteredAuthError = false;
         this.queuePos = 0;
+        this.audioPlayer = document.getElementById( 'local-audio' ) as HTMLAudioElement;
 
         const self = this;
 
@@ -77,6 +79,7 @@ class MusicKitJSWrapper {
         fetch( localStorage.getItem( 'url' ) + '/getAppleMusicDevToken', { credentials: 'include' } ).then( res => {
             if ( res.status === 200 ) {
                 res.text().then( token => {
+                    this.audioPlayer = document.getElementById( 'local-audio' ) as HTMLAudioElement;
                     // MusicKit global is now defined
                     MusicKit.configure( {
                         developerToken: token,
@@ -204,7 +207,11 @@ class MusicKitJSWrapper {
                     console.log( err );
                 } );
             } else {
-                // TODO: Implement
+                this.audioPlayer = document.getElementById( 'local-audio' ) as HTMLAudioElement;
+                this.audioPlayer.src = this.playlist[ this.playingSongID ].id;
+                setTimeout( () => {
+                    this.control( 'play' );
+                }, 500 );
             }
             return true;
         } else {
@@ -225,8 +232,8 @@ class MusicKitJSWrapper {
                         this.musicKit.play();
                         return false;
                     } else {
+                        this.audioPlayer.play();
                         return false;
-                        // TODO: Implement
                     }
                 } else {
                     return false;
@@ -237,8 +244,8 @@ class MusicKitJSWrapper {
                         this.musicKit.pause();
                         return false;
                     } else {
+                        this.audioPlayer.pause();
                         return false;
-                        // TODO: Implement
                     }
                 } else {
                     return false;
@@ -248,8 +255,8 @@ class MusicKitJSWrapper {
                     this.musicKit.seekToTime( this.musicKit.currentPlaybackTime > 10 ? this.musicKit.currentPlaybackTime - 10 : 0 );
                     return false;
                 } else {
+                    this.audioPlayer.currentTime = this.audioPlayer.currentTime > 10 ? this.audioPlayer.currentTime - 10 : 0;
                     return false;
-                    // TODO: Implement
                 }
             case "skip-10":
                 if ( this.playlist[ this.playingSongID ].origin === 'apple-music' ) {
@@ -266,30 +273,30 @@ class MusicKitJSWrapper {
                         }
                     }
                 } else {
-                    // TODO: Finish
-                    // if ( this.audioPlayer.currentTime < ( this.playlist[ this.playingSongID ].duration - 10 ) ) {
-                    //     this.audioPlayer.currentTime = this.audioPlayer.currentTime + 10;
-                    //     this.pos = this.audioPlayer.currentTime;
-                    //     this.sendUpdate( 'pos' );
-                    // } else {
-                    //     if ( this.repeatMode !== 'one' ) {
-                    //         this.control( 'next' );
-                    //     } else {
-                    //         this.audioPlayer.currentTime = 0;
-                    //         this.pos = this.audioPlayer.currentTime;
-                    //         this.sendUpdate( 'pos' );
-                    //     }
-                    // }
+                    if ( this.audioPlayer.currentTime < ( this.playlist[ this.playingSongID ].duration - 10 ) ) {
+                        this.audioPlayer.currentTime = this.audioPlayer.currentTime + 10;
+                    } else {
+                        if ( this.repeatMode !== 'once' ) {
+                            this.control( 'next' );
+                        } else {
+                            this.audioPlayer.currentTime = 0;
+                        }
+                    }
                     return false;
                 }
             case "next":
-                if ( this.queuePos < this.queue.length ) {
+                if ( this.queuePos < this.queue.length - 1 ) {
                     this.queuePos += 1;
                     this.prepare( this.queue[ this.queuePos ] );
                     return true;
                 } else {
                     this.queuePos = 0;
-                    this.control( 'pause' );
+                    if ( this.repeatMode !== 'all' ) {
+                        this.control( 'pause' );
+                    } else {
+                        this.playingSongID = this.queue[ this.queuePos ];
+                        this.prepare( this.queue[ this.queuePos ] );
+                    }
                     return true;
                 }
             case "previous":
@@ -324,6 +331,13 @@ class MusicKitJSWrapper {
                 this.queue.push( parseInt( song ) );
             }
         }
+        // Find current song ID in queue
+        for ( const el in this.queue ) {
+            if ( this.queue[ el ] === this.playingSongID ) {
+                this.queuePos = parseInt( el );
+                break;
+            }
+        }
     }
 
     setRepeatMode ( mode: RepeatMode ) {
@@ -334,8 +348,38 @@ class MusicKitJSWrapper {
         if ( this.playlist[ this.playingSongID ].origin === 'apple-music' ) {
             this.musicKit.seekToTime( pos );
         } else {
-            // TODO: Implement
+            this.audioPlayer.currentTime = pos;
         }
+    }
+
+
+    moveSong ( move: SongMove ) {
+        const newQueue = [];
+        const finishedQueue = [];
+        let songID = 0;
+        for ( const song in this.playlist ) {
+            if ( this.playlist[ song ].id === move.songID ) {
+                songID = parseInt( song );
+                break;
+            }
+        }
+        for ( const el in this.queue ) {
+            if ( this.queue[ el ] !== songID ) {
+                newQueue.push( this.queue[ el ] );
+            }
+        }
+        let hasBeenAdded = false;
+        for ( const el in newQueue ) {
+            if ( parseInt( el ) === move.newPos ) {
+                finishedQueue.push( songID );
+                hasBeenAdded = true;
+            }
+            finishedQueue.push( newQueue[ el ] );
+        }
+        if ( !hasBeenAdded ) {
+            finishedQueue.push( songID );
+        }
+        this.queue = finishedQueue;
     }
 
     /**
@@ -346,8 +390,7 @@ class MusicKitJSWrapper {
         if ( this.playlist[ this.playingSongID ].origin === 'apple-music' ) {
             return this.musicKit.currentPlaybackTime;
         } else {
-            return 0;
-            // TODO: Implement
+            return this.audioPlayer.currentTime;
         }
     }
 
@@ -365,6 +408,14 @@ class MusicKitJSWrapper {
      */
     getPlayingSongID (): number {
         return this.playingSongID;
+    }
+
+    /**
+     * Get the queue index of the currently playing song
+     * @returns {number}
+     */
+    getQueueID (): number {
+        return this.queuePos;
     }
 
     /**
@@ -405,14 +456,25 @@ class MusicKitJSWrapper {
         if ( this.playlist[ this.playingSongID ].origin === 'apple-music' ) {
             return this.musicKit.isPlaying;
         } else {
-            // TODO: Implement
-            return false;
+            return !this.audioPlayer.paused;
         }
     }
 
-    // findSongOnAppleMusic ( searchTerm: string ): Song => {
-    // TODO: Implement
-    // }
+    findSongOnAppleMusic ( searchTerm: string ): Promise<SearchResult> {
+        // TODO: Make storefront adjustable
+        return new Promise( ( resolve, reject ) => {
+            const queryParameters = { 
+                term: ( searchTerm ), 
+                types: [ 'songs' ],
+            };
+            this.musicKit.api.music( `v1/catalog/ch/search`, queryParameters ).then( results => {
+                resolve( results );
+            } ).catch( e => {
+                console.error( e );
+                reject( e );
+            } );
+        } );
+    }
 }
 
 export default MusicKitJSWrapper;

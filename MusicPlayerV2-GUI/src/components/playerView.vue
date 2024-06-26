@@ -1,40 +1,54 @@
 <template>
     <div>
-        <div :class="'player' + ( isShowingFullScreenPlayer ? '' : ' player-hidden' )">
-            <div class="main-player">
-                <!-- TODO: Make cover art of song or otherwise MusicPlayer Logo -->
-                <img src="https://github.com/simplePCBuilding/MusicPlayerV2/raw/master/assets/logo.png" alt="MusicPlayer Logo" class="logo-player" @click="controlUI( 'show' )" v-if="coverArt === ''">
-                <img :src="coverArt" alt="MusicPlayer Logo" class="logo-player" @click="controlUI( 'show' )" v-else>
-                <div class="song-name-wrapper">
-                    <p class="song-name" @click="controlUI( 'show' )">{{ currentlyPlayingSongName }} <i v-if="currentlyPlayingSongArtist">by {{ currentlyPlayingSongArtist }}</i></p>
-                    <div :class="'playback' + ( isShowingFullScreenPlayer ? ' full-screen' : '' )">
-                        <sliderView :position="pos" :active="true" :duration="duration" name="main" @pos="( pos ) => player.goToPos( pos )"
-                            v-if="isShowingFullScreenPlayer"></sliderView>
-                        <div :class="'playback-pos-wrapper' + ( isShowingFullScreenPlayer ? ' full-screen' : '' )">
-                            <p class="playback-pos">{{ nicePlaybackPos }}</p>
-                            <p v-if="!isShowingFullScreenPlayer"> / </p>
-                            <p class="playback-duration">{{ niceDuration }}</p>
+        <div class="player">
+            <div :class="'main-player' + ( isShowingFullScreenPlayer ? ' full-screen' : '' )">
+                <div :class="'song-name-wrapper' + ( isShowingFullScreenPlayer ? ' full-screen' : '' )" @click="controlUI( 'show' )">
+                    <img src="https://github.com/simplePCBuilding/MusicPlayerV2/raw/master/assets/logo.png" alt="MusicPlayer Logo" class="logo-player" v-if="coverArt === ''">
+                    <img :src="coverArt" alt="MusicPlayer Logo" class="logo-player" v-else>
+                    <div class="name-time">
+                        <p class="song-name">{{ currentlyPlayingSongName }} <i v-if="currentlyPlayingSongArtist">by {{ currentlyPlayingSongArtist }}</i></p>
+                        <div class="playback" v-if="!isShowingFullScreenPlayer">
+                            <div class="playback-pos-wrapper">
+                                <p class="playback-pos">{{ nicePlaybackPos }}</p>
+                                <p> / </p>
+                                <p class="playback-duration">{{ niceDuration }}</p> 
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div class="controls-wrapper">
-                    <span class="material-symbols-outlined controls next-previous" @click="control( 'previous' )" id="previous">skip_previous</span>
-                    <span class="material-symbols-outlined controls forward-back" @click="control( 'back' )" :style="'rotate: -' + 360 * clickCountBack + 'deg;'">replay_10</span>
-                    <span class="material-symbols-outlined controls" v-if="isPlaying" @click="playPause()" id="play-pause">pause</span>
-                    <span class="material-symbols-outlined controls" v-else @click="playPause()" id="play-pause">play_arrow</span>
-                    <span class="material-symbols-outlined controls forward-back" @click="control( 'forward' )" :style="'rotate: ' + 360 * clickCountForward + 'deg;'">forward_10</span>
-                    <span class="material-symbols-outlined controls next-previous" @click="control( 'next' )" id="next">skip_next</span>
+                <div :class="'controls-wrapper' + ( isShowingFullScreenPlayer ? ' full-screen' : '' )">
+                    <div class="main-controls">
+                        <span class="material-symbols-outlined controls next-previous" @click="control( 'previous' )" id="previous" v-if="isShowingFullScreenPlayer">skip_previous</span>
+                        <span class="material-symbols-outlined controls forward-back" @click="control( 'back' )" :style="'rotate: -' + 360 * clickCountBack + 'deg;'" v-if="isShowingFullScreenPlayer">replay_10</span>
+                        <span class="material-symbols-outlined controls" v-if="isPlaying" @click="playPause()" id="play-pause">pause</span>
+                        <span class="material-symbols-outlined controls" v-else @click="playPause()" id="play-pause">play_arrow</span>
+                        <span class="material-symbols-outlined controls forward-back" @click="control( 'forward' )" :style="'rotate: ' + 360 * clickCountForward + 'deg;'" v-if="isShowingFullScreenPlayer">forward_10</span>
+                        <span class="material-symbols-outlined controls next-previous" @click="control( 'next' )" id="next">skip_next</span>
+                    </div>
                     
-                    <span class="material-symbols-outlined controls" @click="control( 'repeat' )" style="margin-left: 20px;">repeat{{ repeatMode }}</span>
-                    <span class="material-symbols-outlined controls" @click="control( 'shuffle' )">shuffle{{ shuffleMode }}</span>
+                    <div class="slider-wrapper" v-if="isShowingFullScreenPlayer">
+                        <div class="slider-pb-pos">
+                            <p class="playback-pos">{{ nicePlaybackPos }}</p>
+                            <p class="playback-duration" @click="toggleRemaining()">{{ niceDuration }}</p> 
+                        </div>
+                        <sliderView :position="pos" :active="true" :duration="duration" name="main" @pos="( pos ) => player.goToPos( pos )"></sliderView>
+                    </div>
+
+                    <div class="shuffle-repeat" v-if="isShowingFullScreenPlayer">
+                        <span class="material-symbols-outlined controls" @click="control( 'repeat' )" style="margin-right: auto;">repeat{{ repeatMode }}</span>
+                        <span class="material-symbols-outlined controls" @click="control( 'shuffle' )">shuffle{{ shuffleMode }}</span>
+                    </div>
                 </div>
             </div>
         </div>
         <div :class="'playlist-view' + ( isShowingFullScreenPlayer ? '' : ' hidden' )">
             <span class="material-symbols-outlined close-fullscreen" @click="controlUI( 'hide' )">close</span>
-            <playlistView :playlist="playlist" class="pl-wrapper" :currently-playing="currentlyPlayingSongIndex" :is-playing="isPlaying"
-            @control="( action ) => { control( action ) }" @play-song="( song ) => { playSong( song ) }"></playlistView>
+            <playlistView :playlist="playlist" class="pl-wrapper" :currently-playing="currentlyPlayingSongIndex" :is-playing="isPlaying" :pos="pos"
+                @control="( action ) => { control( action ) }" @play-song="( song ) => { playSong( song ) }"
+                @add-new-songs="( songs ) => addNewSongs( songs )" @playlist-reorder="( move ) => moveSong( move )"></playlistView>
         </div>
+        <notificationsModule ref="notifications" location="bottomleft" size="bigger"></notificationsModule>
+        <audio src="" id="local-audio" controls="false"></audio>
     </div>
 </template>
 
@@ -46,7 +60,9 @@
     import playlistView from '@/components/playlistView.vue';
     import MusicKitJSWrapper from '@/scripts/music-player';
     import sliderView from './sliderView.vue';
-    import type { Song } from '@/scripts/song';
+    import type { ReadFile, Song, SongMove } from '@/scripts/song';
+    import { parseBlob } from 'music-metadata-browser';
+    import notificationsModule from './notificationsModule.vue';
 
     const isPlaying = ref( false );
     const repeatMode = ref( '' );
@@ -65,6 +81,7 @@
     const currentlyPlayingSongArtist = ref( '' );
     const pos = ref( 0 );
     const duration = ref( 0 );
+    const notifications = ref( notificationsModule );
 
     const emits = defineEmits( [ 'playerStateChange' ] );
 
@@ -77,6 +94,10 @@
             player.control( 'pause' );
             stopProgressTracker();
         }
+    }
+
+    const toggleRemaining = () => {
+        isShowingRemainingTime.value = !isShowingRemainingTime.value;
     }
 
     const control = ( action: string ) => {
@@ -103,9 +124,11 @@
             if ( shuffleMode.value === '' ) {
                 shuffleMode.value = '_on';
                 player.setShuffle( true );
+                getDetails();
             } else {
                 shuffleMode.value = '';
                 player.setShuffle( false );
+                getDetails();
             }
             getDetails();
         } else if ( action === 'forward' ) {
@@ -177,13 +200,71 @@
         } );
     }
 
+    const selectCustomPlaylist = async ( pl: ReadFile[] ) => {
+        let n = notifications.value.createNotification( 'Analyzing playlist', 200, 'progress', 'normal' );
+        playlist.value = [];
+        let plLoad: Song[] = [];
+        for ( let element in pl ) {
+            try {
+                plLoad.push( await fetchSongData( pl[ element ] ) );
+            } catch ( e ) {
+                console.error( e );
+            }
+            notifications.value.updateNotification( n, `Analyzing playlist (${element}/${pl.length})` );
+        }
+        playlist.value = plLoad;
+        player.setPlaylist( playlist.value );
+        player.prepare( 0 );
+        isPlaying.value = true;
+        setTimeout( () => {
+            startProgressTracker();
+            getDetails();
+        }, 2000 );
+        notifications.value.cancelNotification( n );
+        notifications.value.createNotification( 'Playlist loaded', 10, 'ok', 'normal' );
+    }
+
+    const fetchSongData = ( songDetails: ReadFile ): Promise<Song> => {
+        return new Promise( ( resolve, reject ) => {
+            fetch( songDetails.url ).then( res => {
+                if ( res.status === 200 ) {
+                    res.blob().then( blob => {
+                        parseBlob( blob ).then( data => {
+                            player.findSongOnAppleMusic( data.common.title ?? songDetails.filename.split( '.' )[ 0 ] ).then( d => {
+                                let url = d.data.results.songs.data[ 0 ].attributes.artwork.url;
+                                url = url.replace( '{w}', String( d.data.results.songs.data[ 0 ].attributes.artwork.width ) );
+                                url = url.replace( '{h}', String( d.data.results.songs.data[ 0 ].attributes.artwork.height ) );
+                                const song: Song = {
+                                    artist: data.common.artist ?? d.data.results.songs.data[ 0 ].attributes.artistName,
+                                    title: data.common.title ?? d.data.results.songs.data[ 0 ].attributes.name,
+                                    duration: data.format.duration ?? ( d.data.results.songs.data[ 0 ].attributes.durationInMillis / 1000 ),
+                                    id: songDetails.url,
+                                    origin: 'disk',
+                                    cover: url
+                                }
+                                resolve( song );
+                            } ).catch( e => {
+                                reject( e );
+                            } );
+                        } ).catch( e => {
+                            reject( e );
+                        } );
+                    } ).catch( e => {
+                        reject( e );
+                    } );
+                }
+            } ).catch( e => {
+                reject( e );
+            } );
+        } );
+    }
+
     const getDetails = () => {
         const details = player.getPlayingSong();
         currentlyPlayingSongName.value = details.title;
         coverArt.value = details.cover;
-        currentlyPlayingSongIndex.value = player.getPlayingSongID();
+        currentlyPlayingSongIndex.value = player.getQueueID();
         playlist.value = player.getQueue();
-        console.log( playlist.value );
         currentlyPlayingSongArtist.value = details.artist;
     }
 
@@ -207,7 +288,10 @@
 
 
     let progressTracker = 0;
+    let hasReachedEnd = false;
+    let hasStarted = false;
     const startProgressTracker = () => {
+        hasReachedEnd = false;
         isPlaying.value = true;
         const playingSong = player.getPlayingSong();
         duration.value = playingSong.duration;
@@ -224,9 +308,18 @@
         }
         progressTracker = setInterval( () => {
             pos.value = player.getPlaybackPos();
-            if ( pos.value > playingSong.duration - 1 ) {
-                // TODO: repeat
-                control( 'next' );
+            if ( pos.value > playingSong.duration - 1 && !hasReachedEnd ) {
+                stopProgressTracker();
+                hasReachedEnd = true;
+                if ( repeatMode.value === '_one_on' ) {
+                    player.goToPos( 0 );
+                } else {
+                    control( 'next' );
+                }
+            }
+
+            if ( pos.value > 0 && !hasStarted ) {
+                hasStarted = true;
             }
 
             const minuteCount = Math.floor( pos.value / 60 );
@@ -264,6 +357,49 @@
         isPlaying.value = false;
     }
 
+    const moveSong = ( move: SongMove ) => {
+        player.moveSong( move );
+        getDetails();
+    }
+
+    const addNewSongs = async ( songs: ReadFile[] ) => {
+        let n = notifications.value.createNotification( 'Analyzing new songs', 200, 'progress', 'normal' );
+        playlist.value = player.getPlaylist();
+        for ( let element in songs ) {
+            try {
+                playlist.value.push( await fetchSongData( songs[ element ] ) );
+            } catch ( e ) {
+                console.error( e );
+            }
+            notifications.value.updateNotification( n, `Analyzing new songs (${element}/${songs.length})` );
+        }
+        player.setPlaylist( playlist.value );
+        player.prepare( 0 );
+        isPlaying.value = true;
+        setTimeout( () => {
+            startProgressTracker();
+            getDetails();
+        }, 2000 );
+        notifications.value.cancelNotification( n );
+        notifications.value.createNotification( 'New songs added', 10, 'ok', 'normal' );
+    }
+
+    emits( 'playerStateChange', isShowingFullScreenPlayer.value ? 'show' : 'hide' );
+
+    document.addEventListener( 'keydown', ( e ) => {
+        if ( e.key === ' ' ) {
+            // TODO: fix
+            e.preventDefault();
+            playPause();
+        } else if ( e.key === 'ArrowRight' ) {
+            e.preventDefault();
+            control( 'next' );
+        } else if ( e.key === 'ArrowLeft' ) {
+            e.preventDefault();
+            control( 'previous' );
+        }
+    } );
+
     defineExpose( {
         logIntoAppleMusic,
         getPlaylists,
@@ -271,12 +407,12 @@
         getAuth,
         skipLogin,
         selectPlaylist,
+        selectCustomPlaylist,
     } );
 </script>
 
 <style scoped>
     .player {
-        height: 15%;
         width: 100%;
         display: flex;
         justify-content: center;
@@ -296,7 +432,14 @@
         position: relative
     }
 
+    .main-player.full-screen {
+        flex-direction: column;
+        height: 30vh;
+        min-height: 250px;
+    }
+
     .song-name-wrapper {
+        margin-top: 10px;
         cursor: pointer;
         margin-left: 10px;
         width: 100%;
@@ -305,22 +448,66 @@
         font-weight: bold;
         font-size: 1.25rem;
         display: flex;
-        flex-direction: column;
+        flex-direction: row;
         justify-content: center;
+        align-items: center;
+        flex-grow: 0;
+    }
+
+    .song-name-wrapper.full-screen {
+        flex-direction: row;
+        max-height: 50%;
+        align-items: center;
+    }
+
+    .name-time {
+        margin-right: auto;
+        margin-left: 10px;
     }
 
     .song-name {
         margin: 0;
+        height: fit-content;
+    }
+
+    .slider-wrapper {
+        position: relative;
+        width: 90%;
+        margin-bottom: 5px;
+    }
+
+    .shuffle-repeat {
+        margin-top: 5px;
+        display: flex;
+        width: 80%;
+        position: relative;
+        z-index: 5;
+    }
+    
+    .slider-pb-pos {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .slider-pb-pos .playback-duration {
+        margin-top: 5px;
+        margin-left: auto;
+        user-select: none;
+        cursor: pointer;
+    }
+
+    .slider-pb-pos .playback-pos {
+        margin-top: 5px;
+        user-select: none;
+        user-select: none;
     }
 
     .logo-player {
         cursor: pointer;
         height: 80%;
-        margin-left: 30px;
-    }
-
-    .player-hidden {
-        height: 100%;
+        width: auto;
+        margin-left: 10px;
     }
 
     .hidden {
@@ -340,6 +527,17 @@
         justify-content: center;
         align-items: center;
         flex-wrap: nowrap;
+    }
+
+    .controls-wrapper.full-screen {
+        flex-direction: column;
+        width: 80%;
+    }
+
+    .main-controls {
+        display: flex;
+        justify-content: center;
+        align-items: center;
     }
 
     #play-pause {
@@ -390,7 +588,7 @@
     }
 
     .pl-wrapper {
-        height: 80vh;
+        height: 70vh;
     }
 
     .playback {
@@ -412,6 +610,7 @@
         display: flex;
         justify-content: center;
         align-items: center;
+        user-select: none;
     }
 
     .playback-pos-wrapper p {
@@ -424,5 +623,28 @@
 
     .playback-pos-wrapper.full-screen .playback-duration {
         margin-left: auto;
+    }
+
+    @media only screen and (min-width: 800px) {
+        .slider-wrapper {
+            width: 40%;
+        }
+
+        .shuffle-repeat {
+            width: 35%;
+        }
+
+        .main-controls .controls {
+            font-size: 2rem;
+        }
+
+        #play-pause {
+            font-size: 3rem;
+        }
+    }
+
+    #local-audio {
+        position: fixed;
+        bottom: -50%;
     }
 </style>

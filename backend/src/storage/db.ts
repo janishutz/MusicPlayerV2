@@ -19,8 +19,8 @@ if ( typeof( __dirname ) === 'undefined' ) {
 }
 
 const dbRef = { 
-    'user': 'jh_store_users', 
-    'users': 'jh_store_users',
+    'user': 'music_users', 
+    'users': 'music_users',
 };
 
 

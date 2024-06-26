@@ -29,6 +29,7 @@
     "express": "^4.19.2",
     "jsonwebtoken": "^9.0.2",
     "node-mysql": "^0.4.2",
-    "oauth-janishutz-client-server": "file:../../oauth/client/server/dist"
+    "oauth-janishutz-client-server": "file:../../oauth/client/server/dist",
+    "socket.io": "^4.7.5"
   }
 }

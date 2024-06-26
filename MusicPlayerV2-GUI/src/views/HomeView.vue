@@ -1,8 +1,8 @@
 <template>
     <div class="home-view">
         <img src="https://github.com/simplePCBuilding/MusicPlayerV2/raw/master/assets/logo.png" alt="MusicPlayer Logo" class="logo">
-        <h1>MusicPlayer</h1>
-        <button @click="login()" class="fancy-button">Log in</button>
+        <button @click="login()" class="fancy-button">Log in / Sign up</button>
+        <p>MusicPlayer is a browser based Music Player, that allows you to connect other devices, simply with another web-browser, where you can see the current playlist with sleek animations. You can log in using your Apple Music account or load a playlist from your local disk, simply by selecting the songs using a file picker.</p>
     </div>
 </template>
 
@@ -28,5 +28,6 @@ import router from '@/router';
 
     .logo {
         height: 50vh;
+        border-radius: 50px;
     }
 </style>

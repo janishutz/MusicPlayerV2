@@ -41,3 +41,43 @@ export interface Song {
      */
     additionalInfo?: string;
 }
+
+
+export interface ReadFile {
+    url: string;
+    filename: string;
+}
+
+export interface SearchResult {
+    data: {
+        results: {
+            songs: {
+                data: AppleMusicSongData[],
+                href: string;
+            }
+        };
+    }
+}
+
+export interface AppleMusicSongData {
+    id: string,
+    type: string;
+    href: string;
+    attributes: {
+        albumName: string;
+        artistName: string;
+        artwork: {
+            width: number,
+            height: number,
+            url: string
+        },
+        name: string;
+        genreNames: string[];
+        durationInMillis: number;
+    }
+}
+
+export interface SongMove {
+    songID: string;
+    newPos: number;
+}

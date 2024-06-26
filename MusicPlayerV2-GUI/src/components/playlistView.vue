@@ -1,7 +1,12 @@
 <template>
     <div>
         <h1>Playlist</h1>
+        <input type="file" multiple accept="audio/*" id="more-songs">
+        <button @click="addNewSongs()">Load local songs</button>
+        <p v-if="!hasSelectedSongs">Please select at least one song to proceed</p>
         <div class="playlist-box" id="pl-box">
+            <!-- TODO: Allow sorting -->
+            <!-- TODO: Allow adding more songs with search on Apple Music or loading from local disk -->
             <div class="song" v-for="song in computedPlaylist" v-bind:key="song.id" 
                 :class="( song.id === ( $props.playlist ? $props.playlist [ $props.currentlyPlaying ?? 0 ].id : '' ) && isPlaying ? 'playing' : ' not-playing' ) 
                 + ( ( !isPlaying && ( song.id === ( $props.playlist ? $props.playlist [ $props.currentlyPlaying ?? 0 ].id : '' ) ) ) ? ' active-song' : '' )">
@@ -16,16 +21,18 @@
                 <span class="material-symbols-outlined play-icon" @click="control( 'play' )" v-if="song.id === ( $props.playlist ? $props.playlist [ $props.currentlyPlaying ?? 0 ].id : '' )">play_arrow</span>
                 <span class="material-symbols-outlined play-icon" @click="play( song.id )" v-else>play_arrow</span>
                 <span class="material-symbols-outlined pause-icon" @click="control( 'pause' )">pause</span>
+                <span class="material-symbols-outlined move-icon" @click="moveSong( song.id, 'up' )" title="Move song up" v-if="canBeMoved( 'up', song.id )">arrow_upward</span>
+                <span class="material-symbols-outlined move-icon" @click="moveSong( song.id, 'down' )" title="Move song down" v-if="canBeMoved( 'down', song.id )">arrow_downward</span>
                 <h3 class="song-title">{{ song.title }}</h3>
-                <p class="playing-in">playing in</p>
+                <p class="playing-in">{{ getTimeUntil( song ) }}</p>
             </div>
         </div>
     </div>
 </template>
 
 <script setup lang="ts">
-    import type { Song } from '@/scripts/song';
-    import { computed } from 'vue';
+    import type { ReadFile, Song } from '@/scripts/song';
+    import { computed, ref } from 'vue';
 
     const props = defineProps( { 
         'playlist': {
@@ -42,8 +49,14 @@
             default: true,
             required: true,
             type: Boolean,
+        },
+        'pos': {
+            default: 0,
+            required: false,
+            type: Number,
         }
     } );
+    const hasSelectedSongs = ref( true );
 
     const computedPlaylist = computed( () => {
         let pl: Song[] = [];
@@ -54,31 +67,53 @@
         return pl;
     } );
 
-    // TODO: Implement
-    // const getTimeUntil = computed( () => {
-    //     return ( song ) => {
-    //         let timeRemaining = 0;
-    //         for ( let i = this.queuePos; i < Object.keys( this.songs ).length; i++ ) {
-    //             if ( this.songs[ i ] == song ) {
-    //                 break;
-    //             }
-    //             timeRemaining += parseInt( this.songs[ i ].duration );
-    //         }
-    //         if ( this.isPlaying ) {
-    //             if ( timeRemaining === 0 ) {
-    //                 return 'Currently playing';
-    //             } else {
-    //                 return 'Playing in less than ' + Math.ceil( timeRemaining / 60 - this.pos / 60 )  + 'min';
-    //             }
-    //         } else {
-    //             if ( timeRemaining === 0 ) {
-    //                 return 'Plays next';
-    //             } else {
-    //                 return 'Playing less than ' + Math.ceil( timeRemaining / 60 - this.pos / 60 )  + 'min after starting to play';
-    //             }
-    //         }
-    //     }
-    // } );
+    const canBeMoved = computed( () => {
+        return ( direction: movementDirection, songID: string ): boolean => {
+            let id = 0;
+            for ( let song in props.playlist ) {
+                if ( props.playlist[ song ].id === songID ) {
+                    id = parseInt( song );
+                    break;
+                }
+            }
+            if ( direction === 'up' ) {
+                if ( props.currentlyPlaying + 1 === id || props.currentlyPlaying === id ) {
+                    return false;
+                }
+                return true;
+            } else {
+                if ( id === props.playlist.length - 1 || props.currentlyPlaying === id ) {
+                    return false;
+                }
+                return true;
+            }
+        }
+    } )
+
+    const getTimeUntil = computed( () => {
+        return ( song: Song ) => {
+            let timeRemaining = 0;
+            for ( let i = props.currentlyPlaying; i < Object.keys( props.playlist ).length; i++ ) {
+                if ( props.playlist[ i ] == song ) {
+                    break;
+                }
+                timeRemaining += props.playlist[ i ].duration;
+            }
+            if ( props.isPlaying ) {
+                if ( timeRemaining === 0 ) {
+                    return 'Currently playing';
+                } else {
+                    return 'Playing in less than ' + Math.ceil( timeRemaining / 60 - props.pos / 60 )  + 'min';
+                }
+            } else {
+                if ( timeRemaining === 0 ) {
+                    return 'Plays next';
+                } else {
+                    return 'Playing less than ' + Math.ceil( timeRemaining / 60 - props.pos / 60 )  + 'min after starting to play';
+                }
+            }
+        }
+    } );
 
 
     const control = ( action: string ) => {
@@ -89,12 +124,44 @@
         emits( 'play-song', song );
     }
 
-    const emits = defineEmits( [ 'play-song', 'control' ] );
+    const addNewSongs = () => {
+        // TODO: Also allow loading Apple Music songs
+        const fileURLList: ReadFile[] = [];
+        const allFiles = ( document.getElementById( 'pl-loader' ) as HTMLInputElement ).files ?? [];
+        if ( allFiles.length > 0 ) {
+            hasSelectedSongs.value = true;
+            for ( let file = 0; file < allFiles.length; file++ ) {
+                fileURLList.push( { 'url': URL.createObjectURL( allFiles[ file ] ), 'filename': allFiles[ file ].name } );
+            }
+            emits( 'add-new-songs', fileURLList );
+        } else {
+            hasSelectedSongs.value = false;
+        }
+    }
+
+    type movementDirection = 'up' | 'down';
+    const moveSong = ( songID: string, direction: movementDirection ) => {
+        let newSongPos = 0;
+        let hasFoundSongToMove = false;
+        for ( let el in props.playlist ) {
+            if ( props.playlist[ el ].id === songID ) {
+                const currPos = parseInt( el );
+                newSongPos = currPos + ( direction === 'up' ? -1 : 1 );
+                hasFoundSongToMove = true;
+                break;
+            }
+        }
+        if ( hasFoundSongToMove ) {
+            emits( 'playlist-reorder', { 'songID': songID, 'newPos': newSongPos } );
+        }
+    }
+
+    const emits = defineEmits( [ 'play-song', 'control', 'playlist-reorder', 'add-new-songs' ] );
 </script>
 
 <style scoped>
     .playlist-box {
-        height: 80vh !important;
+        height: calc( 100% - 100px );
         width: 100%;
         overflow: scroll;
         display: flex;
@@ -222,4 +289,9 @@
         display: none;
     }
 
+    .move-icon {
+        font-size: 1.5rem;
+        cursor: pointer;
+        user-select: none;
+    }
 </style>

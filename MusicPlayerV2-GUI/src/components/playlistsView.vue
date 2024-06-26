@@ -1,9 +1,15 @@
 <template>
     <div class="playlists">
         <h3 style="width: fit-content;">Your playlists</h3>
-        <div v-if="$props.playlists ? $props.playlists.length < 1 : true">
-            loading...
+        <div v-if="( $props.playlists ? $props.playlists.length < 1 : true ) && $props.isLoggedIn">
+            Loading...
             <!-- TODO: Make prettier -->
+        </div>
+        <div v-else-if="!$props.isLoggedIn">
+            <p>You are not logged into Apple Music.</p>
+            <input class="fancy-button" type="file" multiple="true" accept="audio/*" id="pl-loader"><br>
+            <button @click="loadPlaylistFromDisk()" class="fancy-button">Load custom playlist from disk</button>
+            <p v-if="!hasSelectedSongs">Please select at least one song to proceed!</p>
         </div>
         <div class="playlist-wrapper">
             <div v-for="pl in $props.playlists" v-bind:key="pl.id" class="playlist" @click="selectPlaylist( pl.id )">
@@ -14,15 +20,38 @@
 </template>
 
 <script setup lang="ts">
+    import type { ReadFile } from '@/scripts/song';
+    import { ref } from 'vue';
+    const hasSelectedSongs = ref( true );
+
     defineProps( {
         'playlists': {
             'default': [],
             'type': Array<any>,
             'required': true,
+        },
+        'isLoggedIn': {
+            'default': false,
+            'type': Boolean,
+            'required': true,
         }
     } );
 
-    const emits = defineEmits( [ 'selected-playlist' ] );
+    const loadPlaylistFromDisk = () => {
+        const fileURLList: ReadFile[] = [];
+        const allFiles = ( document.getElementById( 'pl-loader' ) as HTMLInputElement ).files ?? [];
+        if ( allFiles.length > 0 ) {
+            hasSelectedSongs.value = true;
+            for ( let file = 0; file < allFiles.length; file++ ) {
+                fileURLList.push( { 'url': URL.createObjectURL( allFiles[ file ] ), 'filename': allFiles[ file ].name } );
+            }
+            emits( 'custom-playlist', fileURLList );
+        } else {
+            hasSelectedSongs.value = false;
+        }
+    }
+
+    const emits = defineEmits( [ 'selected-playlist', 'custom-playlist' ] );
 
     const selectPlaylist = ( id: string ) => {
         emits( 'selected-playlist', id );
