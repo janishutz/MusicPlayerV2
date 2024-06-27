@@ -5,10 +5,11 @@
             Loading...
             <!-- TODO: Make prettier -->
         </div>
-        <div v-else-if="!$props.isLoggedIn">
-            <p>You are not logged into Apple Music.</p>
+        <div v-else-if="!$props.isLoggedIn" class="not-logged-in">
+            <p>You are not logged into Apple Music. We therefore can't show you your playlists. <a href="" title="Refreshes the page, allowing you to log in">Change that</a></p>
+            <p>Use the below button to load songs from your local disk</p>
             <input class="pl-loader-button" type="file" multiple="true" accept="audio/*" id="pl-loader"><br>
-            <button @click="loadPlaylistFromDisk()" class="pl-loader-button">Load custom playlist from disk</button>
+            <button @click="loadPlaylistFromDisk()" class="pl-loader-button" id="load-button">Load</button>
             <p v-if="!hasSelectedSongs">Please select at least one song to proceed!</p>
         </div>
         <div class="playlist-wrapper">
@@ -87,5 +88,19 @@
 
     .pl-loader-button {
         background-color: white;
+        border: none;
+        padding: 10px;
+        border-radius: 5px;
+        margin: 5px;
+        font-size: 1rem;
+        cursor: pointer;
+    }
+
+    #load-button {
+        font-size: 1.5rem;
+    }
+
+    .not-logged-in {
+        width: 80%;
     }
 </style>

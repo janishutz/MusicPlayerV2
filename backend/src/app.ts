@@ -67,7 +67,23 @@ const run = () => {
                 cb( {
                     status: true,
                     msg: 'ADDED_TO_ROOM'
-                } )
+                } );
+            } else {
+                cb( {
+                    status: false,
+                    msg: 'ERR_TOKEN_INVALID'
+                } );
+            }
+        } );
+
+        socket.on( 'delete-room', ( room: { name: string, token: string }, cb: ( res: { status: boolean, msg: string } ) => void ) => {
+            if ( room.token === socketData[ room.name ].roomToken ) {
+                socket.leave( room.name );
+                socketData[ room.name ] = undefined;
+                cb( {
+                    status: true,
+                    msg: 'ROOM_DELETED'
+                } );
             } else {
                 cb( {
                     status: false,
@@ -193,7 +209,7 @@ const run = () => {
     } );
 
 
-    const PORT = process.env.PORT || 8081;
+    const PORT = process.env.PORT || 8082;
     httpServer.listen( PORT );
 }
 

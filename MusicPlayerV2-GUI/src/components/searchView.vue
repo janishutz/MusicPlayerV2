@@ -136,7 +136,7 @@
         width: 100vw;
         left: 0;
         transition: all 1s;
-        z-index: 2;
+        z-index: 50;
     }
 
     #search-bar.search-shown {

@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import HomeView from '@/views/HomeView.vue';
+import { useUserStore } from '@/stores/userStore';
 
 const router = createRouter( {
     history: createWebHistory( import.meta.env.BASE_URL ),
@@ -18,7 +19,7 @@ const router = createRouter( {
             name: 'app',
             component: () => import( '../views/AppView.vue' ),
             meta: {
-                'authRequired': false,
+                'authRequired': true,
                 'title': 'App'
             }
         },
@@ -41,30 +42,14 @@ const router = createRouter( {
 //     next();
 // } );
 
-// router.beforeEach( ( to ) => {
-//     const userStore = useUserStore();
-//     const isUserAuthenticated = userStore.getUserAuthenticated;
-//     const isAdminAuthenticated = userStore.getAdminAuthenticated;
-
-//     if ( to.meta.adminAuthRequired && !isAdminAuthenticated ) {
-//         return { name: 'adminLogin' };
-//     } else if ( to.name === 'adminLogin' && isAdminAuthenticated ) {
-//         return { name: 'admin' };
-//     } 
-//     // else if ( isUserAuthenticated && to.name === 'login' ) {       
-//     //     return { name: 'account' };
-//     // } 
-//     else if ( !isUserAuthenticated && to.name === 'checkout' ) {
-//         localStorage.setItem( 'redirect', '/checkout' );
-//         return { name: 'login' };
-//     } else if ( !isUserAuthenticated && to.meta.authRequired ) {
-//         localStorage.setItem( 'redirect', to.fullPath );
-//         return { name: 'login' };
-//     }
-
-//     // TODO: Make titles adapt to languages as well
-//     // TODO: Make multi-lang
-// } );
+router.beforeEach( ( to ) => {
+    const userStore = useUserStore();
+    const isUserAuthenticated = userStore.getUserAuthenticated;
+    if ( !isUserAuthenticated && to.meta.authRequired ) {
+        localStorage.setItem( 'redirect', to.fullPath );
+        return { name: 'home' };
+    }
+} );
 
 router.afterEach( ( to ) => {
     window.scrollTo( { top: 0, behavior: 'smooth' } );

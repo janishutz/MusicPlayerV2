@@ -18,7 +18,7 @@
     import playerView from '@/components/playerView.vue';
     import libraryView from '@/components/libraryView.vue';
     import { ref } from 'vue';
-import type { ReadFile } from '@/scripts/song';
+    import type { ReadFile } from '@/scripts/song';
     
     const isLoggedIntoAppleMusic = ref( false );
     const isReady = ref( false );
@@ -37,6 +37,7 @@ import type { ReadFile } from '@/scripts/song';
     let loginChecker = 0;
 
     const logIntoAppleMusic = () => {
+        player.value.logIntoAppleMusic();
         loginChecker = setInterval( () => {
             if ( player.value.getAuth()[ 0 ] ) {
                 isLoggedIntoAppleMusic.value = true;

@@ -29,13 +29,15 @@
                     <div class="slider-wrapper" v-if="isShowingFullScreenPlayer">
                         <div class="slider-pb-pos">
                             <p class="playback-pos">{{ nicePlaybackPos }}</p>
-                            <p class="playback-duration" @click="toggleRemaining()">{{ niceDuration }}</p> 
+                            <p class="playback-duration" @click="toggleRemaining()" title="Toggle between remaining time and song duration">{{ niceDuration }}</p> 
                         </div>
                         <sliderView :position="pos" :active="true" :duration="duration" name="main" @pos="( pos ) => player.goToPos( pos )"></sliderView>
                     </div>
 
                     <div class="shuffle-repeat" v-if="isShowingFullScreenPlayer">
                         <span class="material-symbols-outlined controls" @click="control( 'repeat' )" style="margin-right: auto;">repeat{{ repeatMode }}</span>
+                        <span class="material-symbols-outlined controls" @click="control( 'start-share' )" style="margin-right: auto;" title="Share your playlist on a public playlist page (opens a configuration window)" v-if="!isConnectedToNotifier">share</span>
+                        <span class="material-symbols-outlined controls" @click="control( 'stop-share' )" style="margin-right: auto;" title="Stop sharing your playlist on a public playlist page" v-else>close</span>
                         <span class="material-symbols-outlined controls" @click="control( 'shuffle' )">shuffle{{ shuffleMode }}</span>
                     </div>
                 </div>
@@ -82,11 +84,13 @@
     const nicePlaybackPos = ref( '00:00' );
     const niceDuration = ref( '00:00' );
     const isShowingRemainingTime = ref( false );
+    let isShowingRemainingTimeBackend = false;
     const currentlyPlayingSongArtist = ref( '' );
     const pos = ref( 0 );
     const duration = ref( 0 );
     const notifications = ref( notificationsModule );
     const notificationHandler = new NotificationHandler();
+    const isConnectedToNotifier = ref( false );
 
     const emits = defineEmits( [ 'playerStateChange' ] );
 
@@ -163,6 +167,9 @@
                 getDetails();
                 startProgressTracker();
             }, 2000 );
+        } else if ( action === 'start-share' ) {
+            // TODO: Open popup, then send data with popup returns
+            notificationHandler.connect( 'test' );
         }
     }
 
@@ -170,9 +177,15 @@
     const controlUI = ( action: string ) => {
         if ( action === 'show' ) {
             isShowingFullScreenPlayer.value = true;
+            isShowingRemainingTime.value = isShowingRemainingTimeBackend;
             emits( 'playerStateChange', 'show' );
         } else if ( action === 'hide' ) {
             isShowingFullScreenPlayer.value = false;
+            isShowingRemainingTimeBackend = isShowingRemainingTime.value;
+            isShowingRemainingTime.value = false;
+            try {
+                prepNiceDurationTime( player.getPlayingSong() );
+            } catch ( err ) { /* empty */ }
             emits( 'playerStateChange', 'hide' );
         }
     }
@@ -300,18 +313,7 @@
         hasReachedEnd = false;
         isPlaying.value = true;
         const playingSong = player.getPlayingSong();
-        duration.value = playingSong.duration;
-        const minuteCounts = Math.floor( ( playingSong.duration ) / 60 );
-        niceDuration.value = String( minuteCounts ) + ':';
-        if ( ( '' + minuteCounts ).length === 1 ) {
-            niceDuration.value = '0' + minuteCounts + ':';
-        }
-        const secondCounts = Math.floor( ( playingSong.duration ) - minuteCounts * 60 );
-        if ( ( '' + secondCounts ).length === 1 ) {
-            niceDuration.value += '0' + secondCounts;
-        } else {
-            niceDuration.value += secondCounts;
-        }
+        prepNiceDurationTime( playingSong );
         progressTracker = setInterval( () => {
             pos.value = player.getPlaybackPos();
             if ( pos.value > playingSong.duration - 1 && !hasReachedEnd ) {
@@ -319,6 +321,9 @@
                 hasReachedEnd = true;
                 if ( repeatMode.value === '_one_on' ) {
                     player.goToPos( 0 );
+                    setTimeout( () => {
+                        control( 'play' );
+                    }, 500 );
                 } else {
                     control( 'next' );
                 }
@@ -354,6 +359,21 @@
                 }
             }
         }, 50 );
+    }
+
+    const prepNiceDurationTime = ( playingSong: Song ) => {
+        duration.value = playingSong.duration;
+        const minuteCounts = Math.floor( ( playingSong.duration ) / 60 );
+        niceDuration.value = String( minuteCounts ) + ':';
+        if ( ( '' + minuteCounts ).length === 1 ) {
+            niceDuration.value = '0' + minuteCounts + ':';
+        }
+        const secondCounts = Math.floor( ( playingSong.duration ) - minuteCounts * 60 );
+        if ( ( '' + secondCounts ).length === 1 ) {
+            niceDuration.value += '0' + secondCounts;
+        } else {
+            niceDuration.value += secondCounts;
+        }
     }
 
     const stopProgressTracker = () => {
