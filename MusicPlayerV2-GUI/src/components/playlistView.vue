@@ -1,11 +1,11 @@
 <template>
     <div>
         <h1>Playlist</h1>
-        <input type="file" multiple accept="audio/*" id="more-songs">
-        <button @click="addNewSongs()">Load local songs</button>
+        <input type="file" multiple accept="audio/*" id="more-songs" class="small-buttons">
+        <button @click="addNewSongs()" class="small-buttons" title="Load selected files"><span class="material-symbols-outlined">upload</span></button>
+        <button @click="openSearch()" v-if="$props.isLoggedIntoAppleMusic" class="small-buttons" title="Search Apple Music for the song"><span class="material-symbols-outlined">search</span></button>
         <p v-if="!hasSelectedSongs">Please select at least one song to proceed</p>
         <div class="playlist-box" id="pl-box">
-            <!-- TODO: Allow sorting -->
             <!-- TODO: Allow adding more songs with search on Apple Music or loading from local disk -->
             <div class="song" v-for="song in computedPlaylist" v-bind:key="song.id" 
                 :class="( song.id === ( $props.playlist ? $props.playlist [ $props.currentlyPlaying ?? 0 ].id : '' ) && isPlaying ? 'playing' : ' not-playing' ) 
@@ -27,13 +27,16 @@
                 <p class="playing-in">{{ getTimeUntil( song ) }}</p>
             </div>
         </div>
+        <searchView ref="search" @selected-song="( song ) => { addNewSongsAppleMusic( song ) }"></searchView>
     </div>
 </template>
 
 <script setup lang="ts">
-    import type { ReadFile, Song } from '@/scripts/song';
+    import type { AppleMusicSongData, ReadFile, Song } from '@/scripts/song';
     import { computed, ref } from 'vue';
+    import searchView from './searchView.vue';
 
+    const search = ref( searchView );
     const props = defineProps( { 
         'playlist': {
             default: [],
@@ -54,6 +57,11 @@
             default: 0,
             required: false,
             type: Number,
+        },
+        'isLoggedIntoAppleMusic': {
+            default: false,
+            required: true,
+            type: Boolean,
         }
     } );
     const hasSelectedSongs = ref( true );
@@ -66,6 +74,12 @@
         }
         return pl;
     } );
+
+    const openSearch = () => {
+        if ( search.value ) {
+            search.value.controlSearch( 'show' );
+        }
+    }
 
     const canBeMoved = computed( () => {
         return ( direction: movementDirection, songID: string ): boolean => {
@@ -125,9 +139,8 @@
     }
 
     const addNewSongs = () => {
-        // TODO: Also allow loading Apple Music songs
         const fileURLList: ReadFile[] = [];
-        const allFiles = ( document.getElementById( 'pl-loader' ) as HTMLInputElement ).files ?? [];
+        const allFiles = ( document.getElementById( 'more-songs' ) as HTMLInputElement ).files ?? [];
         if ( allFiles.length > 0 ) {
             hasSelectedSongs.value = true;
             for ( let file = 0; file < allFiles.length; file++ ) {
@@ -137,6 +150,18 @@
         } else {
             hasSelectedSongs.value = false;
         }
+    }
+
+    const addNewSongsAppleMusic = ( songData: AppleMusicSongData ) => {
+        const song: Song = {
+            artist: songData.attributes.artistName,
+            cover: songData.attributes.artwork.url.replace( '{w}', String( songData.attributes.artwork.width ) ).replace( '{h}', String( songData.attributes.artwork.height ) ),
+            duration: songData.attributes.durationInMillis / 1000,
+            id: songData.id,
+            origin: 'apple-music',
+            title: songData.attributes.name
+        }
+        emits( 'add-new-songs-apple-music', song );
     }
 
     type movementDirection = 'up' | 'down';
@@ -156,7 +181,7 @@
         }
     }
 
-    const emits = defineEmits( [ 'play-song', 'control', 'playlist-reorder', 'add-new-songs' ] );
+    const emits = defineEmits( [ 'play-song', 'control', 'playlist-reorder', 'add-new-songs', 'add-new-songs-apple-music' ] );
 </script>
 
 <style scoped>
@@ -293,5 +318,23 @@
         font-size: 1.5rem;
         cursor: pointer;
         user-select: none;
+    }
+
+    .small-buttons {
+        margin-bottom: 10px;
+        font-size: 1rem;
+        background: none;
+        border: none;
+        cursor: pointer;
+    }
+
+    .small-buttons .material-symbols-outlined {
+        font-size: 1.5rem;
+        color: var( --primary-color );
+        transition: all 0.5s;
+    }
+
+    .small-buttons:hover .material-symbols-outlined {
+        transform: scale(1.1);
     }
 </style>

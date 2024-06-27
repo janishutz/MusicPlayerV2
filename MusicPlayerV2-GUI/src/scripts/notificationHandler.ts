@@ -15,7 +15,25 @@ class NotificationHandler {
     socket: Socket;
 
     constructor () {
-        this.socket = io();
+        this.socket = io( localStorage.getItem( 'url' ) ?? '', {
+            autoConnect: false,
+        } );
+    }
+
+    /**
+     * Create a room token and connect to 
+     * @param {string} roomName 
+     * @returns {Promise<string>}
+     */
+    connect ( roomName: string ): Promise<string> {
+        fetch( localStorage.getItem( 'url' ) + '/createRoomToken', { credentials: 'include' } ).then( res => {
+            if ( res.status === 200 ) {
+                res.json().then( json => {
+                    
+                } );
+            }
+        } );
+        
     }
 
     /**
@@ -34,10 +52,6 @@ class NotificationHandler {
 
     disconnect (): void {
         this.socket.disconnect();
-    }
-
-    joinRoom ( roomName: string ): void {
-        // this.socket.
     }
 }
 

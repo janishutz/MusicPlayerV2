@@ -42,6 +42,14 @@ export interface Song {
     additionalInfo?: string;
 }
 
+export interface SongTransmitted {
+    title: string;
+    artist: string;
+    duration: number;
+    cover: string;
+    additionalInfo?: string;
+}
+
 
 export interface ReadFile {
     url: string;

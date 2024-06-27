@@ -131,7 +131,7 @@ export default {
 <style scoped>
     .message-box {
         position: fixed;
-        z-index: -1;
+        z-index: -20;
         color: white;
         transition: all 0.5s;
         width: 95vw;

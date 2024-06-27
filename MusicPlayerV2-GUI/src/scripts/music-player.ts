@@ -228,6 +228,7 @@ class MusicKitJSWrapper {
         switch ( action ) {
             case "play":
                 if ( this.isPreparedToPlay ) {
+                    this.control( 'pause' );
                     if ( this.playlist[ this.playingSongID ].origin === 'apple-music' ) {
                         this.musicKit.play();
                         return false;
@@ -285,6 +286,7 @@ class MusicKitJSWrapper {
                     return false;
                 }
             case "next":
+                this.control( 'pause' );
                 if ( this.queuePos < this.queue.length - 1 ) {
                     this.queuePos += 1;
                     this.prepare( this.queue[ this.queuePos ] );
@@ -300,6 +302,7 @@ class MusicKitJSWrapper {
                     return true;
                 }
             case "previous":
+                this.control( 'pause' );
                 if ( this.queuePos > 0 ) {
                     this.queuePos -= 1;
                     this.prepare( this.queue[ this.queuePos ] );

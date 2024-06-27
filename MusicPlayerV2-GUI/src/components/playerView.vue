@@ -45,7 +45,9 @@
             <span class="material-symbols-outlined close-fullscreen" @click="controlUI( 'hide' )">close</span>
             <playlistView :playlist="playlist" class="pl-wrapper" :currently-playing="currentlyPlayingSongIndex" :is-playing="isPlaying" :pos="pos"
                 @control="( action ) => { control( action ) }" @play-song="( song ) => { playSong( song ) }"
-                @add-new-songs="( songs ) => addNewSongs( songs )" @playlist-reorder="( move ) => moveSong( move )"></playlistView>
+                @add-new-songs="( songs ) => addNewSongs( songs )" @playlist-reorder="( move ) => moveSong( move )"
+                :is-logged-into-apple-music="player.isLoggedIn"
+                @add-new-songs-apple-music="( song ) => addNewSongFromObject( song )"></playlistView>
         </div>
         <notificationsModule ref="notifications" location="bottomleft" size="bigger"></notificationsModule>
         <audio src="" id="local-audio" controls="false"></audio>
@@ -63,6 +65,8 @@
     import type { ReadFile, Song, SongMove } from '@/scripts/song';
     import { parseBlob } from 'music-metadata-browser';
     import notificationsModule from './notificationsModule.vue';
+    import { useUserStore } from '@/stores/userStore';
+    import NotificationHandler from '@/scripts/notificationHandler';
 
     const isPlaying = ref( false );
     const repeatMode = ref( '' );
@@ -82,6 +86,7 @@
     const pos = ref( 0 );
     const duration = ref( 0 );
     const notifications = ref( notificationsModule );
+    const notificationHandler = new NotificationHandler();
 
     const emits = defineEmits( [ 'playerStateChange' ] );
 
@@ -90,6 +95,7 @@
         if ( isPlaying.value ) {
             player.control( 'play' );
             startProgressTracker();
+            
         } else {
             player.control( 'pause' );
             stopProgressTracker();
@@ -364,7 +370,7 @@
 
     const addNewSongs = async ( songs: ReadFile[] ) => {
         let n = notifications.value.createNotification( 'Analyzing new songs', 200, 'progress', 'normal' );
-        playlist.value = player.getPlaylist();
+        playlist.value = player.getQueue();
         for ( let element in songs ) {
             try {
                 playlist.value.push( await fetchSongData( songs[ element ] ) );
@@ -374,29 +380,48 @@
             notifications.value.updateNotification( n, `Analyzing new songs (${element}/${songs.length})` );
         }
         player.setPlaylist( playlist.value );
-        player.prepare( 0 );
-        isPlaying.value = true;
-        setTimeout( () => {
-            startProgressTracker();
-            getDetails();
-        }, 2000 );
+        if ( !isPlaying.value ) {
+            player.prepare( 0 );
+            isPlaying.value = true;
+            setTimeout( () => {
+                startProgressTracker();
+                getDetails();
+            }, 2000 );
+        }
         notifications.value.cancelNotification( n );
         notifications.value.createNotification( 'New songs added', 10, 'ok', 'normal' );
     }
 
+    const addNewSongFromObject = ( song: Song ) => {
+        playlist.value = player.getQueue();
+        playlist.value.push( song );
+        player.setPlaylist( playlist.value );
+        if ( !isPlaying.value ) {
+            player.prepare( 0 );
+            isPlaying.value = true;
+            setTimeout( () => {
+                startProgressTracker();
+                getDetails();
+            }, 2000 );
+        }
+    }
+
     emits( 'playerStateChange', isShowingFullScreenPlayer.value ? 'show' : 'hide' );
 
+    const userStore = useUserStore();
+
     document.addEventListener( 'keydown', ( e ) => {
-        if ( e.key === ' ' ) {
-            // TODO: fix
-            e.preventDefault();
-            playPause();
-        } else if ( e.key === 'ArrowRight' ) {
-            e.preventDefault();
-            control( 'next' );
-        } else if ( e.key === 'ArrowLeft' ) {
-            e.preventDefault();
-            control( 'previous' );
+        if ( !userStore.isUsingKeyboard ) {
+            if ( e.key === ' ' ) {
+                e.preventDefault();
+                playPause();
+            } else if ( e.key === 'ArrowRight' ) {
+                e.preventDefault();
+                control( 'next' );
+            } else if ( e.key === 'ArrowLeft' ) {
+                e.preventDefault();
+                control( 'previous' );
+            }
         }
     } );
 

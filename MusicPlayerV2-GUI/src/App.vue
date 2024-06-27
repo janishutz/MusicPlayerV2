@@ -141,7 +141,7 @@
     #themeSelector {
         position: fixed;
         top: 10px;
-        right: 10px;
+        left: 10px;
         background: none;
         border: none;
         color: var( --primary-color );

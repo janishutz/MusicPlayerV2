@@ -7,8 +7,8 @@
         </div>
         <div v-else-if="!$props.isLoggedIn">
             <p>You are not logged into Apple Music.</p>
-            <input class="fancy-button" type="file" multiple="true" accept="audio/*" id="pl-loader"><br>
-            <button @click="loadPlaylistFromDisk()" class="fancy-button">Load custom playlist from disk</button>
+            <input class="pl-loader-button" type="file" multiple="true" accept="audio/*" id="pl-loader"><br>
+            <button @click="loadPlaylistFromDisk()" class="pl-loader-button">Load custom playlist from disk</button>
             <p v-if="!hasSelectedSongs">Please select at least one song to proceed!</p>
         </div>
         <div class="playlist-wrapper">
@@ -83,5 +83,9 @@
         margin: 1px;
         cursor: pointer;
         user-select: none;
+    }
+
+    .pl-loader-button {
+        background-color: white;
     }
 </style>
