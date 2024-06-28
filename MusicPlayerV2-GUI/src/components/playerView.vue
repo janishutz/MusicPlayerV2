@@ -99,11 +99,11 @@
         if ( isPlaying.value ) {
             player.control( 'play' );
             startProgressTracker();
-            
         } else {
             player.control( 'pause' );
             stopProgressTracker();
         }
+        notificationHandler.emit( 'playback', isPlaying.value );
     }
 
     const toggleRemaining = () => {
@@ -115,10 +115,12 @@
             isPlaying.value = false;
             player.control( 'pause' );
             stopProgressTracker();
+            notificationHandler.emit( 'playback', isPlaying.value );
         } else if ( action === 'play' ) {
             isPlaying.value = true;
             player.control( 'play' );
             startProgressTracker();
+            notificationHandler.emit( 'playback', isPlaying.value );
         } else if ( action === 'repeat' ) {
             if ( repeatMode.value === '' ) {
                 repeatMode.value = '_on';
@@ -135,18 +137,30 @@
                 shuffleMode.value = '_on';
                 player.setShuffle( true );
                 getDetails();
+                notificationHandler.emit( 'playlist', playlist.value );
             } else {
                 shuffleMode.value = '';
                 player.setShuffle( false );
                 getDetails();
+                notificationHandler.emit( 'playlist', playlist.value );
             }
             getDetails();
         } else if ( action === 'forward' ) {
             clickCountForward.value += 1;
-            player.control( 'skip-10' );
+            if( player.control( 'skip-10' ) ) {
+                setTimeout( () => {
+                    startProgressTracker();
+                    getDetails();
+                }, 2000 );
+            }
         } else if ( action === 'back' ) {
             clickCountBack.value += 1;
-            player.control( 'back-10' );
+            if( player.control( 'back-10' ) ) {
+                setTimeout( () => {
+                    startProgressTracker();
+                    getDetails();
+                }, 2000 );
+            }
         } else if ( action === 'next' ) {
             stopProgressTracker();
             player.control( 'next' );
@@ -170,6 +184,10 @@
         } else if ( action === 'start-share' ) {
             // TODO: Open popup, then send data with popup returns
             notificationHandler.connect( 'test' );
+        } else if ( action === 'stop-share' ) {
+            if ( confirm( 'Do you really want to stop sharing?' ) ) {
+                notificationHandler.disconnect();
+            }
         }
     }
 
@@ -215,6 +233,8 @@
             setTimeout( () => {
                 startProgressTracker();
                 getDetails();
+                notificationHandler.emit( 'playlist', playlist.value );
+                // TODO: Add playback-start emit as well. For every time elapsed before starting to play current section, move start time back
             }, 2000 );
         } );
     }
@@ -330,6 +350,9 @@
             }
 
             if ( pos.value > 0 && !hasStarted ) {
+                notificationHandler.emit( 'playlist-index', currentlyPlayingSongIndex.value );
+                notificationHandler.emit( 'playback', isPlaying.value );
+                notificationHandler.emit( 'playback-start', new Date().getTime() - pos.value * 1000 );
                 hasStarted = true;
             }
 

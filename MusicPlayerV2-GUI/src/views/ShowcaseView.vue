@@ -61,7 +61,7 @@
 
 <script setup lang="ts">
     import type { Song } from '@/scripts/song';
-    import { ref, type Ref } from 'vue';
+    import { computed, ref, type Ref } from 'vue';
     import { ColorThief } from 'colorthief';
 
     const hasLoaded = ref( false );
@@ -75,46 +75,42 @@
     const visualizationSettings = ref( 'mic' );
     const micAnalyzer = ref( 0 );
     const beatDetected = ref( false );
-    colorThief: null,
-    lastDispatch: new Date().getTime() - 5000,
-    isReconnecting: false,
-    computed: {
-        songQueue() {
-            let ret = [];
-            let pos = 0;
-            for ( let song in this.songs ) {
-                if ( pos >= this.queuePos ) {
-                    ret.push( this.songs[ song ] );
-                }
-                pos += 1;
+    const colorThief = new ColorThief();
+    const songQueue = computed( () => {
+        let ret = [];
+        let pos = 0;
+        for ( let song in songs.value ) {
+            if ( pos >= playingSong.value ) {
+                ret.push( songs.value[ song ] );
             }
-            return ret;
-        },
-        getTimeUntil() {
-            return ( song ) => {
-                let timeRemaining = 0;
-                for ( let i = this.queuePos; i < Object.keys( this.songs ).length - 1; i++ ) {
-                    if ( this.songs[ i ] == song ) {
-                        break;
-                    }
-                    timeRemaining += parseInt( this.songs[ i ].duration );
+            pos += 1;
+        }
+        return ret;
+    } );
+    const getTimeUntil = computed( () => {
+        return ( song ) => {
+            let timeRemaining = 0;
+            for ( let i = this.queuePos; i < Object.keys( this.songs ).length - 1; i++ ) {
+                if ( this.songs[ i ] == song ) {
+                    break;
                 }
-                if ( this.isPlaying ) {
-                    if ( timeRemaining === 0 ) {
-                        return 'Currently playing';
-                    } else {
-                        return 'Playing in less than ' + Math.ceil( timeRemaining / 60 - this.pos / 60 )  + 'min';
-                    }
+                timeRemaining += parseInt( this.songs[ i ].duration );
+            }
+            if ( isPlaying.value ) {
+                if ( timeRemaining === 0 ) {
+                    return 'Currently playing';
                 } else {
-                    if ( timeRemaining === 0 ) {
-                        return 'Plays next';
-                    } else {
-                        return 'Playing less than ' + Math.ceil( timeRemaining / 60 - this.pos / 60 )  + 'min after starting to play';
-                    }
+                    return 'Playing in less than ' + Math.ceil( timeRemaining / 60 - this.pos / 60 )  + 'min';
+                }
+            } else {
+                if ( timeRemaining === 0 ) {
+                    return 'Plays next';
+                } else {
+                    return 'Playing less than ' + Math.ceil( timeRemaining / 60 - this.pos / 60 )  + 'min after starting to play';
                 }
             }
         }
-    },
+    } );
     methods: {
         startTimeTracker () {
             this.timeTracker = setInterval( () => {

@@ -83,7 +83,7 @@ class NotificationHandler {
      */
     disconnect (): void {
         this.socket.disconnect();
-        this.socket.emit( 'create-room', {
+        this.socket.emit( 'delete-room', {
             name: this.roomName,
             token: this.roomToken
         }, ( res: { status: boolean, msg: string } ) => {
