@@ -174,6 +174,7 @@
         overflow: hidden;
         transition: all 0.5s;
         transform: scale(1);
+        z-index: 99;
     }
 
     .incomplete-message {
@@ -195,7 +196,7 @@
         padding: 2.5%;
         border-radius: 20px;
         position: relative;
-        overflow: scroll;
+        overflow-y: scroll;
         display: block;
     }
 
@@ -211,7 +212,7 @@
     .popup-content {
         position: unset;
         height: 60%;
-        overflow: scroll;
+        overflow-y: scroll;
     }
 
     .textarea {

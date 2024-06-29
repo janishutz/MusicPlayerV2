@@ -1,416 +1,479 @@
 <template>
     <div>
         <div class="info">Designed and developed by Janis Hutz <a href="https://janishutz.com" target="_blank" style="text-decoration: none; color: white;">https://janishutz.com</a></div>
-        <div class="content" id="app">
-            <div v-if="hasLoaded" style="width: 100%">
+        <div class="remote-view">
+            <div v-if="hasLoaded && !showCouldNotFindRoom" class="showcase-wrapper">
                 <div class="current-song-wrapper">
-                    <span class="material-symbols-outlined fancy-view-song-art" v-if="!playingSong.hasCoverArt">music_note</span>
-                    <img v-else-if="playingSong.hasCoverArt && playingSong.coverArtOrigin === 'api'" :src="playingSong.coverArtURL" class="fancy-view-song-art" id="current-image" crossorigin="anonymous">
-                    <img v-else :src="'/getSongCover?filename=' + playingSong.filename" class="fancy-view-song-art" id="current-image">
+                    <img v-if="playlist[ playingSong ]" :src="playlist[ playingSong ].cover" class="fancy-view-song-art" id="current-image" crossorigin="anonymous">
+                    <span v-else class="material-symbols-outlined">music_note</span>
                     <div class="current-song">
                         <progress max="1000" id="progress" :value="progressBar"></progress>
-                        <h1>{{ playingSong.title }}</h1>
-                        <p class="dancing-style" v-if="playingSong.dancingStyle">{{ playingSong.dancingStyle }}</p>
-                        <p>{{ playingSong.artist }}</p>
+                        <h1>{{ playlist[ playingSong ] ? playlist[ playingSong ].title : 'Not playing' }}</h1>
+                        <p class="additional-info" v-if="playlist[ playingSong ] ? ( playlist[ playingSong ].additionalInfo !== '' ) : false">{{ playlist[ playingSong ] ? playlist[ playingSong ].additionalInfo : '' }}</p>
+                        <p>{{ playlist[ playingSong ] ? playlist[ playingSong ].artist : '' }}</p>
                     </div>
                 </div>
                 <div class="mode-selector-wrapper">
-                    <select v-model="visualizationSettings" @change="setVisualization()">
+                    <select v-model="visualizationSettings" @change="handleAnimationChange()">
                         <option value="mic">Microphone (Mic access required)</option>
-                        <option value="bpm">BPM (might not be 100% accurate)</option>
                         <option value="off">No visualization except background</option>
                     </select>
                 </div>
                 <div class="song-list-wrapper">
-                    <div v-for="song in songQueue" class="song-list">
-                        <span class="material-symbols-outlined song-image" v-if="!song.hasCoverArt && ( playingSong.filename !== song.filename || isPlaying )">music_note</span>
-                        <img v-else-if="song.hasCoverArt && ( playingSong.filename !== song.filename || isPlaying ) && song.coverArtOrigin === 'api'" :src="song.coverArtURL" class="song-image">
-                        <img v-else-if="song.hasCoverArt && ( playingSong.filename !== song.filename || isPlaying ) && song.coverArtOrigin !== 'api'" :src="'/getSongCover?filename=' + song.filename" class="song-image">
-                        <div v-if="playingSong.filename === song.filename && isPlaying" class="playing-symbols">
+                    <div v-for="song in songQueue" v-bind:key="song.id" class="song-list">
+                        <img :src="song.cover" class="song-image">
+                        <div v-if="( playlist[ playingSong ] ? playlist[ playingSong ].id : '' ) === song.id && isPlaying" class="playing-symbols">
                             <div class="playing-symbols-wrapper">
                                 <div class="playing-bar" id="bar-1"></div>
                                 <div class="playing-bar" id="bar-2"></div>
                                 <div class="playing-bar" id="bar-3"></div>
                             </div>
                         </div>
-                        <span class="material-symbols-outlined pause-icon" v-if="!isPlaying && playingSong.filename === song.filename">pause</span>
                         <div class="song-details-wrapper">
                             <h3>{{ song.title }}</h3>
                             <p>{{ song.artist }}</p>
                         </div>
                         <div class="time-until">
-                            {{ getTimeUntil( song ) }}
+                            {{ getTimeUntil( song.id ) }}
                         </div>
                     </div>
                     <!-- <img :src="" alt=""> -->
                 </div>
             </div>
-            <div v-else>
+            <div v-else-if="!hasLoaded && !showCouldNotFindRoom" class="showcase-wrapper">
                 <h1>Loading...</h1>
             </div>
+            <div v-else class="showcase-wrapper">
+                <h1>Couldn't connect!</h1>
+                <p>There does not appear to be a share with the specified name, or an error occurred when connecting.</p>
+                <p>You may reload the page to try again!</p>
+            </div>
             <div class="background" id="background">
-                <div class="beat"></div>
                 <div class="beat-manual"></div>
             </div>
         </div>
-        <!-- TODO: Get ColorThief either from CDN or preferably as NPM module -->
-        <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.3.0/color-thief.umd.js"></script> -->
     </div>
 </template>
 
-
 <script setup lang="ts">
+    import SocketConnection from '@/scripts/connection';
     import type { Song } from '@/scripts/song';
     import { computed, ref, type Ref } from 'vue';
-    import { ColorThief } from 'colorthief';
+    import bizualizer from '@/scripts/bizualizer';
 
-    const hasLoaded = ref( false );
-    const songs: Ref<Song[]> = ref( [] );
-    const playingSong = ref( 0 );
     const isPlaying = ref( false );
+    const playlist: Ref<Song[]> = ref( [] );
     const pos = ref( 0 );
-    const colourPalette: string[] = [];
+    const playingSong = ref( 0 );
     const progressBar = ref( 0 );
-    const timeTracker = ref( 0 );
+    const hasLoaded = ref( false );
+    const showCouldNotFindRoom = ref( false );
+    const playbackStart = ref( 0 );
+    let timeTracker = 0;
     const visualizationSettings = ref( 'mic' );
-    const micAnalyzer = ref( 0 );
-    const beatDetected = ref( false );
-    const colorThief = new ColorThief();
+
+    const conn = new SocketConnection();
+
+    conn.connect().then( d => {
+        playlist.value = d.playlist;
+        isPlaying.value = d.playbackStatus;
+        playingSong.value = d.playlistIndex;
+        playbackStart.value = d.playbackStart;
+        if ( isPlaying.value ) {
+            startTimeTracker();
+        }
+        pos.value = ( new Date().getTime() - parseInt( d.playbackStart ) ) / 1000;
+        progressBar.value = ( pos.value / playlist.value[ playingSong.value ].duration ) * 1000;
+        hasLoaded.value = true;
+        conn.registerListener( 'playlist', ( data ) => {
+            playlist.value = data;
+        } );
+
+        conn.registerListener( 'playback', ( data ) => {
+            isPlaying.value = data;
+            if ( isPlaying.value ) {
+                startTimeTracker();
+            } else {
+                stopTimeTracker();
+            }
+        } );
+
+        conn.registerListener( 'playback-start', ( data ) => {
+            playbackStart.value = data;
+            pos.value = ( new Date().getTime() - parseInt( data ) ) / 1000;
+        } );
+
+        conn.registerListener( 'playlist-index', ( data ) => {
+            playingSong.value = parseInt( data );
+            setTimeout( () => {
+                setBackground();
+            }, 1000 )
+        } );
+    } ).catch( () => {
+        showCouldNotFindRoom.value = true;
+    } );
+
     const songQueue = computed( () => {
-        let ret = [];
+        let ret: Song[] = [];
         let pos = 0;
-        for ( let song in songs.value ) {
+        for ( let song in playlist.value ) {
             if ( pos >= playingSong.value ) {
-                ret.push( songs.value[ song ] );
+                ret.push( playlist.value[ song ] );
             }
             pos += 1;
         }
         return ret;
     } );
+
+    // TODO: Handle disconnect from updater (=> have it disconnect)
+
     const getTimeUntil = computed( () => {
-        return ( song ) => {
+        return ( song: string ) => {
             let timeRemaining = 0;
-            for ( let i = this.queuePos; i < Object.keys( this.songs ).length - 1; i++ ) {
-                if ( this.songs[ i ] == song ) {
+            for ( let i = playingSong.value; i < Object.keys( playlist.value ).length - 1; i++ ) {
+                if ( playlist.value[ i ].id == song ) {
                     break;
                 }
-                timeRemaining += parseInt( this.songs[ i ].duration );
+                timeRemaining += playlist.value[ i ].duration;
             }
             if ( isPlaying.value ) {
                 if ( timeRemaining === 0 ) {
                     return 'Currently playing';
                 } else {
-                    return 'Playing in less than ' + Math.ceil( timeRemaining / 60 - this.pos / 60 )  + 'min';
+                    return 'Playing in less than ' + Math.ceil( timeRemaining / 60 - pos.value / 60 )  + 'min';
                 }
             } else {
                 if ( timeRemaining === 0 ) {
                     return 'Plays next';
                 } else {
-                    return 'Playing less than ' + Math.ceil( timeRemaining / 60 - this.pos / 60 )  + 'min after starting to play';
+                    return 'Playing less than ' + Math.ceil( timeRemaining / 60 - pos.value / 60 )  + 'min after starting to play';
                 }
             }
         }
     } );
-    methods: {
-        startTimeTracker () {
-            this.timeTracker = setInterval( () => {
-                this.pos = ( new Date().getTime() - this.playingSong.startTime ) / 1000 + this.oldPos;
-                this.progressBar = ( this.pos / this.playingSong.duration ) * 1000;
-                if ( isNaN( this.progressBar ) ) {
-                    this.progressBar = 0;
-                }
-            }, 100 );
-        },
-        stopTimeTracker () {
-            clearInterval( this.timeTracker );
-            this.oldPos = this.pos;
-        },
-        getImageData() {
-            return new Promise( ( resolve, reject ) => {
-                if ( this.playingSong.hasCoverArt ) {
-                    setTimeout( () => {
-                        const img = document.getElementById( 'current-image' );
-                        if ( img.complete ) {
-                            resolve( this.colorThief.getPalette( img ) );
-                        } else {
-                            img.addEventListener( 'load', () => {
-                                resolve( this.colorThief.getPalette( img ) );
-                            } );
-                        }
-                    }, 500 );
-                } else {
-                    reject( 'no image' );
-                }
-            } );
-        },
-        connect() {
-            this.colorThief = new ColorThief();
-            let source = new EventSource( '/clientDisplayNotifier', { withCredentials: true } );
-            source.onmessage = ( e ) => {
-                let data;
-                try {
-                    data = JSON.parse( e.data );
-                } catch ( err ) {
-                    data = { 'type': e.data };
-                }
-                if ( data.type === 'basics' ) {
-                    this.isPlaying = data.data.isPlaying ?? false;
-                    this.playingSong = data.data.playingSong ?? {};
-                    this.songs = data.data.songQueue ?? [];
-                    this.pos = data.data.pos ?? 0;
-                    this.oldPos = data.data.pos ?? 0;
-                    this.progressBar = this.pos / this.playingSong.duration * 1000;
-                    this.queuePos = data.data.queuePos ?? 0;
-                    this.getImageData().then( palette => {
-                        this.colourPalette = palette;
-                        this.handleBackground();
-                    } ).catch( () => {
-                        this.colourPalette = [ { 'r': 255, 'g': 0, 'b': 0 }, { 'r': 0, 'g': 255, 'b': 0 }, { 'r': 0, 'g': 0, 'b': 255 } ];
-                        this.handleBackground();
-                    } );
-                } else if ( data.type === 'pos' ) {
-                    this.pos = data.data;
-                    this.oldPos = data.data;
-                    this.progressBar = data.data / this.playingSong.duration * 1000;
-                } else if ( data.type === 'isPlaying' ) {
-                    this.isPlaying = data.data;
-                    this.handleBackground();
-                } else if ( data.type === 'songQueue' ) {
-                    this.songs = data.data;
-                } else if ( data.type === 'playingSong' ) {
-                    this.playingSong = data.data;
-                    this.getImageData().then( palette => {
-                        this.colourPalette = palette;
-                        this.handleBackground();
-                    } ).catch( () => {
-                        this.colourPalette = [ [ 255, 0, 0 ], [ 0, 255, 0 ], [ 0, 0, 255 ] ];
-                        this.handleBackground();
-                    } );
-                } else if ( data.type === 'queuePos' ) {
-                    this.queuePos = data.data;
-                }
-            };
 
-            source.onopen = () => {
-                this.isReconnecting = false;
-                this.hasLoaded = true;
-            };
+    const startTimeTracker = () => {
+        try {
+            clearInterval( timeTracker );
+        } catch ( err ) { /* empty */ }
 
-            let self = this;
-                
-            source.addEventListener( 'error', function( e ) {
-                if ( e.eventPhase == EventSource.CLOSED ) source.close();
-
-                if ( e.target.readyState == EventSource.CLOSED ) {
-                    console.log( 'disconnected' );
-                }
-
-                // TODO: Notify about disconnect
-                setTimeout( () => {
-                    if ( !self.isReconnecting ) {
-                        self.isReconnecting = true;
-                        self.tryReconnect();
-                    }
-                }, 1000 );
-            }, false );
-        },
-        tryReconnect() {
-            const int = setInterval( () => {
-                if ( !this.isReconnecting ) {
-                    clearInterval( int );
-                } else {
-                    connectToSSESource();
-                }
-            }, 1000 );
-        },
-        handleBackground() {
-            let colourDetails = [];
-            let colours = [];
-            let differentEnough = true;
-            if ( this.colourPalette[ 0 ] ) {
-                for ( let i in this.colourPalette ) {
-                    for ( let colour in colourDetails ) {
-                        const colourDiff = ( Math.abs( colourDetails[ colour ][ 0 ] - this.colourPalette[ i ][ 0 ] ) / 255
-                            + Math.abs( colourDetails[ colour ][ 1 ] - this.colourPalette[ i ][ 1 ] ) / 255
-                            + Math.abs( colourDetails[ colour ][ 2 ] - this.colourPalette[ i ][ 2 ] ) / 255 ) / 3 * 100;
-                        if ( colourDiff > 15 ) {
-                            differentEnough = true;
-                        }
-                    }
-                    if ( differentEnough ) {
-                        colourDetails.push( this.colourPalette[ i ] );
-                        colours.push( 'rgb(' + this.colourPalette[ i ][ 0 ] + ',' + this.colourPalette[ i ][ 1 ] + ',' + this.colourPalette[ i ][ 2 ] + ')' );
-                    }
-                    differentEnough = false;
-                }
+        setTimeout( () => {
+            handleAnimationChange();
+            setBackground();
+        }, 1000 );
+        timeTracker = setInterval( () => {
+            pos.value = ( new Date().getTime() - playbackStart.value ) / 1000;
+            progressBar.value = ( pos.value / playlist.value[ playingSong.value ].duration ) * 1000;
+            if ( isNaN( progressBar.value ) ) {
+                progressBar.value = 0;
             }
-            let outColours = 'conic-gradient(';
-            if ( colours.length < 3 ) {
-                for ( let i = 0; i < 3; i++ ) {
-                    if ( colours[ i ] ) {
-                        outColours += colours[ i ] + ',';
-                    } else {
-                        if ( i === 0 ) {
-                            outColours += 'blue,';
-                        } else if ( i === 1 ) {
-                            outColours += 'green,';
-                        } else if ( i === 2 ) {
-                            outColours += 'red,';
-                        }
-                    }
-                }
-            } else if ( colours.length < 11 ) {
-                for ( let i in colours ) {
-                    outColours += colours[ i ] + ',';
-                }
-            } else {
-                for ( let i = 0; i < 10; i++ ) {
-                    outColours += colours[ i ] + ',';
-                }
-            }
-            outColours += colours[ 0 ] ?? 'blue' + ')';
+        }, 100 );
+    }
+    
+    const stopTimeTracker = () => {
+        clearInterval( timeTracker );
 
-            $( '#background' ).css( 'background', outColours );
-            this.setVisualization();
-        },
-        setVisualization () {
-            if ( Object.keys( this.playingSong ).length > 0 ) {
-                if ( this.visualizationSettings === 'bpm' ) {
-                    if ( this.playingSong.bpm && this.isPlaying ) {
-                        $( '.beat' ).show();
-                        $( '.beat' ).css( 'animation-duration', 60 / this.playingSong.bpm );
-                        $( '.beat' ).css( 'animation-delay', this.pos % ( 60 / this.playingSong.bpm  * this.pos ) + this.playingSong.bpmOffset - ( 60 / this.playingSong.bpm  * this.pos / 2 ) );
-                    } else {
-                        $( '.beat' ).hide();
-                    }
-                    try {
-                        clearInterval( this.micAnalyzer );
-                    } catch ( err ) {}
-                } else if ( this.visualizationSettings === 'off' ) {
-                    $( '.beat' ).hide();
-                    try {
-                        clearInterval( this.micAnalyzer );
-                    } catch ( err ) {}
-                } else if ( this.visualizationSettings === 'mic' ) {
-                    $( '.beat-manual' ).hide();
-                    try {
-                        clearInterval( this.micAnalyzer );
-                    } catch ( err ) {}
-                    this.micAudioHandler();
-                }
-            } else {
-                console.log( 'not playing yet' );
-            }
-        },
-        micAudioHandler () {
-            const audioContext = new ( window.AudioContext || window.webkitAudioContext )();
-            const analyser = audioContext.createAnalyser();
-            analyser.fftSize = 256;
-            const bufferLength = analyser.frequencyBinCount;
-            const dataArray = new Uint8Array( bufferLength );
+        handleAnimationChange();
+    }
 
-            navigator.mediaDevices.getUserMedia( { audio: true } ).then( ( stream ) => {
-                const mic = audioContext.createMediaStreamSource( stream );
-                mic.connect( analyser );
-                analyser.getByteFrequencyData( dataArray );
-                let prevSpectrum = null;
-                let threshold = 10; // Adjust as needed
-                this.beatDetected = false;
-                this.micAnalyzer = setInterval( () => {
-                    analyser.getByteFrequencyData( dataArray );
-                    // Convert the frequency data to a numeric array
-                    const currentSpectrum = Array.from( dataArray );
-
-                    if ( prevSpectrum ) {
-                        // Calculate the spectral flux
-                        const flux = this.calculateSpectralFlux( prevSpectrum, currentSpectrum );
-
-                        if ( flux > threshold && !this.beatDetected ) {
-                            // Beat detected
-                            this.beatDetected = true;
-                            this.animateBeat();
-                        }
-                    }
-                    prevSpectrum = currentSpectrum;
-                }, 20 );
-            } );
-        },
-        animateBeat () {
-            $( '.beat-manual' ).stop();
-            const duration = Math.ceil( 60 / ( this.playingSong.bpm ?? 180 ) * 500 ) - 50;
-            $( '.beat-manual' ).fadeIn( 50 );
+    const animateBeat = () => {
+        $( '.beat-manual' ).stop();
+        const duration = Math.ceil( 60 / 120 * 500 ) - 50;
+        $( '.beat-manual' ).fadeIn( 50 );
+        setTimeout( () => {
+            $( '.beat-manual' ).fadeOut( duration );
             setTimeout( () => {
-                $( '.beat-manual' ).fadeOut( duration );
-                setTimeout( () => {
-                    $( '.beat-manual' ).stop();
-                    this.beatDetected = false;
-                }, duration );
-            }, 50 );
-        },
-        calculateSpectralFlux( prevSpectrum, currentSpectrum ) {
-            let flux = 0;
-        
-            for ( let i = 0; i < prevSpectrum.length; i++ ) {
-                const diff = currentSpectrum[ i ] - prevSpectrum[ i ];
-                flux += Math.max( 0, diff );
-            }
-        
-            return flux;
-        },
-        notifier() {
-            if ( parseInt( this.lastDispatch ) + 5000 < new Date().getTime() ) {
+                bizualizer.coolDown();
+                $( '.beat-manual' ).stop();
+            }, duration );
+        }, 50 );
+    }
 
-            }
-            Notification.requestPermission();
-
-            console.warn( '[ notifier ]: Status is now enabled \n\n-> Any leaving or tampering with the website will send a notification to the host' );
-            // Detect if window is currently in focus
-            window.onblur = () => {
-                this.sendNotification( 'blur' );
-            }
-
-            // Detect if browser window becomes hidden (also with blur event)
-            document.onvisibilitychange = () => {
-                if ( document.visibilityState === 'hidden' ) {
-                    this.sendNotification( 'visibility' );
-                }
-            };
-        },
-        sendNotification( notification ) {
-            let fetchOptions = {
-                method: 'post',
-                body: JSON.stringify( { 'type': notification } ),
-                headers: {
-                    'Content-Type': 'application/json',
-                    'charset': 'utf-8'
-                },
-            };
-            fetch( '/clientStatusUpdate', fetchOptions ).catch( err => {
-                console.error( err );
-            } );
-
-            new Notification( 'YOU ARE UNDER SURVEILLANCE', { 
-                body: 'Please return to the original webpage immediately!',
-                requireInteraction: true,
-             } )
-        }
-    },
-    mounted() {
-        this.connect();
-        this.notifier();
-        // if ( this.visualizationSettings === 'mic' ) {
-        //     this.micAudioHandler();
-        // }
-    },
-    watch: {
-        isPlaying( value ) {
-            if ( value ) {
-                this.startTimeTracker();
-            } else {
-                this.stopTimeTracker();
-            }
+    const handleAnimationChange = () => {
+        if ( visualizationSettings.value === 'mic' && isPlaying.value ) {
+            bizualizer.subscribeToBeatUpdate( animateBeat );
+        } else {
+            bizualizer.unsubscribeFromBeatUpdate()
         }
     }
-} ).mount( '#app' );
 
+    const setBackground = () => {
+        bizualizer.createBackground().then( bg => {
+            $( '#background' ).css( 'background', bg );
+        } );
+    }
+
+    const notifier = () => {
+        Notification.requestPermission();
+
+        console.warn( '[ notifier ]: Status is now enabled \n\n-> Any leaving or tampering with the website will send a notification to the host' );
+        // Detect if window is currently in focus
+        window.onblur = () => {
+            sendNotification();
+        }
+
+        // Detect if browser window becomes hidden (also with blur event)
+        document.onvisibilitychange = () => {
+            if ( document.visibilityState === 'hidden' ) {
+                sendNotification();
+            }
+        };
+    }
+
+    const sendNotification = () => {
+        new Notification( 'YOU ARE UNDER SURVEILLANCE', { 
+            body: 'Please return to the original webpage immediately!',
+            requireInteraction: true,
+        } );
+    }
 </script>
+
+<style scoped>
+    .remote-view {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+        text-align: justify;
+    }
+
+    .showcase-wrapper {
+        width: 100%;
+        z-index: 5;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+    }
+
+    .playing-symbols {
+        position: absolute;
+        left: 10vw;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: row;
+        width: 5vw;
+        height: 5vw;
+        background-color: rgba( 0, 0, 0, 0.6 );
+    }
+
+    .playing-symbols-wrapper {
+        width: 4vw;
+        height: 5vw;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: row;
+    }
+
+    .playing-bar {
+        height: 60%;
+        background-color: white;
+        width: 10%;
+        border-radius: 50px;
+        margin: auto;
+    }
+
+    #bar-1 {
+        animation: music-playing 0.9s infinite ease-in-out;
+    }
+
+    #bar-2 {
+        animation: music-playing 0.9s infinite ease-in-out;
+        animation-delay: 0.3s;
+    }
+
+    #bar-3 {
+        animation: music-playing 0.9s infinite ease-in-out;
+        animation-delay: 0.6s;
+    }
+
+    @keyframes music-playing {
+        0% {
+            transform: scaleY( 1 );
+        }
+        50% {
+            transform: scaleY( 0.5 );
+        }
+        100% {
+            transform: scaleY( 1 );
+        }
+    }
+
+    .song-list-wrapper {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+    }
+
+    .song-list {
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        align-items: center;
+        width: 80%;
+        margin: 2px;
+        padding: 1vh;
+        border: 1px white solid;
+        background-color: rgba( 0, 0, 0, 0.4 );
+    }
+
+    .song-details-wrapper {
+        margin: 0;
+        display: block;
+        margin-left: 10px;
+        margin-right: auto;
+        text-align: justify;
+    }
+
+    .song-list .song-image {
+        width: 5vw;
+        height: 5vw;
+        object-fit: cover;
+        object-position: center;
+        font-size: 5vw;
+    }
+
+    .pause-icon {
+        width: 5vw;
+        height: 5vw;
+        object-fit: cover;
+        object-position: center;
+        font-size: 5vw !important;
+        user-select: none;
+    }
+
+    .current-song-wrapper {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+        height: 55vh;
+        width: 100%;
+        margin-bottom: 0.5%;
+        margin-top: 0.25%;
+    }
+
+    .current-song {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+        margin-top: 1vh;
+        padding: 1vh;
+        text-align: center;
+        background-color: rgba( 0, 0, 0, 0.4 );
+    }
+
+    .fancy-view-song-art {
+        height: 30vh;
+        width: 30vh;
+        object-fit: cover;
+        object-position: center;
+        margin-bottom: 10px;
+        font-size: 30vh !important;
+    }
+
+    #app {
+        background-color: rgba( 0, 0, 0, 0 );
+    }
+
+    #progress, #progress::-webkit-progress-bar {
+        background-color: rgba(45, 28, 145);
+        color: rgba(45, 28, 145);
+        width: 30vw;
+        border: none;
+        border-radius: 0px;
+        accent-color: white;
+        -webkit-appearance: none;
+        appearance: none;
+    }
+
+    #progress::-moz-progress-bar {
+        background-color: white;
+    }
+
+    #progress::-webkit-progress-value {
+        background-color: white !important;
+    }
+
+    .mode-selector-wrapper {
+        opacity: 0;
+        position: fixed;
+        right: 0.5%;
+        top: 0.5%;
+        padding: 0.5%;
+    }
+
+    .mode-selector-wrapper:hover {
+        opacity: 1;
+    }
+
+    .dancing-style {
+        font-size: 250%;
+        margin: 0;
+        font-weight: bolder;
+    }
+
+    .info {
+        position: fixed;
+        font-size: 12px;
+        transform: rotate(270deg);
+        left: -150px;
+        margin: 0;
+        padding: 0;
+        top: 50%;
+        z-index: 100;
+    }
+</style>
+
+<style scoped>
+    .background {
+        position: fixed;
+        left: -50vw;
+        width: 200vw;
+        height: 200vw;
+        top: -50vw;
+        z-index: 1;
+        filter: blur(10px);
+        background: conic-gradient( blue, green, red, blue );
+        animation: gradientAnim 10s infinite linear;
+        background-position: center;
+    }
+
+    .beat, .beat-manual {
+        height: 100%;
+        width: 100%;
+        background-color: rgba( 0, 0, 0, 0.1 );
+        display: none;
+    }
+
+    .beat {
+        animation: beatAnim 0.6s infinite linear;
+    }
+
+    @keyframes beatAnim {
+        0% {
+            background-color: rgba( 0, 0, 0, 0.2 );
+        }
+        20% {
+            background-color: rgba( 0, 0, 0, 0 );
+        }
+        100% {
+            background-color: rgba( 0, 0, 0, 0.2 );
+        }
+    }
+
+    @keyframes gradientAnim {
+        from {
+            transform: rotate( 0deg );
+        }
+        to {
+            transform: rotate( 360deg );
+        }
+    }
+</style>

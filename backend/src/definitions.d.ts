@@ -5,6 +5,7 @@ export interface Room {
     playlistIndex: number;
     roomName: string;
     roomToken: string;
+    ownerUID: string;
 }
 
 export interface Song {

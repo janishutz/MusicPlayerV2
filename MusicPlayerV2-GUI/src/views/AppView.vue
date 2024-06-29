@@ -1,6 +1,9 @@
 <template>
     <div class="app-view">
-        <div class="home-view" v-if="isReady">
+        <div class="loading-view" v-if="!hasFinishedLoading">
+            <h1>Loading...</h1>
+        </div>
+        <div class="home-view" v-else-if="hasFinishedLoading && isReady">
             <libraryView class="library-view" :playlists="playlists" @selected-playlist="( id ) => { selectPlaylist( id ) }" 
                 :is-logged-in="isLoggedIntoAppleMusic" @custom-playlist="( pl ) => selectCustomPlaylist( pl )"></libraryView>
         </div>
@@ -11,6 +14,7 @@
         </div>
         <playerView :class="'player-view' + ( isReady ? ( isShowingFullScreenPlayer ? ' full-screen-player' : '' ) : ' player-hidden' )" @player-state-change="( state ) => { handlePlayerStateChange( state ) }"
             ref="player"></playerView>
+        <!-- TODO: Call to backend to check if user has access -->
     </div>
 </template>
 
@@ -25,6 +29,7 @@
     const isShowingFullScreenPlayer = ref( false );
     const player = ref( playerView );
     const playlists = ref( [] );
+    const hasFinishedLoading = ref( true );
 
     const handlePlayerStateChange = ( newState: string ) => {
         if ( newState === 'hide' ) {
@@ -66,6 +71,15 @@
     const selectCustomPlaylist = ( playlist: ReadFile[] ) => {
         player.value.selectCustomPlaylist( playlist );
     }
+
+    // fetch( localStorage.getItem( 'url' ) + '/checkUserStatus', { credentials: 'include' } ).then( res => {
+    //     if ( res.status === 200 ) {
+    //         res.json().then( json => {
+                
+    //         } );
+    //     }
+    // } );
+    
 </script>
 
 <style scoped>

@@ -188,7 +188,7 @@
     .playlist-box {
         height: calc( 100% - 100px );
         width: 100%;
-        overflow: scroll;
+        overflow-y: scroll;
         display: flex;
         align-items: center;
         flex-direction: column;

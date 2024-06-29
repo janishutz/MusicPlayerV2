@@ -71,9 +71,9 @@
      * @param {string} priority The priority of the message: 'low', 'normal', 'critical'
      * @returns {number}
      */
-    const createNotification = ( message: string, showDuration: number, messageType: string, priority: string, redirect?: string ): number => {
+    const createNotification = ( message: string, showDuration: number, msgType: string, priority: string, redirect?: string ): number => {
         /* 
-                Takes a notification options array that contains: message, showDuration (in seconds), messageType (ok, error, progress, info) and priority (low, normal, critical).
+                Takes a notification options array that contains: message, showDuration (in seconds), msgType (ok, error, progress, info) and priority (low, normal, critical).
                 Returns a notification ID which can be used to cancel the notification. The component will throttle notifications and display
                 one at a time and prioritize messages with higher priority. Use vue refs to access these methods.
             */
@@ -89,10 +89,10 @@
             currentID.value[ 'low' ] += 1;
             id = currentID.value[ 'low' ];
         }
-        notifications.value[ id ] = { 'message': message, 'showDuration': showDuration, 'messageType': messageType, 'priority': priority, 'id': id, redirect: redirect };
+        notifications.value[ id ] = { 'message': message, 'showDuration': showDuration, 'messageType': msgType, 'priority': priority, 'id': id, redirect: redirect };
         queue.value.push( id );
         console.log( 'scheduled notification: ' + id + ' (' + message + ')' );
-        if ( ( new Date().getTime() - notificationDisplayStartTime.value ) / 1000 >= ( notifications.value[ currentDID.value ] ? notifications.value[ currentDID.value ].showDuration : 0 ) ) {
+        if ( ( new Date().getTime() - notificationDisplayStartTime.value ) / 1000 >= ( notifications.value[ currentDID.value ] ? notifications.value[ currentDID.value ].showDuration : 0 ) || messageType.value === 'hide' ) {
             handleNotifications();
         }
         return id;

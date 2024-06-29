@@ -119,16 +119,18 @@ const run = () => {
             }
         } )
 
-        socket.on( 'playlist', ( data: { roomName: string, roomToken: string, data: Song[] } ) => {
+        socket.on( 'playlist-update', ( data: { roomName: string, roomToken: string, data: Song[] } ) => {
             if ( socketData[ data.roomName ] ) {
                 if ( socketData[ data.roomName ].roomToken === data.roomToken ) {
-                    socketData[ data.roomName ].playlist = data.data;
-                    io.to( data.roomName ).emit( 'playlist', data.data );
+                    if ( socketData[ data.roomName ].playlist !== data.data ) {
+                        socketData[ data.roomName ].playlist = data.data;
+                        io.to( data.roomName ).emit( 'playlist', data.data );
+                    }
                 }
             }
         } );
 
-        socket.on( 'playback', ( data: { roomName: string, roomToken: string, data: boolean } ) => {
+        socket.on( 'playback-update', ( data: { roomName: string, roomToken: string, data: boolean } ) => {
             if ( socketData[ data.roomName ] ) {
                 if ( socketData[ data.roomName ].roomToken === data.roomToken ) {
                     socketData[ data.roomName ].playbackStatus = data.data;
@@ -137,7 +139,7 @@ const run = () => {
             }
         } );
 
-        socket.on( 'playlist-index', ( data: { roomName: string, roomToken: string, data: number } ) => {
+        socket.on( 'playlist-index-update', ( data: { roomName: string, roomToken: string, data: number } ) => {
             if ( socketData[ data.roomName ] ) {
                 if ( socketData[ data.roomName ].roomToken === data.roomToken ) {
                     socketData[ data.roomName ].playlistIndex = data.data;
@@ -146,7 +148,7 @@ const run = () => {
             }
         } );
 
-        socket.on( 'playback-start', ( data: { roomName: string, roomToken: string, data: number } ) => {
+        socket.on( 'playback-start-update', ( data: { roomName: string, roomToken: string, data: number } ) => {
             if ( socketData[ data.roomName ] ) {
                 if ( socketData[ data.roomName ].roomToken === data.roomToken ) {
                     socketData[ data.roomName ].playbackStart = data.data;
@@ -174,10 +176,15 @@ const run = () => {
                     playlistIndex: 0,
                     roomName: roomName,
                     roomToken: roomToken,
+                    ownerUID: sdk.getUserData( request ).uid,
                 };
                 response.send( roomToken );
             } else {
-                response.status( 409 ).send( 'ERR_CONFLICT' );
+                if ( socketData[ roomName ].ownerUID === sdk.getUserData( request ).uid ) {
+                    response.send( socketData[ roomName ].roomToken );
+                } else {
+                    response.status( 409 ).send( 'ERR_CONFLICT' );
+                }
             }
         } else {
             response.status( 403 ).send( 'ERR_FORBIDDEN' );
@@ -202,6 +209,8 @@ const run = () => {
         } );
         res.send( jwtToken );
     } );
+
+    // TODO: Get user's subscriptions using store sdk
 
     app.use( ( request: express.Request, response: express.Response, next: express.NextFunction ) => {
         response.status( 404 ).send( 'ERR_NOT_FOUND' );

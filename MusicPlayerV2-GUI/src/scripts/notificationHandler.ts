@@ -15,6 +15,7 @@ class NotificationHandler {
     socket: Socket;
     roomName: string;
     roomToken: string;
+    isConnected: boolean;
 
     constructor () {
         this.socket = io( localStorage.getItem( 'url' ) ?? '', {
@@ -22,6 +23,7 @@ class NotificationHandler {
         } );
         this.roomName = '';
         this.roomToken = '';
+        this.isConnected = false;
     }
 
     /**
@@ -41,7 +43,8 @@ class NotificationHandler {
                             name: this.roomName,
                             token: this.roomToken
                         }, ( res: { status: boolean, msg: string } ) => {
-                            if ( res.status === true) {
+                            if ( res.status === true ) {
+                                this.isConnected = true;
                                 resolve();
                             } else {
                                 reject( 'ERR_ROOM_CONNECTING' );
@@ -64,7 +67,9 @@ class NotificationHandler {
      * @returns {void}
      */
     emit ( event: string, data: any ): void {
-        this.socket.emit( event, data );
+        if ( this.isConnected ) {
+            this.socket.emit( event, { 'roomToken': this.roomToken, 'roomName': this.roomName, 'data': data } );
+        }
     }
 
     /**
@@ -74,7 +79,9 @@ class NotificationHandler {
      * @returns {void}
      */
     registerListener ( event: string, cb: ( data: any ) => void ): void {
-        this.socket.on( event, cb );
+        if ( this.isConnected ) {
+            this.socket.on( event, cb );
+        }
     }
 
     /**
@@ -82,15 +89,21 @@ class NotificationHandler {
      * @returns {any}
      */
     disconnect (): void {
-        this.socket.disconnect();
-        this.socket.emit( 'delete-room', {
-            name: this.roomName,
-            token: this.roomToken
-        }, ( res: { status: boolean, msg: string } ) => {
-            if ( !res.status ) {
-                alert( 'Unable to delete the room you were just in. The name will be blocked until the next server restart!' );
-            }
-        } );
+        if ( this.isConnected ) {
+            this.socket.emit( 'delete-room', {
+                name: this.roomName,
+                token: this.roomToken
+            }, ( res: { status: boolean, msg: string } ) => {
+                this.socket.disconnect();
+                if ( !res.status ) {
+                    alert( 'Unable to delete the room you were just in. The name will be blocked until the next server restart!' );
+                }
+            } );
+        }
+    }
+
+    getRoomName (): string {
+        return this.roomName;
     }
 }
 

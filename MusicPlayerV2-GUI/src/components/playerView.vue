@@ -31,13 +31,18 @@
                             <p class="playback-pos">{{ nicePlaybackPos }}</p>
                             <p class="playback-duration" @click="toggleRemaining()" title="Toggle between remaining time and song duration">{{ niceDuration }}</p> 
                         </div>
-                        <sliderView :position="pos" :active="true" :duration="duration" name="main" @pos="( pos ) => player.goToPos( pos )"></sliderView>
+                        <sliderView :position="pos" :active="true" :duration="duration" name="main" @pos="( pos ) => goToPos( pos )"></sliderView>
                     </div>
 
                     <div class="shuffle-repeat" v-if="isShowingFullScreenPlayer">
                         <span class="material-symbols-outlined controls" @click="control( 'repeat' )" style="margin-right: auto;">repeat{{ repeatMode }}</span>
-                        <span class="material-symbols-outlined controls" @click="control( 'start-share' )" style="margin-right: auto;" title="Share your playlist on a public playlist page (opens a configuration window)" v-if="!isConnectedToNotifier">share</span>
-                        <span class="material-symbols-outlined controls" @click="control( 'stop-share' )" style="margin-right: auto;" title="Stop sharing your playlist on a public playlist page" v-else>close</span>
+                        <div style="margin-right: auto;">
+                            <span class="material-symbols-outlined controls" @click="control( 'start-share' )" title="Share your playlist on a public playlist page (opens a configuration window)" v-if="!isConnectedToNotifier">share</span>
+                            <div v-else>
+                                <span class="material-symbols-outlined controls" @click="control( 'stop-share' )" title="Stop sharing your playlist on a public playlist page">close</span>
+                                <span class="material-symbols-outlined controls" @click="control( 'show-share' )" title="Show information on the share, including URL to connect to">info</span>
+                            </div>
+                        </div>
                         <span class="material-symbols-outlined controls" @click="control( 'shuffle' )">shuffle{{ shuffleMode }}</span>
                     </div>
                 </div>
@@ -52,6 +57,7 @@
                 @add-new-songs-apple-music="( song ) => addNewSongFromObject( song )"></playlistView>
         </div>
         <notificationsModule ref="notifications" location="bottomleft" size="bigger"></notificationsModule>
+        <popupModule @update="( data ) => popupReturnHandler( data )" ref="popup"></popupModule>
         <audio src="" id="local-audio" controls="false"></audio>
     </div>
 </template>
@@ -69,6 +75,7 @@
     import notificationsModule from './notificationsModule.vue';
     import { useUserStore } from '@/stores/userStore';
     import NotificationHandler from '@/scripts/notificationHandler';
+    import popupModule from './popupModule.vue';
 
     const isPlaying = ref( false );
     const repeatMode = ref( '' );
@@ -91,6 +98,9 @@
     const notifications = ref( notificationsModule );
     const notificationHandler = new NotificationHandler();
     const isConnectedToNotifier = ref( false );
+    const popup = ref( popupModule );
+    const roomName = ref( '' );
+    let currentlyOpenPopup = '';
 
     const emits = defineEmits( [ 'playerStateChange' ] );
 
@@ -103,7 +113,12 @@
             player.control( 'pause' );
             stopProgressTracker();
         }
-        notificationHandler.emit( 'playback', isPlaying.value );
+    }
+
+    const goToPos = ( position: number ) => {
+        player.goToPos( position );
+        pos.value = position;
+        notificationHandler.emit( 'playback-start-update', new Date().getTime() - pos.value * 1000 );
     }
 
     const toggleRemaining = () => {
@@ -115,12 +130,12 @@
             isPlaying.value = false;
             player.control( 'pause' );
             stopProgressTracker();
-            notificationHandler.emit( 'playback', isPlaying.value );
+            notificationHandler.emit( 'playback-update', isPlaying.value );
         } else if ( action === 'play' ) {
             isPlaying.value = true;
             player.control( 'play' );
             startProgressTracker();
-            notificationHandler.emit( 'playback', isPlaying.value );
+            notificationHandler.emit( 'playback-update', isPlaying.value );
         } else if ( action === 'repeat' ) {
             if ( repeatMode.value === '' ) {
                 repeatMode.value = '_on';
@@ -137,29 +152,29 @@
                 shuffleMode.value = '_on';
                 player.setShuffle( true );
                 getDetails();
-                notificationHandler.emit( 'playlist', playlist.value );
+                notificationHandler.emit( 'playlist-update', playlist.value );
             } else {
                 shuffleMode.value = '';
                 player.setShuffle( false );
                 getDetails();
-                notificationHandler.emit( 'playlist', playlist.value );
+                notificationHandler.emit( 'playlist-update', playlist.value );
             }
             getDetails();
         } else if ( action === 'forward' ) {
             clickCountForward.value += 1;
             if( player.control( 'skip-10' ) ) {
-                setTimeout( () => {
-                    startProgressTracker();
-                    getDetails();
-                }, 2000 );
+                startProgressTracker();
+            } else {
+                pos.value = player.getPlaybackPos();
+                notificationHandler.emit( 'playback-start-update', new Date().getTime() - pos.value * 1000 );
             }
         } else if ( action === 'back' ) {
             clickCountBack.value += 1;
             if( player.control( 'back-10' ) ) {
-                setTimeout( () => {
-                    startProgressTracker();
-                    getDetails();
-                }, 2000 );
+                startProgressTracker();
+            } else {
+                pos.value = player.getPlaybackPos();
+                notificationHandler.emit( 'playback-start-update', new Date().getTime() - pos.value * 1000 );
             }
         } else if ( action === 'next' ) {
             stopProgressTracker();
@@ -167,27 +182,39 @@
             coverArt.value = '';
             currentlyPlayingSongArtist.value = '';
             currentlyPlayingSongName.value = 'Loading...';
-            setTimeout( () => {
-                getDetails();
-                startProgressTracker();
-            }, 2000 );
+            startProgressTracker();
         } else if ( action === 'previous' ) {
             stopProgressTracker();
             player.control( 'previous' );
             coverArt.value = '';
             currentlyPlayingSongArtist.value = '';
             currentlyPlayingSongName.value = 'Loading...';
-            setTimeout( () => {
-                getDetails();
-                startProgressTracker();
-            }, 2000 );
+            startProgressTracker();
         } else if ( action === 'start-share' ) {
-            // TODO: Open popup, then send data with popup returns
-            notificationHandler.connect( 'test' );
+            popup.value.openPopup( {
+                title: 'Define a share name',
+                popupType: 'input',
+                subtitle: 'A share allows others to join your playlist and see the current song, the playback position and the upcoming songs. You can get the link to the page, once the share is set up. Please choose a name, which will then be part of the URL with which others can join the share',
+                data: [
+                    {
+                        name: 'Share Name',
+                        dataType: 'text',
+                        id: 'roomName'
+                    }
+                ]
+            } );
+            currentlyOpenPopup = 'create-share';
         } else if ( action === 'stop-share' ) {
             if ( confirm( 'Do you really want to stop sharing?' ) ) {
                 notificationHandler.disconnect();
+                isConnectedToNotifier.value = false;
+                notifications.value.createNotification( 'Disconnected successfully!', 5, 'ok', 'normal' );
             }
+        } else if ( action === 'show-share' ) {
+            alert( 'You are currently connected to share "' + roomName.value 
+                + '". \nYou can connect to it via https://music.janishutz.com/share/' + roomName.value
+                + '. \n\nYou can connect to the fancy showcase screen using this link: https://music.janishutz.com/fancy/' + roomName.value
+                + '. Be aware that this one will use significantly more system AND network resources, so only use that for a screen that is front and center, not for a QR code to have all people connect to.' );
         }
     }
 
@@ -230,11 +257,10 @@
         currentlyPlayingSongName.value = 'Loading...';
         player.setPlaylistByID( id ).then( () => {
             isPlaying.value = true;
+            startProgressTracker();
             setTimeout( () => {
-                startProgressTracker();
                 getDetails();
-                notificationHandler.emit( 'playlist', playlist.value );
-                // TODO: Add playback-start emit as well. For every time elapsed before starting to play current section, move start time back
+                notificationHandler.emit( 'playlist-update', playlist.value );
             }, 2000 );
         } );
     }
@@ -255,9 +281,10 @@
         player.setPlaylist( playlist.value );
         player.prepare( 0 );
         isPlaying.value = true;
+        startProgressTracker();
         setTimeout( () => {
-            startProgressTracker();
             getDetails();
+            notificationHandler.emit( 'playlist-update', playlist.value );
         }, 2000 );
         notifications.value.cancelNotification( n );
         notifications.value.createNotification( 'Playlist loaded', 10, 'ok', 'normal' );
@@ -316,10 +343,7 @@
         for ( const s in p ) {
             if ( p[ s ].id === id ) {
                 player.prepare( parseInt( s ) );
-                setTimeout( () => {
-                    getDetails();
-                    startProgressTracker();
-                }, 2000 );
+                startProgressTracker();
                 break;
             }
         }
@@ -332,8 +356,9 @@
     const startProgressTracker = () => {
         hasReachedEnd = false;
         isPlaying.value = true;
-        const playingSong = player.getPlayingSong();
-        prepNiceDurationTime( playingSong );
+        let playingSong = player.getPlayingSong();
+        hasStarted = false;
+        pos.value = 0;
         progressTracker = setInterval( () => {
             pos.value = player.getPlaybackPos();
             if ( pos.value > playingSong.duration - 1 && !hasReachedEnd ) {
@@ -350,9 +375,13 @@
             }
 
             if ( pos.value > 0 && !hasStarted ) {
-                notificationHandler.emit( 'playlist-index', currentlyPlayingSongIndex.value );
-                notificationHandler.emit( 'playback', isPlaying.value );
-                notificationHandler.emit( 'playback-start', new Date().getTime() - pos.value * 1000 );
+                getDetails();
+                playingSong = player.getPlayingSong();
+                console.log( pos.value );
+                prepNiceDurationTime( playingSong );
+                notificationHandler.emit( 'playlist-index-update', currentlyPlayingSongIndex.value );
+                notificationHandler.emit( 'playback-update', isPlaying.value );
+                notificationHandler.emit( 'playback-start-update', new Date().getTime() - pos.value * 1000 );
                 hasStarted = true;
             }
 
@@ -404,11 +433,13 @@
             clearInterval( progressTracker );
         } catch ( _ ) { /* empty */ }
         isPlaying.value = false;
+        notificationHandler.emit( 'playback-update', isPlaying.value );
     }
 
     const moveSong = ( move: SongMove ) => {
         player.moveSong( move );
         getDetails();
+        notificationHandler.emit( 'playlist-update', playlist.value );
     }
 
     const addNewSongs = async ( songs: ReadFile[] ) => {
@@ -426,13 +457,11 @@
         if ( !isPlaying.value ) {
             player.prepare( 0 );
             isPlaying.value = true;
-            setTimeout( () => {
-                startProgressTracker();
-                getDetails();
-            }, 2000 );
+            startProgressTracker();
         }
         notifications.value.cancelNotification( n );
         notifications.value.createNotification( 'New songs added', 10, 'ok', 'normal' );
+        notificationHandler.emit( 'playlist-update', playlist.value );
     }
 
     const addNewSongFromObject = ( song: Song ) => {
@@ -442,10 +471,8 @@
         if ( !isPlaying.value ) {
             player.prepare( 0 );
             isPlaying.value = true;
-            setTimeout( () => {
-                startProgressTracker();
-                getDetails();
-            }, 2000 );
+            startProgressTracker();
+            notificationHandler.emit( 'playlist-update', playlist.value );
         }
     }
 
@@ -467,6 +494,28 @@
             }
         }
     } );
+
+    const popupReturnHandler = ( data: any ) => {
+        if ( currentlyOpenPopup === 'create-share' ) {
+            notificationHandler.connect( data.roomName ).then( () => {
+                roomName.value = notificationHandler.getRoomName();
+                isConnectedToNotifier.value = true;
+                notificationHandler.emit( 'playlist-index-update', currentlyPlayingSongIndex.value );
+                notificationHandler.emit( 'playback-update', isPlaying.value );
+                notificationHandler.emit( 'playback-start-update', new Date().getTime() - pos.value * 1000 );
+                notificationHandler.emit( 'playlist-update', playlist.value );
+                notifications.value.createNotification( 'Joined share "' + data.roomName + '"!', 5, 'ok', 'normal' );
+            } ).catch( e => {
+                if ( e === 'ERR_CONFLICT' ) {
+                    notifications.value.createNotification( 'A share with this name exists already!', 5, 'error', 'normal' );
+                    control( 'start-share' );
+                } else {
+                    console.error( e );
+                    notifications.value.createNotification( 'Could not create share!', 5, 'error', 'normal' );
+                }
+            } );
+        }
+    }
 
     defineExpose( {
         logIntoAppleMusic,

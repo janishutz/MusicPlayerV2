@@ -10,17 +10,17 @@
 import { defineStore } from 'pinia';
 
 export const useUserStore = defineStore( 'user', {
-    state: () => ( { 'isUserAuth': false, 'isAdminAuth': false, 'isUsingKeyboard': false, 'username': '' } ),
+    state: () => ( { 'isUserAuth': false, 'hasSubscribed': false, 'isUsingKeyboard': false, 'username': '' } ),
     getters: {
         getUserAuthenticated: ( state ) => state.isUserAuth,
-        getAdminAuthenticated: ( state ) => state.isAdminAuth,
+        getSubscriptionStatus: ( state ) => state.hasSubscribed,
     },
     actions: { 
         setUserAuth ( auth: boolean ) {
             this.isUserAuth = auth;
         },
-        setAdminAuth ( auth: boolean ) {
-            this.isAdminAuth = auth;
+        setSubscriptionStatus ( status: boolean ) {
+            this.hasSubscribed = status;
         },
         setUsername ( username: string ) {
             this.username = username;

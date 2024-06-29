@@ -23,6 +23,24 @@ const router = createRouter( {
                 'title': 'App'
             }
         },
+        {
+            path: '/share/:name',
+            name: 'share',
+            component: () => import( '../views/RemoteView.vue' ),
+            meta: {
+                'authRequired': false,
+                'title': 'Share'
+            }
+        },
+        {
+            path: '/fancy/:name',
+            name: 'fancy',
+            component: () => import( '../views/ShowcaseView.vue' ),
+            meta: {
+                'authRequired': false,
+                'title': 'Fancy View'
+            }
+        },
         { 
             path: '/:pathMatch(.*)*', 
             name: 'NotFound', 
