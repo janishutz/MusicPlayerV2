@@ -1,11 +1,12 @@
 <template>
     <div>
+        <span class="anti-tamper material-symbols-outlined" title="Anti-Tamper is enabled. Leaving this window will cause a notification to be dispatched to the player!" v-if="isAntiTamperEnabled">lock</span>
         <div class="info">Designed and developed by Janis Hutz <a href="https://janishutz.com" target="_blank" style="text-decoration: none; color: white;">https://janishutz.com</a></div>
         <div class="remote-view">
             <div v-if="hasLoaded && !showCouldNotFindRoom" class="showcase-wrapper">
                 <div class="current-song-wrapper">
                     <img v-if="playlist[ playingSong ]" :src="playlist[ playingSong ].cover" class="fancy-view-song-art" id="current-image" crossorigin="anonymous">
-                    <span v-else class="material-symbols-outlined">music_note</span>
+                    <span v-else class="material-symbols-outlined fancy-view-song-art">music_note</span>
                     <div class="current-song">
                         <progress max="1000" id="progress" :value="progressBar"></progress>
                         <h1>{{ playlist[ playingSong ] ? playlist[ playingSong ].title : 'Not playing' }}</h1>
@@ -71,6 +72,7 @@
     const playbackStart = ref( 0 );
     let timeTracker = 0;
     const visualizationSettings = ref( 'mic' );
+    const isAntiTamperEnabled = ref( false );
 
     const conn = new SocketConnection();
 
@@ -83,8 +85,12 @@
             startTimeTracker();
         }
         pos.value = ( new Date().getTime() - parseInt( d.playbackStart ) ) / 1000;
-        progressBar.value = ( pos.value / playlist.value[ playingSong.value ].duration ) * 1000;
+        progressBar.value = ( pos.value / ( playlist.value[ playingSong.value ] ? playlist.value[ playingSong.value ].duration : 1 ) ) * 1000;
         hasLoaded.value = true;
+        if ( d.useAntiTamper ) {
+            isAntiTamperEnabled.value = true;
+            notifier();
+        }
         conn.registerListener( 'playlist', ( data ) => {
             playlist.value = data;
         } );
@@ -107,9 +113,17 @@
             playingSong.value = parseInt( data );
             setTimeout( () => {
                 setBackground();
-            }, 1000 )
+            }, 1000 );
         } );
-    } ).catch( () => {
+
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        conn.registerListener( 'delete-share', ( _ ) => {
+            alert( 'This share was just deleted. It is no longer available. This page will reload automatically!' );
+            conn.disconnect();
+            location.reload();
+        } );
+    } ).catch( e => {
+        console.error( e );
         showCouldNotFindRoom.value = true;
     } );
 
@@ -178,7 +192,7 @@
 
     const animateBeat = () => {
         $( '.beat-manual' ).stop();
-        const duration = Math.ceil( 60 / 120 * 500 ) - 50;
+        const duration = Math.ceil( 60 / 180 * 500 ) - 50;
         $( '.beat-manual' ).fadeIn( 50 );
         setTimeout( () => {
             $( '.beat-manual' ).fadeOut( duration );
@@ -225,10 +239,20 @@
             body: 'Please return to the original webpage immediately!',
             requireInteraction: true,
         } );
+
+        conn.emit( 'tampering', '' );
     }
 </script>
 
 <style scoped>
+    .anti-tamper {
+        position: fixed;
+        z-index: 10;
+        bottom: 5px;
+        right: 5px;
+        font-size: 2rem;
+    }
+
     .remote-view {
         width: 100%;
         display: flex;
@@ -236,6 +260,7 @@
         align-items: center;
         flex-direction: column;
         text-align: justify;
+        color: white;
     }
 
     .showcase-wrapper {
@@ -428,6 +453,7 @@
         padding: 0;
         top: 50%;
         z-index: 100;
+        color: white;
     }
 </style>
 

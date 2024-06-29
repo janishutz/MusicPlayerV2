@@ -6,7 +6,9 @@
         <button @click="openSearch()" v-if="$props.isLoggedIntoAppleMusic" class="small-buttons" title="Search Apple Music for the song"><span class="material-symbols-outlined">search</span></button>
         <p v-if="!hasSelectedSongs">Please select at least one song to proceed</p>
         <div class="playlist-box" id="pl-box">
-            <!-- TODO: Allow adding more songs with search on Apple Music or loading from local disk -->
+            <!-- TODO: Allow editing additionalInfo. Think also how to make it persist over reloads... Export to JSON and then best-guess add them? Very easy for Apple Music 'cause ID, but how for local songs? -->
+            <!-- TODO: Allow deleting songs, as well as whole playlist -->
+            <!-- TODO: Handle long AppleMusic Playlists, as AppleMusic doesn't automatically load all songs of a playlist -->
             <div class="song" v-for="song in computedPlaylist" v-bind:key="song.id" 
                 :class="( song.id === ( $props.playlist ? $props.playlist [ $props.currentlyPlaying ?? 0 ].id : '' ) && isPlaying ? 'playing' : ' not-playing' ) 
                 + ( ( !isPlaying && ( song.id === ( $props.playlist ? $props.playlist [ $props.currentlyPlaying ?? 0 ].id : '' ) ) ) ? ' active-song' : '' )">
@@ -186,7 +188,7 @@
 
 <style scoped>
     .playlist-box {
-        height: calc( 100% - 100px );
+        height: calc( 100% - 150px );
         width: 100%;
         overflow-y: scroll;
         display: flex;

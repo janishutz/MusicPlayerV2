@@ -6,6 +6,7 @@ export interface Room {
     roomName: string;
     roomToken: string;
     ownerUID: string;
+    useAntiTamper: boolean;
 }
 
 export interface Song {

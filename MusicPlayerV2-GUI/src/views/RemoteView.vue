@@ -5,7 +5,7 @@
             <div v-if="hasLoaded && !showCouldNotFindRoom" style="width: 100%">
                 <div class="current-song-wrapper">
                     <img v-if="playlist[ playingSong ]" :src="playlist[ playingSong ].cover" class="fancy-view-song-art" id="current-image" crossorigin="anonymous">
-                    <span v-else class="material-symbols-outlined">music_note</span>
+                    <span v-else class="material-symbols-outlined fancy-view-song-art">music_note</span>
                     <div class="current-song">
                         <progress max="1000" id="progress" :value="progressBar"></progress>
                         <h1>{{ playlist[ playingSong ] ? playlist[ playingSong ].title : 'Not playing' }}</h1>
@@ -64,7 +64,7 @@
             startTimeTracker();
         }
         pos.value = ( new Date().getTime() - parseInt( d.playbackStart ) ) / 1000;
-        progressBar.value = ( pos.value / playlist.value[ playingSong.value ].duration ) * 1000;
+        progressBar.value = ( pos.value / ( playlist.value[ playingSong.value ] ? playlist.value[ playingSong.value ].duration : 1 ) ) * 1000;
         hasLoaded.value = true;
         conn.registerListener( 'playlist', ( data ) => {
             playlist.value = data;
@@ -87,7 +87,15 @@
         conn.registerListener( 'playlist-index', ( data ) => {
             playingSong.value = parseInt( data );
         } );
-    } ).catch( () => {
+
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        conn.registerListener( 'delete-share', ( _ ) => {
+            alert( 'This share was just deleted. It is no longer available. The page will reload automatically to try and re-establish connection!' );
+            conn.disconnect();
+            location.reload();
+        } );
+    } ).catch( e => {
+        console.error( e );
         showCouldNotFindRoom.value = true;
     } );
 

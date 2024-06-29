@@ -29,11 +29,12 @@ class NotificationHandler {
     /**
      * Create a room token and connect to 
      * @param {string} roomName 
+     * @param {boolean} useAntiTamper
      * @returns {Promise<string>}
      */
-    connect ( roomName: string ): Promise<void> {
+    connect ( roomName: string, useAntiTamper: boolean ): Promise<void> {
         return new Promise( ( resolve, reject ) => {
-            fetch( localStorage.getItem( 'url' ) + '/createRoomToken?roomName=' + roomName, { credentials: 'include' } ).then( res => {
+            fetch( localStorage.getItem( 'url' ) + '/createRoomToken?roomName=' + roomName + '&useAntiTamper=' + useAntiTamper, { credentials: 'include' } ).then( res => {
                 if ( res.status === 200 ) {
                     res.text().then( text => {
                         this.roomToken = text;

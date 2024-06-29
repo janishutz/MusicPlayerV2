@@ -5,7 +5,7 @@
             style="margin-top: 5vh;" title="Sign in or sign up with janishutz.com ID" v-if="status"
             >{{ isTryingToSignIn ? 'Signing you in...' : 'Login / Sign up' }}</button>
         <p v-else>We are sorry, but we were unable to initialize the login services. Please reload the page if you wish to retry!</p>
-        <p>MusicPlayer is a browser based Music Player, that allows you to connect other devices, simply with another web-browser, where you can see the current playlist with sleek animations. You can log in using your Apple Music account or load a playlist from your local disk, simply by selecting the songs using a file picker.</p>
+        <p style="width: 80%;">MusicPlayer is a browser based Music Player, that allows you to connect other devices, simply with another web-browser, where you can see the current playlist with sleek animations. You can log in using your Apple Music account or load a playlist from your local disk, simply by selecting the songs using a file picker.</p>
         <notificationsModule ref="notifications" location="bottomleft" size="bigger"></notificationsModule>
     </div>
 </template>

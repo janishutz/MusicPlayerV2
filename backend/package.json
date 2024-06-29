@@ -30,6 +30,7 @@
     "jsonwebtoken": "^9.0.2",
     "node-mysql": "^0.4.2",
     "oauth-janishutz-client-server": "file:../../oauth/client/server/dist",
-    "socket.io": "^4.7.5"
+    "socket.io": "^4.7.5",
+    "store.janishutz.com-sdk": "file:../../store/sdk/dist"
   }
 }

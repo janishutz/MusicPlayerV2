@@ -121,7 +121,7 @@
 
     const closePopupReturn = () => {
         for ( let el in popupContent.value.data ) {
-            if ( !data.value[ popupContent.value.data[ parseInt( el ) ].id ] ) {
+            if ( !data.value[ popupContent.value.data[ parseInt( el ) ].id ] && popupContent.value.data[ parseInt( el ) ].dataType !== 'checkbox' ) {
                 isShowingIncomplete.value = true;
                 return;
             }
@@ -150,6 +150,11 @@
         }
         isShowingPopup.value = true;
         popupContent.value = popupConfig;
+        for ( const el in popupContent.value.data ) {
+            if ( popupContent.value.data[ parseInt( el ) ].dataType === 'checkbox' ) {
+                data.value[ popupContent.value.data[ parseInt( el ) ].id ] = false;
+            }
+        }
     }
 
     defineExpose( {

@@ -24,6 +24,15 @@ const router = createRouter( {
             }
         },
         {
+            path: '/get',
+            name: 'get',
+            component: () => import( '../views/GetView.vue' ),
+            meta: {
+                'authRequired': false,
+                'title': 'Get'
+            }
+        },
+        {
             path: '/share/:name',
             name: 'share',
             component: () => import( '../views/RemoteView.vue' ),

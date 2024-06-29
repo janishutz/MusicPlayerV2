@@ -23,13 +23,16 @@
     import libraryView from '@/components/libraryView.vue';
     import { ref } from 'vue';
     import type { ReadFile } from '@/scripts/song';
+    import router from '@/router';
+    import { useUserStore } from '@/stores/userStore';
     
     const isLoggedIntoAppleMusic = ref( false );
     const isReady = ref( false );
     const isShowingFullScreenPlayer = ref( false );
     const player = ref( playerView );
     const playlists = ref( [] );
-    const hasFinishedLoading = ref( true );
+    const hasFinishedLoading = ref( false );
+    const userStore = useUserStore();
 
     const handlePlayerStateChange = ( newState: string ) => {
         if ( newState === 'hide' ) {
@@ -72,13 +75,21 @@
         player.value.selectCustomPlaylist( playlist );
     }
 
-    // fetch( localStorage.getItem( 'url' ) + '/checkUserStatus', { credentials: 'include' } ).then( res => {
-    //     if ( res.status === 200 ) {
-    //         res.json().then( json => {
-                
-    //         } );
-    //     }
-    // } );
+    fetch( localStorage.getItem( 'url' ) + '/checkUserStatus', { credentials: 'include' } ).then( res => {
+        if ( res.status === 200 ) {
+            res.text().then( text => {
+                if ( text === 'ok' ) {
+                    hasFinishedLoading.value = true;
+                    userStore.setSubscriptionStatus( true );
+                } else {
+                    userStore.setSubscriptionStatus( false );
+                    router.push( '/get' );
+                }
+            } );
+        } else {
+            console.log( res.status );
+        }
+    } );
     
 </script>
 

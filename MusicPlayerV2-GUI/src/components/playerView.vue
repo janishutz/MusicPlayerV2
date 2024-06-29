@@ -1,5 +1,13 @@
 <template>
     <div>
+        <div v-if="isShowingWarning" class="warning">
+            <h3>WARNING!</h3>
+            <p>A client display is being tampered with!</p>
+            <p>A desktop notification with a warning has already been dispatched.</p>
+            <button @click="dismissNotification()">Ok</button>
+
+            <div class="flash"></div>
+        </div>
         <div class="player">
             <div :class="'main-player' + ( isShowingFullScreenPlayer ? ' full-screen' : '' )">
                 <div :class="'song-name-wrapper' + ( isShowingFullScreenPlayer ? ' full-screen' : '' )" @click="controlUI( 'show' )">
@@ -100,6 +108,7 @@
     const isConnectedToNotifier = ref( false );
     const popup = ref( popupModule );
     const roomName = ref( '' );
+    const isShowingWarning = ref( false );
     let currentlyOpenPopup = '';
 
     const emits = defineEmits( [ 'playerStateChange' ] );
@@ -194,12 +203,17 @@
             popup.value.openPopup( {
                 title: 'Define a share name',
                 popupType: 'input',
-                subtitle: 'A share allows others to join your playlist and see the current song, the playback position and the upcoming songs. You can get the link to the page, once the share is set up. Please choose a name, which will then be part of the URL with which others can join the share',
+                subtitle: 'A share allows others to join your playlist and see the current song, the playback position and the upcoming songs. You can get the link to the page, once the share is set up. Please choose a name, which will then be part of the URL with which others can join the share. The anti tamper feature notifies you, whenever a user leaves the fancy view.',
                 data: [
                     {
                         name: 'Share Name',
                         dataType: 'text',
                         id: 'roomName'
+                    },
+                    {
+                        name: 'Use Anti-Tamper?',
+                        dataType: 'checkbox',
+                        id: 'useAntiTamper'
                     }
                 ]
             } );
@@ -377,7 +391,6 @@
             if ( pos.value > 0 && !hasStarted ) {
                 getDetails();
                 playingSong = player.getPlayingSong();
-                console.log( pos.value );
                 prepNiceDurationTime( playingSong );
                 notificationHandler.emit( 'playlist-index-update', currentlyPlayingSongIndex.value );
                 notificationHandler.emit( 'playback-update', isPlaying.value );
@@ -472,8 +485,8 @@
             player.prepare( 0 );
             isPlaying.value = true;
             startProgressTracker();
-            notificationHandler.emit( 'playlist-update', playlist.value );
         }
+        notificationHandler.emit( 'playlist-update', playlist.value );
     }
 
     emits( 'playerStateChange', isShowingFullScreenPlayer.value ? 'show' : 'hide' );
@@ -495,9 +508,13 @@
         }
     } );
 
+    const dismissNotification = () => {
+        isShowingWarning.value = false;
+    }
+
     const popupReturnHandler = ( data: any ) => {
         if ( currentlyOpenPopup === 'create-share' ) {
-            notificationHandler.connect( data.roomName ).then( () => {
+            notificationHandler.connect( data.roomName, data.useAntiTamper ?? false ).then( () => {
                 roomName.value = notificationHandler.getRoomName();
                 isConnectedToNotifier.value = true;
                 notificationHandler.emit( 'playlist-index-update', currentlyPlayingSongIndex.value );
@@ -505,6 +522,10 @@
                 notificationHandler.emit( 'playback-start-update', new Date().getTime() - pos.value * 1000 );
                 notificationHandler.emit( 'playlist-update', playlist.value );
                 notifications.value.createNotification( 'Joined share "' + data.roomName + '"!', 5, 'ok', 'normal' );
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                notificationHandler.registerListener( 'tampering-msg', ( _ ) => {
+                    isShowingWarning.value = true;
+                } );
             } ).catch( e => {
                 if ( e === 'ERR_CONFLICT' ) {
                     notifications.value.createNotification( 'A share with this name exists already!', 5, 'error', 'normal' );
@@ -516,6 +537,10 @@
             } );
         }
     }
+
+    window.addEventListener( 'beforeunload', () => {
+        notificationHandler.disconnect();
+    } );
 
     defineExpose( {
         logIntoAppleMusic,
@@ -763,5 +788,50 @@
     #local-audio {
         position: fixed;
         bottom: -50%;
+    }
+</style>
+
+<style scoped>
+    .warning {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 40vw;
+        height: 50vh;
+        font-size: 2vh;
+        background-color: rgb(255, 0, 0);
+        color: white;
+        position: fixed;
+        right: 1vh;
+        top: 1vh;
+        flex-direction: column;
+        z-index: 1001;
+    }
+
+    .warning h3 {
+        font-size: 4vh;
+    }
+
+    .warning .flash {
+        background-color: rgba(255, 0, 0, 0.4);
+        animation: flashing linear infinite 1s;
+        width: 100vw;
+        height: 100vh;
+        top: 0;
+        left: 0;
+        position: fixed;
+        z-index: -1;
+    }
+
+    @keyframes flashing {
+        0% {
+            opacity: 0;
+        }
+        50% {
+            opacity: 1;
+        }
+        100% {
+            opacity: 0;
+        }
     }
 </style>

@@ -4,7 +4,6 @@ const colorThief = new ColorThief();
 const getImageData = (): Promise<number[][]> => {
     return new Promise( ( resolve ) => {
         const img = ( document.getElementById( 'current-image' ) as HTMLImageElement );
-        console.log( img );
         if ( img.complete ) {
             resolve( colorThief.getPalette( img ) );
         } else {
@@ -18,7 +17,6 @@ const getImageData = (): Promise<number[][]> => {
 const createBackground = () => {
     return new Promise( ( resolve ) => {
         getImageData().then( palette => {
-            console.log( palette );
             const colourDetails: number[][] = [];
             const colours: string[] = [];
             let differentEnough = true;
@@ -118,7 +116,7 @@ const micAudioHandler = () => {
                 }
             }
             prevSpectrum = currentSpectrum;
-        }, 20 );
+        }, 60 / 180 * 250 );
     } );
 }
 

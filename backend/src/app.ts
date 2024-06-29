@@ -9,6 +9,7 @@ import { createServer } from 'node:http';
 import { Server } from 'socket.io';
 import crypto from 'node:crypto';
 import type { Room, Song } from './definitions';
+import storeSDK from 'store.janishutz.com-sdk';
 
 declare let __dirname: string | undefined
 if ( typeof( __dirname ) === 'undefined' ) {
@@ -25,6 +26,11 @@ const run = () => {
         credentials: true,
         origin: true 
     } ) );
+    storeSDK.configure( {
+        backendURL: 'http://localhost:8083',
+        name: 'testing',
+        signingSecret: 'test',
+    } )
 
     const httpServer = createServer( app );
 
@@ -79,6 +85,7 @@ const run = () => {
         socket.on( 'delete-room', ( room: { name: string, token: string }, cb: ( res: { status: boolean, msg: string } ) => void ) => {
             if ( room.token === socketData[ room.name ].roomToken ) {
                 socket.leave( room.name );
+                socket.to( room.name ).emit( 'delete-share', room.name );
                 socketData[ room.name ] = undefined;
                 cb( {
                     status: true,
@@ -92,7 +99,7 @@ const run = () => {
             }
         } );
 
-        socket.on( 'join-room', ( room: string, cb: ( res: { status: boolean, msg: string, data?: { playbackStatus: boolean, playbackStart: number, playlist: Song[], playlistIndex: number } } ) => void ) => {
+        socket.on( 'join-room', ( room: string, cb: ( res: { status: boolean, msg: string, data?: { playbackStatus: boolean, playbackStart: number, playlist: Song[], playlistIndex: number, useAntiTamper: boolean } } ) => void ) => {
             if ( socketData[ room ] ) {
                 socket.join( room );
                 cb( {
@@ -101,6 +108,7 @@ const run = () => {
                         playbackStatus: socketData[ room ].playbackStatus,
                         playlist: socketData[ room ].playlist,
                         playlistIndex: socketData[ room ].playlistIndex,
+                        useAntiTamper: socketData[ room ].useAntiTamper,
                     },
                     msg: 'STATUS_OK',
                     status: true,
@@ -177,6 +185,7 @@ const run = () => {
                     roomName: roomName,
                     roomToken: roomToken,
                     ownerUID: sdk.getUserData( request ).uid,
+                    useAntiTamper: request.query.useAntiTamper === 'true' ? true : false,
                 };
                 response.send( roomToken );
             } else {
@@ -211,6 +220,31 @@ const run = () => {
     } );
 
     // TODO: Get user's subscriptions using store sdk
+
+    app.get( '/checkUserStatus', ( request: express.Request, response: express.Response ) => {
+        if ( sdk.checkAuth( request ) ) {
+            storeSDK.getSubscriptions( sdk.getUserData( request ).uid ).then( stat => {
+                let owned = false;
+                const now = new Date().getTime();
+                for ( let sub in stat ) {
+                    if ( stat[ sub ].expires - now > 0 
+                        && ( stat[ sub ].id === 'com.janishutz.MusicPlayer.subscription' || stat[ sub ].id === 'com.janishutz.MusicPlayer.subscription-month' ) ) {
+                            owned = true;
+                    }
+                }
+                if ( owned ) {
+                    response.send( 'ok' );
+                } else {
+                    response.send( 'ERR_NOT_OWNED' );
+                }
+            } ).catch( e => {
+                console.error( e );
+                response.status( 404 ).send( 'ERR_NOT_OWNED' );
+            } );
+        } else {
+            response.status( 401 ).send( 'ERR_AUTH_REQUIRED' );
+        }
+    } );
 
     app.use( ( request: express.Request, response: express.Response, next: express.NextFunction ) => {
         response.status( 404 ).send( 'ERR_NOT_FOUND' );
