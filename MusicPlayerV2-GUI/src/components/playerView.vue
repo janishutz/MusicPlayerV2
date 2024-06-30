@@ -62,7 +62,9 @@
                 @control="( action ) => { control( action ) }" @play-song="( song ) => { playSong( song ) }"
                 @add-new-songs="( songs ) => addNewSongs( songs )" @playlist-reorder="( move ) => moveSong( move )"
                 :is-logged-into-apple-music="player.isLoggedIn"
-                @add-new-songs-apple-music="( song ) => addNewSongFromObject( song )"></playlistView>
+                @add-new-songs-apple-music="( song ) => addNewSongFromObject( song )"
+                @delete-song="song => removeSongFromPlaylist( song )"
+                @clear-playlist="() => clearPlaylist()"></playlistView>
         </div>
         <notificationsModule ref="notifications" location="bottomleft" size="bigger"></notificationsModule>
         <popupModule @update="( data ) => popupReturnHandler( data )" ref="popup"></popupModule>
@@ -486,6 +488,31 @@
             isPlaying.value = true;
             startProgressTracker();
         }
+        notificationHandler.emit( 'playlist-update', playlist.value );
+    }
+
+    const removeSongFromPlaylist = ( song: number ) => {
+        playlist.value = player.getQueue();
+        playlist.value.splice( song, 1 );
+        player.setPlaylist( playlist.value );
+        if ( !isPlaying.value ) {
+            player.prepare( 0 );
+            isPlaying.value = true;
+            startProgressTracker();
+        }
+        notificationHandler.emit( 'playlist-update', playlist.value );
+    }
+
+    const clearPlaylist = () => {
+        playlist.value = [];
+        player.control( 'pause' );
+        stopProgressTracker();
+        isPlaying.value = false;
+        player.setPlaylist( [] );
+        currentlyPlayingSongArtist.value = '';
+        currentlyPlayingSongName.value = 'Not playing';
+        coverArt.value = '';
+        pos.value = 0;
         notificationHandler.emit( 'playlist-update', playlist.value );
     }
 

@@ -7,10 +7,10 @@
                     <img v-if="playlist[ playingSong ]" :src="playlist[ playingSong ].cover" class="fancy-view-song-art" id="current-image" crossorigin="anonymous">
                     <span v-else class="material-symbols-outlined fancy-view-song-art">music_note</span>
                     <div class="current-song">
-                        <progress max="1000" id="progress" :value="progressBar"></progress>
-                        <h1>{{ playlist[ playingSong ] ? playlist[ playingSong ].title : 'Not playing' }}</h1>
-                        <p class="additional-info" v-if="playlist[ playingSong ] ? ( playlist[ playingSong ].additionalInfo !== '' ) : false">{{ playlist[ playingSong ] ? playlist[ playingSong ].additionalInfo : '' }}</p>
+                        <h1 style="margin-bottom: 5px;">{{ playlist[ playingSong ] ? playlist[ playingSong ].title : 'Not playing' }}</h1>
                         <p>{{ playlist[ playingSong ] ? playlist[ playingSong ].artist : '' }}</p>
+                        <p class="additional-info" v-if="playlist[ playingSong ] ? ( playlist[ playingSong ].additionalInfo !== '' ) : false">{{ playlist[ playingSong ] ? playlist[ playingSong ].additionalInfo : '' }}</p>
+                        <progress max="1000" id="progress" :value="progressBar"></progress>
                     </div>
                 </div>
                 <div class="song-list-wrapper">
@@ -156,6 +156,12 @@
     }
 </script>
 
+<style>
+    #themeSelector {
+        display: none;
+    }
+</style>
+
 <style scoped>
     .remote-view {
         width: 100%;
@@ -164,6 +170,8 @@
         align-items: center;
         flex-direction: column;
         text-align: justify;
+        background-color: rgb(2, 16, 61);
+        color: white;
     }
 
     .loaded {
@@ -214,6 +222,7 @@
         padding: 1vh;
         border: 1px white solid;
         background-color: rgba( 0, 0, 0, 0.4 );
+        border-radius: 10px;
     }
 
     .song-details-wrapper {
@@ -223,14 +232,6 @@
         margin-right: auto;
         width: 65%;
         text-align: justify;
-    }
-
-    .song-list .song-image {
-        width: 5vw;
-        height: 5vw;
-        object-fit: cover;
-        object-position: center;
-        font-size: 5vw;
     }
 
     .pause-icon {
@@ -260,6 +261,7 @@
         max-width: 80%;
         text-align: center;
         background-color: rgba( 0, 0, 0, 0.4 );
+        border-radius: 10px;
     }
 
     .fancy-view-song-art {
@@ -269,6 +271,7 @@
         object-position: center;
         margin-bottom: 10px;
         font-size: 30vh !important;
+        border-radius: 30px;
     }
 
     #app {
@@ -276,14 +279,17 @@
     }
 
     #progress, #progress::-webkit-progress-bar {
-        background-color: rgba(45, 28, 145);
-        color: rgba(45, 28, 145);
+        background-color: rgb(82, 82, 82);
+        color: rgb(82, 82, 82);
         width: 30vw;
+        height: 10px;
         border: none;
         border-radius: 0px;
         accent-color: white;
         -webkit-appearance: none;
         appearance: none;
+        border-radius: 10px;
+        margin-bottom: 5px;
     }
 
     #progress::-moz-progress-bar {
@@ -320,6 +326,7 @@
         margin: 0;
         padding: 0;
         top: 50%;
+        color: white;
     }
 
     .time-until {

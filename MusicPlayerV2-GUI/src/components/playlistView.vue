@@ -1,13 +1,14 @@
 <template>
     <div>
-        <h1>Playlist</h1>
+        <h1>Queue</h1>
         <input type="file" multiple accept="audio/*" id="more-songs" class="small-buttons">
         <button @click="addNewSongs()" class="small-buttons" title="Load selected files"><span class="material-symbols-outlined">upload</span></button>
         <button @click="openSearch()" v-if="$props.isLoggedIntoAppleMusic" class="small-buttons" title="Search Apple Music for the song"><span class="material-symbols-outlined">search</span></button>
+        <button @click="clearPlaylist()" class="small-buttons" title="Clear the playlist"><span class="material-symbols-outlined">delete</span></button>
         <p v-if="!hasSelectedSongs">Please select at least one song to proceed</p>
         <div class="playlist-box" id="pl-box">
             <!-- TODO: Allow editing additionalInfo. Think also how to make it persist over reloads... Export to JSON and then best-guess add them? Very easy for Apple Music 'cause ID, but how for local songs? -->
-            <!-- TODO: Allow deleting songs, as well as whole playlist -->
+            <!-- TODO: Allow deleting songs, as well as whole playlist -> Handle on player side -->
             <!-- TODO: Handle long AppleMusic Playlists, as AppleMusic doesn't automatically load all songs of a playlist -->
             <div class="song" v-for="song in computedPlaylist" v-bind:key="song.id" 
                 :class="( song.id === ( $props.playlist ? $props.playlist [ $props.currentlyPlaying ?? 0 ].id : '' ) && isPlaying ? 'playing' : ' not-playing' ) 
@@ -27,6 +28,7 @@
                 <span class="material-symbols-outlined move-icon" @click="moveSong( song.id, 'down' )" title="Move song down" v-if="canBeMoved( 'down', song.id )">arrow_downward</span>
                 <h3 class="song-title">{{ song.title }}</h3>
                 <p class="playing-in">{{ getTimeUntil( song ) }}</p>
+                <button @click="deleteSong( song.id )" class="small-buttons" title="Remove this song from the queue" v-if="canBeMoved( 'down', song.id ) || canBeMoved( 'up', song.id )"><span class="material-symbols-outlined">delete</span></button>
             </div>
         </div>
         <searchView ref="search" @selected-song="( song ) => { addNewSongsAppleMusic( song ) }"></searchView>
@@ -34,6 +36,7 @@
 </template>
 
 <script setup lang="ts">
+// TODO: Add logout button
     import type { AppleMusicSongData, ReadFile, Song } from '@/scripts/song';
     import { computed, ref } from 'vue';
     import searchView from './searchView.vue';
@@ -131,6 +134,18 @@
         }
     } );
 
+    const deleteSong = ( songID: string ) => {
+        for ( const song in props.playlist ) {
+            if ( props.playlist[ song ].id === songID ) {
+                emits( 'delete-song', parseInt( song ) );
+            }
+        }
+    }
+
+    const clearPlaylist = () => {
+        emits( 'clear-playlist', '' );
+    }
+
 
     const control = ( action: string ) => {
         emits( 'control', action );
@@ -183,7 +198,7 @@
         }
     }
 
-    const emits = defineEmits( [ 'play-song', 'control', 'playlist-reorder', 'add-new-songs', 'add-new-songs-apple-music' ] );
+    const emits = defineEmits( [ 'play-song', 'control', 'playlist-reorder', 'add-new-songs', 'add-new-songs-apple-music', 'delete-song', 'clear-playlist' ] );
 </script>
 
 <style scoped>
