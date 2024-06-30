@@ -74,8 +74,6 @@
 
 
 <script setup lang="ts">
-    // TODO: Handle resize, hide all non-essential controls when below 900px width
-
     import { ref, type Ref } from 'vue';
     import playlistView from '@/components/playlistView.vue';
     import MusicKitJSWrapper from '@/scripts/music-player';

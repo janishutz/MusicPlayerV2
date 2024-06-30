@@ -68,33 +68,47 @@ const run = () => {
 
     io.on( 'connection', ( socket ) => {
         socket.on( 'create-room', ( room: { name: string, token: string }, cb: ( res: { status: boolean, msg: string } ) => void ) => {
-            if ( room.token === socketData[ room.name ].roomToken ) {
-                socket.join( room.name );
-                cb( {
-                    status: true,
-                    msg: 'ADDED_TO_ROOM'
-                } );
+            if ( socketData[ room.name ] ) {
+                if ( room.token === socketData[ room.name ].roomToken ) {
+                    socket.join( room.name );
+                    cb( {
+                        status: true,
+                        msg: 'ADDED_TO_ROOM'
+                    } );
+                } else {
+                    cb( {
+                        status: false,
+                        msg: 'ERR_TOKEN_INVALID'
+                    } );
+                }
             } else {
                 cb( {
                     status: false,
-                    msg: 'ERR_TOKEN_INVALID'
+                    msg: 'ERR_NAME_INVALID'
                 } );
             }
         } );
 
         socket.on( 'delete-room', ( room: { name: string, token: string }, cb: ( res: { status: boolean, msg: string } ) => void ) => {
-            if ( room.token === socketData[ room.name ].roomToken ) {
-                socket.leave( room.name );
-                socket.to( room.name ).emit( 'delete-share', room.name );
-                socketData[ room.name ] = undefined;
-                cb( {
-                    status: true,
-                    msg: 'ROOM_DELETED'
-                } );
+            if ( socketData[ room.name ] ) {
+                if ( room.token === socketData[ room.name ].roomToken ) {
+                    socket.leave( room.name );
+                    socket.to( room.name ).emit( 'delete-share', room.name );
+                    socketData[ room.name ] = undefined;
+                    cb( {
+                        status: true,
+                        msg: 'ROOM_DELETED'
+                    } );
+                } else {
+                    cb( {
+                        status: false,
+                        msg: 'ERR_TOKEN_INVALID'
+                    } );
+                }
             } else {
                 cb( {
                     status: false,
-                    msg: 'ERR_TOKEN_INVALID'
+                    msg: 'ERR_NAME_INVALID'
                 } );
             }
         } );
@@ -117,7 +131,8 @@ const run = () => {
                 cb( {
                     msg: 'ERR_NO_ROOM_WITH_THIS_ID',
                     status: false,
-                } )
+                } );
+                socket.disconnect();
             }
         } );
 

@@ -69,10 +69,12 @@
 
     const selectPlaylist = ( id: string ) => {
         player.value.selectPlaylist( id );
+        player.value.controlUI( 'show' );
     }
 
     const selectCustomPlaylist = ( playlist: ReadFile[] ) => {
         player.value.selectCustomPlaylist( playlist );
+        player.value.controlUI( 'show' );
     }
 
     fetch( localStorage.getItem( 'url' ) + '/checkUserStatus', { credentials: 'include' } ).then( res => {

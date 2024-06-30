@@ -172,6 +172,7 @@
         text-align: justify;
         background-color: rgb(2, 16, 61);
         color: white;
+        min-height: 100vh;
     }
 
     .loaded {
