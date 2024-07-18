@@ -30,7 +30,7 @@ const run = () => {
         backendURL: 'http://localhost:8083',
         name: 'testing',
         signingSecret: 'test',
-    } )
+    } );
 
     const httpServer = createServer( app );
 

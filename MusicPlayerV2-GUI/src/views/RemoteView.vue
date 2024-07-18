@@ -30,9 +30,10 @@
                 <h1>Loading...</h1>
             </div>
             <div v-else>
+                <span class="material-symbols-outlined" style="font-size: 4rem;">wifi_off</span>
                 <h1>Couldn't connect!</h1>
                 <p>There does not appear to be a share with the specified name, or an error occurred when connecting.</p>
-                <p>You may reload the page to try again!</p>
+                <p>You may <a href="">reload</a> the page to try again!</p>
             </div>
         </div>
     </div>
