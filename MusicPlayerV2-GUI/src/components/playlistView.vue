@@ -6,9 +6,9 @@
         <button @click="openSearch()" v-if="$props.isLoggedIntoAppleMusic" class="small-buttons" title="Search Apple Music for the song"><span class="material-symbols-outlined">search</span></button>
         <button @click="clearPlaylist()" class="small-buttons" title="Clear the playlist"><span class="material-symbols-outlined">delete</span></button>
         <p v-if="!hasSelectedSongs">Please select at least one song to proceed</p>
+        <button title="Transmit additional information" class="small-buttons" @click="sendAdditionalInfo()"><span class="material-symbols-outlined">send</span></button>
         <div class="playlist-box" id="pl-box">
-            <!-- TODO: Allow editing additionalInfo. Think also how to make it persist over reloads... Export to JSON and then best-guess add them? Very easy for Apple Music 'cause ID, but how for local songs? -->
-            <!-- TODO: Allow deleting songs, as well as whole playlist -> Handle on player side -->
+            <!-- TODO: Allow editing additionalInfo. Think also how to make it persist over reloads... Export to JSON and then best-guess add them? Very easy for Apple Music 'cause ID, but how for local songs? Maybe using retrieved ID from Apple Music? -->
             <!-- TODO: Handle long AppleMusic Playlists, as AppleMusic doesn't automatically load all songs of a playlist -->
             <div class="song" v-for="song in computedPlaylist" v-bind:key="song.id" 
                 :class="( song.id === ( $props.playlist ? $props.playlist [ $props.currentlyPlaying ?? 0 ].id : '' ) && isPlaying ? 'playing' : ' not-playing' ) 
@@ -27,7 +27,10 @@
                 <span class="material-symbols-outlined move-icon" @click="moveSong( song.id, 'up' )" title="Move song up" v-if="canBeMoved( 'up', song.id )">arrow_upward</span>
                 <span class="material-symbols-outlined move-icon" @click="moveSong( song.id, 'down' )" title="Move song down" v-if="canBeMoved( 'down', song.id )">arrow_downward</span>
                 <h3 class="song-title">{{ song.title }}</h3>
-                <p class="playing-in">{{ getTimeUntil( song ) }}</p>
+                <div>
+                    <input type="text" placeholder="Additional information for remote display" v-model="song.additionalInfo">
+                    <p class="playing-in">{{ getTimeUntil( song ) }}</p>
+                </div>
                 <button @click="deleteSong( song.id )" class="small-buttons" title="Remove this song from the queue" v-if="canBeMoved( 'down', song.id ) || canBeMoved( 'up', song.id )"><span class="material-symbols-outlined">delete</span></button>
             </div>
         </div>
@@ -36,7 +39,7 @@
 </template>
 
 <script setup lang="ts">
-// TODO: Add logout button
+    // TODO: Add logout button
     import type { AppleMusicSongData, ReadFile, Song } from '@/scripts/song';
     import { computed, ref } from 'vue';
     import searchView from './searchView.vue';
@@ -198,7 +201,11 @@
         }
     }
 
-    const emits = defineEmits( [ 'play-song', 'control', 'playlist-reorder', 'add-new-songs', 'add-new-songs-apple-music', 'delete-song', 'clear-playlist' ] );
+    const sendAdditionalInfo = () => {
+        emits( 'send-additional-info' );
+    }
+
+    const emits = defineEmits( [ 'play-song', 'control', 'playlist-reorder', 'add-new-songs', 'add-new-songs-apple-music', 'delete-song', 'clear-playlist', 'send-additional-info' ] );
 </script>
 
 <style scoped>
@@ -224,11 +231,11 @@
     }
 
     .song .song-cover {
-        width: 5vw;
-        height: 5vw;
+        width: 6rem;
+        height: 6rem;
         object-fit: cover;
         object-position: center;
-        font-size: 5vw;
+        font-size: 6rem;
     }
 
     .song-title {
@@ -244,14 +251,14 @@
         align-items: center;
         flex-direction: row;
         margin: 0;
-        width: 5vw;
-        height: 5vw;
+        width: 6rem;
+        height: 6rem;
         background-color: rgba( 0, 0, 0, 0.6 );
     }
 
     .playing-symbols-wrapper {
-        width: 4vw;
-        height: 5vw;
+        width: 5rem;
+        height: 6rem;
         display: flex;
         justify-content: center;
         align-items: center;
@@ -294,11 +301,11 @@
 
     .play-icon, .pause-icon {
         display: none;
-        width: 5vw;
-        height: 5vw;
+        width: 6rem;
+        height: 6rem;
         object-fit: cover;
         object-position: center;
-        font-size: 5vw;
+        font-size: 6rem;
         cursor: pointer;
         user-select: none;
     }

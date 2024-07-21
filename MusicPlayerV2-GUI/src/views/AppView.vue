@@ -1,5 +1,6 @@
 <template>
     <div class="app-view">
+        <button id="logout" @click="logout()"><span class="material-symbols-outlined">logout</span></button>
         <div class="loading-view" v-if="!hasFinishedLoading">
             <h1>Loading...</h1>
         </div>
@@ -92,10 +93,28 @@
             console.log( res.status );
         }
     } );
-    
+
+    const logout = () => {
+        location.href = 'http://localhost:8080/logout?return=http://localhost:8081';
+        // location.href = 'https://id.janishutz.com/logout?return=https://music.janishutz.com';
+    }
 </script>
 
 <style scoped>
+    #logout {
+        border: none;
+        background: none;
+        position: fixed;
+        left: calc( 10px + 2rem );
+        top: 10px;
+        cursor: pointer;
+    }
+
+    #logout .material-symbols-outlined {
+        font-size: 1.5rem;
+        color: var( --primary-color );
+    }
+
     .library-view {
         height: calc( 90vh - 10px );
         width: 100%;

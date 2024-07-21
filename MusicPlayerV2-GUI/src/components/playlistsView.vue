@@ -7,7 +7,7 @@
         </div>
         <div v-else-if="!$props.isLoggedIn" class="not-logged-in">
             <p>You are not logged into Apple Music. We therefore can't show you your playlists. <a href="" title="Refreshes the page, allowing you to log in">Change that</a></p>
-            <p>Use the below button to load songs from your local disk</p>
+            <p>Use the button below to load songs from your local disk</p>
             <input class="pl-loader-button" type="file" multiple="true" accept="audio/*" id="pl-loader"><br>
             <button @click="loadPlaylistFromDisk()" class="pl-loader-button" id="load-button">Load</button>
             <p v-if="!hasSelectedSongs">Please select at least one song to proceed!</p>

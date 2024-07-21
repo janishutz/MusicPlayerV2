@@ -24,7 +24,7 @@
                         </div>
                     </div>
                 </div>
-                <div :class="'controls-wrapper' + ( isShowingFullScreenPlayer ? ' full-screen' : '' )">
+                <div :class="'controls-wrapper' + ( isShowingFullScreenPlayer ? ' full-screen' : '' )" :style="playlist.length > 0 ? '' : 'pointer-events: none'">
                     <div class="main-controls">
                         <span class="material-symbols-outlined controls next-previous" @click="control( 'previous' )" id="previous" v-if="isShowingFullScreenPlayer">skip_previous</span>
                         <span class="material-symbols-outlined controls forward-back" @click="control( 'back' )" :style="'rotate: -' + 360 * clickCountBack + 'deg;'" v-if="isShowingFullScreenPlayer">replay_10</span>
@@ -64,7 +64,8 @@
                 :is-logged-into-apple-music="player.isLoggedIn"
                 @add-new-songs-apple-music="( song ) => addNewSongFromObject( song )"
                 @delete-song="song => removeSongFromPlaylist( song )"
-                @clear-playlist="() => clearPlaylist()"></playlistView>
+                @clear-playlist="() => clearPlaylist()"
+                @send-additional-info="() => sendAdditionalInfo()"></playlistView>
         </div>
         <notificationsModule ref="notifications" location="bottomleft" size="bigger"></notificationsModule>
         <popupModule @update="( data ) => popupReturnHandler( data )" ref="popup"></popupModule>
@@ -225,10 +226,14 @@
                 notifications.value.createNotification( 'Disconnected successfully!', 5, 'ok', 'normal' );
             }
         } else if ( action === 'show-share' ) {
-            alert( 'You are currently connected to share "' + roomName.value 
-                + '". \nYou can connect to it via https://music.janishutz.com/share/' + roomName.value
-                + '. \n\nYou can connect to the fancy showcase screen using this link: https://music.janishutz.com/fancy/' + roomName.value
-                + '. Be aware that this one will use significantly more system AND network resources, so only use that for a screen that is front and center, not for a QR code to have all people connect to.' );
+            popup.value.openPopup( {
+                title: 'Details on share',
+                subtitle: 'You are currently connected to share "' + roomName.value 
+                + '". \nYou can connect to it via <a href="https://music.janishutz.com/share/' + roomName.value + '" target="_blank">https://music.janishutz.com/share/' + roomName.value + '</a>'
+                + '. \n\nYou can connect to the fancy showcase screen using this link: <a href="https://music.janishutz.com/fancy/' + roomName.value + '" target="_blank">https://music.janishutz.com/fancy/' + roomName.value + '</a>'
+                + '. Be aware that this one will use significantly more system AND network resources, so only use that for a screen that is front and center, not for a QR code to have all people connect to.'
+            } );
+            currentlyOpenPopup = 'share-details';
         }
     }
 
@@ -511,6 +516,11 @@
         currentlyPlayingSongName.value = 'Not playing';
         coverArt.value = '';
         pos.value = 0;
+        notificationHandler.emit( 'playlist-update', playlist.value );
+    }
+
+    const sendAdditionalInfo = () => {
+        notifications.value.createNotification( 'Additional song info transmitted', 5, 'ok', 'normal' );
         notificationHandler.emit( 'playlist-update', playlist.value );
     }
 

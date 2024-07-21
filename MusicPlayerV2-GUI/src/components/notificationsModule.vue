@@ -1,7 +1,7 @@
 <!-- eslint-disable no-undef -->
 <template>
     <div id="notifications">
-        <div class="message-box" :class="[ location, size ]">
+        <div class="message-box" :class="[ location, size ]" :style="'z-index: ' + ( messageType === 'hide' ? '-1' : '1000' )">
             <div class="message-container" :class="messageType">
                 <button @click="handleNotifications();" class="close-notification"><span class="material-symbols-outlined close-notification-icon">close</span></button>
                 <span class="material-symbols-outlined types hide" v-if="messageType == 'hide'">question_mark</span>
@@ -150,15 +150,11 @@
             notificationTimeout = setTimeout( () => {
                 handleNotifications();
             }, notifications.value[ currentDID.value ].showDuration * 1000 );
-            // eslint-disable-next-line no-undef
-            $( '.message-box' ).css( 'z-index', 1000 );
         } else {
             try {
                 clearInterval( progressBar );
             } catch (err) { /* empty */ }
             messageType.value = 'hide';
-            // eslint-disable-next-line no-undef
-            $( '.message-box' ).css( 'z-index', -1 );
         }
     }
 
@@ -185,7 +181,7 @@
 <style scoped>
     .message-box {
         position: fixed;
-        z-index: -1;
+        z-index: -100;
         color: white;
         transition: all 0.5s;
         width: 95vw;
