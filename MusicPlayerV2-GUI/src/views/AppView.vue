@@ -86,9 +86,14 @@
                     userStore.setSubscriptionStatus( true );
                 } else {
                     userStore.setSubscriptionStatus( false );
+                    sessionStorage.setItem( 'getRedirectionReason', 'notOwned' );
                     router.push( '/get' );
                 }
             } );
+        } else if ( res.status === 404 ) {
+            userStore.setSubscriptionStatus( false );
+            router.push( '/get' );
+            sessionStorage.setItem( 'getRedirectionReason', 'notOwned' );
         } else {
             console.log( res.status );
         }
