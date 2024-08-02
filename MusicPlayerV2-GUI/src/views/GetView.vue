@@ -11,21 +11,18 @@
                 <a href="https://github.com/simplePCBuilding/MusicPlayerV2" class="fancy-button" style="margin-left: 10px;" target="_blank">GitHub</a>
             </div>
         </div>
-        <div class="full-height">
+        <div>
             <h2>Fully featured Music Player</h2>
-            <img src="https://github.com/simplePCBuilding/MusicPlayerV2/raw/master/assets/logo.png" alt="MusicPlayer Logo" class="promo-img">
-        </div>
-        <div class="full-height">
+            <p>All the features you'd expect a Music Player to have are also present here</p>
+
             <h2>Apple Music integration</h2>
-            <img src="https://github.com/simplePCBuilding/MusicPlayerV2/raw/master/assets/logo.png" alt="MusicPlayer Logo" class="promo-img">
-        </div>
-        <div class="full-height">
+            <p>Use MusicPlayer in conjunction with Apple Music</p>
+
             <h2>Share your playlist</h2>
-            <img src="https://github.com/simplePCBuilding/MusicPlayerV2/raw/master/assets/logo.png" alt="MusicPlayer Logo" class="promo-img">
-        </div>
-        <div class="full-height">
+            <p>You can share your playlist on a beautifully animated public page, so that other people can join in and view your playlist</p>
+
             <h2>Fully browser based</h2>
-            <img src="https://github.com/simplePCBuilding/MusicPlayerV2/raw/master/assets/logo.png" alt="MusicPlayer Logo" class="promo-img">
+            <p>No installation required when using MusicPlayer on <a href="https://music.janishutz.com">music.janishutz.com</a></p>
         </div>
     </div>
 </template>

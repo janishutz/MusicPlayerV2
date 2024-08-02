@@ -10,7 +10,7 @@
 import { defineStore } from 'pinia';
 
 export const useUserStore = defineStore( 'user', {
-    state: () => ( { 'isUserAuth': false, 'hasSubscribed': false, 'isUsingKeyboard': false, 'username': '' } ),
+    state: () => ( { 'isUserAuth': false, 'hasSubscribed': false, 'isUsingKeyboard': false, 'username': '', 'isFOSSVersion': false } ),
     getters: {
         getUserAuthenticated: ( state ) => state.isUserAuth,
         getSubscriptionStatus: ( state ) => state.hasSubscribed,
