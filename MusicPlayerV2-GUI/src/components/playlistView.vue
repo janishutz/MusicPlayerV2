@@ -28,7 +28,7 @@
                 <span class="material-symbols-outlined move-icon" @click="moveSong( song.id, 'down' )" title="Move song down" v-if="canBeMoved( 'down', song.id )">arrow_downward</span>
                 <h3 class="song-title">{{ song.title }}</h3>
                 <div>
-                    <input type="text" placeholder="Additional information for remote display" v-model="song.additionalInfo">
+                    <input type="text" placeholder="Additional information for remote display" v-model="song.additionalInfo" @focusin="kbControl( 'on' )" @focusout="kbControl( 'off' )">
                     <p class="playing-in">{{ getTimeUntil( song ) }}</p>
                 </div>
                 <button @click="deleteSong( song.id )" class="small-buttons" title="Remove this song from the queue" v-if="canBeMoved( 'down', song.id ) || canBeMoved( 'up', song.id )"><span class="material-symbols-outlined">delete</span></button>
@@ -43,6 +43,9 @@
     import type { AppleMusicSongData, ReadFile, Song } from '@/scripts/song';
     import { computed, ref } from 'vue';
     import searchView from './searchView.vue';
+    import { useUserStore } from '@/stores/userStore';
+
+    const userStore = useUserStore();
 
     const search = ref( searchView );
     const props = defineProps( { 
@@ -82,6 +85,14 @@
         }
         return pl;
     } );
+
+    const kbControl = ( action: string ) => {
+        if ( action === 'off' ) {
+            userStore.setKeyboardUsageStatus( false );
+        } else {
+            userStore.setKeyboardUsageStatus( true );
+        }
+    }
 
     const openSearch = () => {
         if ( search.value ) {

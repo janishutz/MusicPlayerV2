@@ -9,12 +9,16 @@
 
 // These functions handle connections to the backend with socket.io
 
-import { io, type Socket } from "socket.io-client"
+import { io, type Socket } from "socket.io-client";
+import type { SSEMap } from "./song";
 
 class SocketConnection {
     socket: Socket;
     roomName: string;
     isConnected: boolean;
+    useSocket: boolean;
+    eventSource?: EventSource;
+    toBeListenedForItems: SSEMap;
 
     constructor () {
         this.socket = io( localStorage.getItem( 'url' ) ?? '', {
@@ -22,6 +26,8 @@ class SocketConnection {
         } );
         this.roomName = location.pathname.split( '/' )[ 2 ];
         this.isConnected = false;
+        this.useSocket = localStorage.getItem( 'music-player-config' ) === 'ws';
+        this.toBeListenedForItems = {};
     }
 
     /**
@@ -30,16 +36,51 @@ class SocketConnection {
      */
     connect (): Promise<any> {
         return new Promise( ( resolve, reject ) => {
-            this.socket.connect();
-            this.socket.emit( 'join-room', this.roomName, ( res: { status: boolean, msg: string, data: any } ) => {
-                if ( res.status === true ) {
-                    this.isConnected = true;
-                    resolve( res.data );
-                } else {
-                    console.debug( res.msg );
+            if ( this.useSocket ) {
+                this.socket.connect();
+                this.socket.emit( 'join-room', this.roomName, ( res: { status: boolean, msg: string, data: any } ) => {
+                    if ( res.status === true ) {
+                        this.isConnected = true;
+                        resolve( res.data );
+                    } else {
+                        console.debug( res.msg );
+                        reject( 'ERR_ROOM_CONNECTING' );
+                    }
+                } );
+            } else {
+                fetch( localStorage.getItem( 'url' ) + '/socket/joinRoom?room=' + this.roomName, { credentials: 'include' } ).then( res => {
+                    if ( res.status === 200 ) {
+                        this.eventSource = new EventSource( localStorage.getItem( 'url' ) + '/socket/connection?room=' + this.roomName, { withCredentials: true } );
+
+                        this.eventSource.onmessage = ( e ) => {
+                            const d = JSON.parse( e.data );
+                            if ( this.toBeListenedForItems[ d.type ] ) {
+                                this.toBeListenedForItems[ d.type ]( d.data );
+                            } else if ( d.type === 'basics' ) {
+                                resolve( d.data );
+                            }
+                        }
+
+                        this.eventSource.onerror = ( e ) => {
+                            if ( this.isConnected ) {
+                                this.isConnected = false;
+                                console.log( '[ SSE Connection ] - ' + new Date().toISOString() +  ': Reconnecting due to connection error!' );
+                                console.debug( e );
+                                
+                                this.eventSource = undefined;
+                                
+                                setTimeout( () => {
+                                    this.connect();
+                                }, 500 );
+                            }
+                        };
+                    } else {
+                        reject( 'ERR_ROOM_CONNECTING' );
+                    }
+                } ).catch( () => {
                     reject( 'ERR_ROOM_CONNECTING' );
-                }
-            } );
+                } );
+            }
         } );
     }
 
@@ -51,7 +92,19 @@ class SocketConnection {
      */
     emit ( event: string, data: any ): void {
         if ( this.isConnected ) {
-            this.socket.emit( event, { 'roomName': this.roomName, 'data': data } );
+            if ( this.useSocket ) {
+                this.socket.emit( event, { 'roomName': this.roomName, 'data': data } );
+            } else {
+                fetch( localStorage.getItem( 'url' ) + '/socket/update', {
+                    method: 'post',
+                    body: JSON.stringify( { 'event': event, 'roomName': this.roomName, 'data': data } ),
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'charset': 'utf-8'
+                    }
+                } ).catch( () => {} );
+            }
         }
     }
 
@@ -62,8 +115,12 @@ class SocketConnection {
      * @returns {void}
      */
     registerListener ( event: string, cb: ( data: any ) => void ): void {
-        if ( this.isConnected ) {
-            this.socket.on( event, cb );
+        if ( this.useSocket ) {
+            if ( this.isConnected ) {
+                this.socket.on( event, cb );
+            } 
+        } else {
+            this.toBeListenedForItems[ event ] = cb;
         }
     }
 
@@ -73,7 +130,11 @@ class SocketConnection {
      */
     disconnect (): void {
         if ( this.isConnected ) {
-            this.socket.disconnect();
+            if ( this.useSocket ) {
+                this.socket.disconnect();
+            } else {
+                this.eventSource!.close();
+            }
         }
     }
 }

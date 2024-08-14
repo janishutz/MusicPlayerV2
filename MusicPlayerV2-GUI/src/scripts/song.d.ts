@@ -89,3 +89,7 @@ export interface SongMove {
     songID: string;
     newPos: number;
 }
+
+export interface SSEMap {
+    [key: string]: ( data: any ) => void;
+}

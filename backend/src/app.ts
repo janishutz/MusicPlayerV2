@@ -10,6 +10,7 @@ import { Server } from 'socket.io';
 import crypto from 'node:crypto';
 import type { Room, Song } from './definitions';
 import storeSDK from 'store.janishutz.com-sdk';
+import bodyParser from 'body-parser';
 
 declare let __dirname: string | undefined
 if ( typeof( __dirname ) === 'undefined' ) {
@@ -182,11 +183,175 @@ const run = () => {
     } );
 
 
+    /* 
+        ROUTES FOR SERVER SENT EVENTS VERSION
+    */
+    // Connected clients have their session ID as key
+    interface SocketClientList {
+        [key: string]: SocketClient;
+    }
+
+    interface SocketClient {
+        response: express.Response;
+        room: string;
+    }
+
+    interface ClientReferenceList {
+        /**
+         * Find all clients connected to one room
+         */
+        [key: string]: string[];
+    }
+
+    const importantClients: SocketClientList = {};
+    const connectedClients: SocketClientList = {};
+    const clientReference: ClientReferenceList = {};
+
+    app.get( '/socket/connection', ( request: express.Request, response: express.Response ) => {
+        if ( request.query.room ) {
+            if ( socketData[ String( request.query.room ) ] ) {
+                response.writeHead( 200, {
+                    'Content-Type': 'text/event-stream',
+                    'Cache-Control': 'no-cache',
+                    'Connection': 'keep-alive',
+                } );
+                response.status( 200 );
+                response.flushHeaders();
+                response.write( `data: ${ JSON.stringify( { 'type': 'basics', 'data': socketData[ String( request.query.room ) ] } ) }\n\n` );
+                const sid = sdk.getSessionID( request );
+                if ( sdk.checkAuth( request ) ) {
+                    importantClients[ sid ] = { 'response': response, 'room': String( request.query.room ) };
+                }
+                connectedClients[ sid ] = { 'response': response, 'room': String( request.query.room ) };
+                if ( !clientReference[ String( request.query.room ) ] ) {
+                    clientReference[ String( request.query.room ) ] = [];
+                }
+                if ( !clientReference[ String( request.query.room ) ].includes( sid ) ) {
+                    clientReference[ String( request.query.room ) ].push( sid );
+                }
+                request.on( 'close', () => {
+                    try {
+                        importantClients[ sid ] = undefined;
+                    } catch ( e ) { /* empty */ }
+                    const cl = clientReference[ String( request.query.room ) ];
+                    for ( let c in cl ) {
+                        if ( cl[ c ] === sid ) {
+                            cl.splice( parseInt( c ), 1 );
+                            break;
+                        }
+                    }
+                    connectedClients[ sid ] = undefined;
+                } );
+            } else {
+                response.status( 404 ).send( 'ERR_ROOM_NOT_FOUND' );
+            }
+        } else {
+            response.status( 404 ).send( 'ERR_NO_ROOM_SPECIFIED' );
+        }
+    } );    
+    
+    app.get( '/socket/getData', ( request: express.Request, response: express.Response ) => {
+        if ( request.query.room ) {
+            response.send( socketData[ String( request.query.room ) ] );
+        } else {
+            response.status( 400 ).send( 'ERR_NO_ROOM_SPECIFIED' );
+        }
+    } );
+    
+    app.get( '/socket/joinRoom', ( request: express.Request, response: express.Response ) => {
+        if ( request.query.room ) {
+            if ( socketData[ String( request.query.room ) ] ) {
+                response.send( 'ok' );
+            } else {
+                response.status( 404 ).send( 'ERR_ROOM_NOT_FOUND' );
+            }
+        } else {
+            response.status( 404 ).send( 'ERR_NO_ROOM_SPECIFIED' );
+        }
+    } );
+    
+    app.post( '/socket/update', bodyParser.json(), ( request: express.Request, response: express.Response ) => {
+        if ( socketData[ request.body.roomName ] ) {
+            if ( request.body.update === 'tampering' ) {
+                const clients = clientReference[ request.body.roomName ];
+                for ( let client in clients ) {
+                    if ( importantClients[ clients[ client ] ] ) {
+                        importantClients[ clients[ client ] ].response.write( 'data: ' + JSON.stringify( { 'update': 'tampering', 'data': true } ) + '\n\n' );
+                    }
+                }
+            } else {
+                if ( socketData[ request.body.roomName ].roomToken === request.body.roomToken ) {
+                    let send = false;
+                    let update = '';
+
+                    if ( request.body.event === 'playback-start-update' ) {
+                        send = true;
+                        update = 'playback-start';
+                        socketData[ request.body.roomName ].playbackStart = request.body.data;
+                    } else if ( request.body.event === 'playback-update' ) {
+                        send = true;
+                        update = 'playback';
+                        socketData[ request.body.roomName ].playbackStatus = request.body.data;
+                    } else if ( request.body.event === 'playlist-update' ) {
+                        send = true;
+                        update = 'playlist';
+                        socketData[ request.body.roomName ].playlist = request.body.data;
+                    } else if ( request.body.event === 'playlist-index-update' ) {
+                        send = true;
+                        update = 'playlist-index';
+                        socketData[ request.body.roomName ].playlistIndex = request.body.data;
+                    }
+
+                    if ( send ) {
+                        const clients = clientReference[ request.body.roomName ];
+                        for ( let client in clients ) {
+                            if ( connectedClients[ clients[ client ] ] ) {
+                                connectedClients[ clients[ client ] ].response.write( 'data: ' + JSON.stringify( { 'type': update, 'data': request.body.data } ) + '\n\n' );
+                            }
+                        }
+                        response.send( 'ok' );
+                    } else {
+                        response.status( 404 ).send( 'ERR_CANNOT_SEND' );
+                    }
+                }
+            }
+        }
+    } );
+
+    
+    
+    app.post( '/socket/deleteRoom', bodyParser.json(), ( request: express.Request, response: express.Response ) => {
+        if ( request.body.roomName ) {
+            if ( socketData[ request.body.roomName ] ) {
+                if ( socketData[ request.body.roomName ].roomToken === request.body.roomToken ) {
+                    socketData[ request.body.roomName ] = undefined;
+                    const clients = clientReference[ request.body.roomName ];
+                    for ( let client in clients ) {
+                        if ( connectedClients[ clients[ client ] ] ) {
+                            connectedClients[ clients[ client ] ].response.write( 'data: ' + JSON.stringify( { 'update': 'delete-share', 'data': true } ) + '\n\n' );
+                        }
+                    }
+                } else {
+                    response.send( 403 ).send( 'ERR_UNAUTHORIZED' );
+                }
+            } else {
+                response.status( 404 ).send( 'ERR_ROOM_NOT_FOUND' );
+            }
+        } else {
+            response.status( 400 ).send( 'ERR_NO_ROOM_NAME' );
+        }
+    } );
+
+
+
+    /*
+        GENERAL ROUTES
+    */
     app.get( '/', ( request: express.Request, response: express.Response ) => {
         response.send( 'Please visit <a href="https://music.janishutz.com">https://music.janishutz.com</a> to use this service' );
     } );
 
-    
+
     app.get( '/createRoomToken', ( request: express.Request, response: express.Response ) => {
         if ( sdk.checkAuth( request ) ) {
             const roomName = String( request.query.roomName ) ?? '';
