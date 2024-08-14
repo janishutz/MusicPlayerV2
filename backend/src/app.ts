@@ -272,13 +272,14 @@ const run = () => {
     
     app.post( '/socket/update', bodyParser.json(), ( request: express.Request, response: express.Response ) => {
         if ( socketData[ request.body.roomName ] ) {
-            if ( request.body.update === 'tampering' ) {
+            if ( request.body.event === 'tampering' ) {
                 const clients = clientReference[ request.body.roomName ];
                 for ( let client in clients ) {
                     if ( importantClients[ clients[ client ] ] ) {
-                        importantClients[ clients[ client ] ].response.write( 'data: ' + JSON.stringify( { 'update': 'tampering', 'data': true } ) + '\n\n' );
+                        importantClients[ clients[ client ] ].response.write( 'data: ' + JSON.stringify( { 'type': 'tampering-msg', 'data': true } ) + '\n\n' );
                     }
                 }
+                response.send( 'ok' );
             } else {
                 if ( socketData[ request.body.roomName ].roomToken === request.body.roomToken ) {
                     let send = false;
@@ -313,8 +314,12 @@ const run = () => {
                     } else {
                         response.status( 404 ).send( 'ERR_CANNOT_SEND' );
                     }
+                } else {
+                    response.status( 403 ).send( 'ERR_UNAUTHORIZED' );
                 }
             }
+        } else {
+            response.status( 400 ).send( 'ERR_WRONG_REQUEST' );
         }
     } );
 
@@ -328,7 +333,7 @@ const run = () => {
                     const clients = clientReference[ request.body.roomName ];
                     for ( let client in clients ) {
                         if ( connectedClients[ clients[ client ] ] ) {
-                            connectedClients[ clients[ client ] ].response.write( 'data: ' + JSON.stringify( { 'update': 'delete-share', 'data': true } ) + '\n\n' );
+                            connectedClients[ clients[ client ] ].response.write( 'data: ' + JSON.stringify( { 'type': 'delete-share', 'data': true } ) + '\n\n' );
                         }
                     }
                 } else {

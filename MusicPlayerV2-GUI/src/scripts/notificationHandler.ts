@@ -61,7 +61,7 @@ class NotificationHandler {
                                 }
                             } );
                         } else {
-                            this.sseConnect().then( data => {
+                            this.sseConnect().then( () => {
                                 resolve();
                             } ).catch(  );
                         }
@@ -156,12 +156,12 @@ class NotificationHandler {
      * @returns {void}
      */
     registerListener ( event: string, cb: ( data: any ) => void ): void {
-        if ( this.isConnected ) {
-            if ( this.useSocket ) {
+        if ( this.useSocket ) {
+            if ( this.isConnected ) {
                 this.socket.on( event, cb );
-            } else {
-                this.toBeListenedForItems[ event ] = cb;
-            }
+            } 
+        } else {
+            this.toBeListenedForItems[ event ] = cb;
         }
     }
 

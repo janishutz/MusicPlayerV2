@@ -4,7 +4,7 @@
             <h3>WARNING!</h3>
             <p>A client display is being tampered with!</p>
             <p>A desktop notification with a warning has already been dispatched.</p>
-            <button @click="dismissNotification()">Ok</button>
+            <button @click="dismissNotification()" class="simple-button">Ok</button>
 
             <div class="flash"></div>
         </div>
@@ -44,7 +44,7 @@
 
                     <div class="shuffle-repeat" v-if="isShowingFullScreenPlayer">
                         <span class="material-symbols-outlined controls" @click="control( 'repeat' )" style="margin-right: auto;">repeat{{ repeatMode }}</span>
-                        <div style="margin-right: auto;">
+                        <div style="margin-right: auto; pointer-events: all;">
                             <span class="material-symbols-outlined controls" @click="control( 'start-share' )" title="Share your playlist on a public playlist page (opens a configuration window)" v-if="!isConnectedToNotifier">share</span>
                             <div v-else>
                                 <span class="material-symbols-outlined controls" @click="control( 'stop-share' )" title="Stop sharing your playlist on a public playlist page">close</span>
@@ -868,5 +868,20 @@
         100% {
             opacity: 0;
         }
+    }
+
+    .simple-button {
+        padding: 10px 15px;
+        border: none;
+        background-color: rgb(0, 0, 51);
+        color: white;
+        font-size: 1rem;
+        border-radius: 15px;
+        cursor: pointer;
+        transition: all 0.5s;
+    }
+
+    .simple-button:hover {
+        border-radius: 5px;
     }
 </style>

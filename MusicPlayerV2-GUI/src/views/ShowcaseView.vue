@@ -1,6 +1,7 @@
 <template>
     <div>
-        <span class="anti-tamper material-symbols-outlined" title="Anti-Tamper is enabled. Leaving this window will cause a notification to be dispatched to the player!" v-if="isAntiTamperEnabled">lock</span>
+        <span class="anti-tamper material-symbols-outlined" v-if="isAntiTamperEnabled" @click="secureModeInfo( 'toggle' )">lock</span>
+        <div class="anti-tamper-info" v-if="isShowingSecureModeInfo && isAntiTamperEnabled" @click="secureModeInfo( 'hide' )">Anti-Tamper is enabled. Leaving this window will cause a notification to be dispatched to the player!</div>
         <div class="info">Designed and developed by Janis Hutz <a href="https://janishutz.com" target="_blank" style="text-decoration: none; color: white;">https://janishutz.com</a></div>
         <div class="remote-view">
             <div v-if="hasLoaded && !showCouldNotFindRoom" class="showcase-wrapper">
@@ -242,6 +243,17 @@
 
         conn.emit( 'tampering', '' );
     }
+
+    const isShowingSecureModeInfo = ref( false );
+    const secureModeInfo = ( action: string ) => {
+        if ( action === 'toggle' ) {
+            isShowingSecureModeInfo.value = !isShowingSecureModeInfo.value;
+        } else if ( action === 'show' ) {
+            isShowingSecureModeInfo.value = true;
+        } else {
+            isShowingSecureModeInfo.value = false;
+        }
+    }
 </script>
 
 <style scoped>
@@ -251,6 +263,18 @@
         bottom: 5px;
         right: 5px;
         font-size: 2rem;
+        cursor: default;
+    }
+
+    .anti-tamper-info {
+        position: fixed;
+        z-index: 10;
+        bottom: calc( 10px + 2rem );
+        right: 5px;
+        max-width: 20rem;
+        background-color: black;
+        color: white;
+        padding: 5px;
     }
 
     .remote-view {

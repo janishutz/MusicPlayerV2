@@ -19,6 +19,7 @@ class SocketConnection {
     useSocket: boolean;
     eventSource?: EventSource;
     toBeListenedForItems: SSEMap;
+    reconnectRetryCount: number;
 
     constructor () {
         this.socket = io( localStorage.getItem( 'url' ) ?? '', {
@@ -28,6 +29,7 @@ class SocketConnection {
         this.isConnected = false;
         this.useSocket = localStorage.getItem( 'music-player-config' ) === 'ws';
         this.toBeListenedForItems = {};
+        this.reconnectRetryCount = 0;
     }
 
     /**
@@ -36,50 +38,57 @@ class SocketConnection {
      */
     connect (): Promise<any> {
         return new Promise( ( resolve, reject ) => {
-            if ( this.useSocket ) {
-                this.socket.connect();
-                this.socket.emit( 'join-room', this.roomName, ( res: { status: boolean, msg: string, data: any } ) => {
-                    if ( res.status === true ) {
-                        this.isConnected = true;
-                        resolve( res.data );
-                    } else {
-                        console.debug( res.msg );
-                        reject( 'ERR_ROOM_CONNECTING' );
-                    }
-                } );
-            } else {
-                fetch( localStorage.getItem( 'url' ) + '/socket/joinRoom?room=' + this.roomName, { credentials: 'include' } ).then( res => {
-                    if ( res.status === 200 ) {
-                        this.eventSource = new EventSource( localStorage.getItem( 'url' ) + '/socket/connection?room=' + this.roomName, { withCredentials: true } );
-
-                        this.eventSource.onmessage = ( e ) => {
-                            const d = JSON.parse( e.data );
-                            if ( this.toBeListenedForItems[ d.type ] ) {
-                                this.toBeListenedForItems[ d.type ]( d.data );
-                            } else if ( d.type === 'basics' ) {
-                                resolve( d.data );
-                            }
+            if ( this.reconnectRetryCount < 5 ) {
+                if ( this.useSocket ) {
+                    this.socket.connect();
+                    this.socket.emit( 'join-room', this.roomName, ( res: { status: boolean, msg: string, data: any } ) => {
+                        if ( res.status === true ) {
+                            this.isConnected = true;
+                            resolve( res.data );
+                        } else {
+                            console.debug( res.msg );
+                            reject( 'ERR_ROOM_CONNECTING' );
                         }
+                    } );
+                } else {
+                    fetch( localStorage.getItem( 'url' ) + '/socket/joinRoom?room=' + this.roomName, { credentials: 'include' } ).then( res => {
+                        if ( res.status === 200 ) {
+                            this.eventSource = new EventSource( localStorage.getItem( 'url' ) + '/socket/connection?room=' + this.roomName, { withCredentials: true } );
 
-                        this.eventSource.onerror = ( e ) => {
-                            if ( this.isConnected ) {
-                                this.isConnected = false;
-                                console.log( '[ SSE Connection ] - ' + new Date().toISOString() +  ': Reconnecting due to connection error!' );
-                                console.debug( e );
-                                
-                                this.eventSource = undefined;
-                                
-                                setTimeout( () => {
-                                    this.connect();
-                                }, 500 );
+                            this.eventSource.onmessage = ( e ) => {
+                                const d = JSON.parse( e.data );
+                                if ( this.toBeListenedForItems[ d.type ] ) {
+                                    this.toBeListenedForItems[ d.type ]( d.data );
+                                } else if ( d.type === 'basics' ) {
+                                    this.isConnected = true;
+                                    resolve( d.data );
+                                }
                             }
-                        };
-                    } else {
+
+                            this.eventSource.onerror = ( e ) => {
+                                if ( this.isConnected ) {
+                                    this.isConnected = false;
+                                    console.log( '[ SSE Connection ] - ' + new Date().toISOString() +  ': Reconnecting due to connection error!' );
+                                    console.debug( e );
+                                    
+                                    this.eventSource = undefined;
+                                    
+                                    this.reconnectRetryCount += 1;
+                                    setTimeout( () => {
+                                        this.connect();
+                                    }, 500 * this.reconnectRetryCount );
+                                }
+                            };
+                        } else {
+                            reject( 'ERR_ROOM_CONNECTING' );
+                        }
+                    } ).catch( () => {
                         reject( 'ERR_ROOM_CONNECTING' );
-                    }
-                } ).catch( () => {
-                    reject( 'ERR_ROOM_CONNECTING' );
-                } );
+                    } );
+                }
+            } else {
+                alert( 'Could not reconnect to the share. Please reload the page to retry!' );
+                reject( 'ERR_ROOM_CONNECTING' );
             }
         } );
     }
