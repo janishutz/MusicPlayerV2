@@ -18,8 +18,8 @@ if ( typeof( __dirname ) === 'undefined' ) {
 }
 
 // TODO: Change config file, as well as in main.ts, index.html, oauth, if deploying there
-const sdkConfig = JSON.parse( '' + fs.readFileSync( path.join( __dirname + '/config/sdk.config.testing.json' ) ) );
-// const sdkConfig: AuthSDKConfig = JSON.parse( '' + fs.readFileSync( path.join( __dirname + '/config/sdk.config.secret.json' ) ) );
+// const sdkConfig = JSON.parse( '' + fs.readFileSync( path.join( __dirname + '/config/sdk.config.testing.json' ) ) );
+const sdkConfig = JSON.parse( '' + fs.readFileSync( path.join( __dirname + '/config/sdk.config.secret.json' ) ) );
 
 const run = () => {
     let app = express();
@@ -27,11 +27,8 @@ const run = () => {
         credentials: true,
         origin: true 
     } ) );
-    storeSDK.configure( {
-        backendURL: 'http://localhost:8083',
-        name: 'testing',
-        signingSecret: 'test',
-    } );
+    // storeSDK.configure( JSON.parse( '' + fs.readFileSync( path.join( __dirname + '/config/store-sdk.config.testing.json' ) ) ) );
+    storeSDK.configure( JSON.parse( '' + fs.readFileSync( path.join( __dirname + '/config/store-sdk.config.secret.json' ) ) ) );
 
     const httpServer = createServer( app );
 
