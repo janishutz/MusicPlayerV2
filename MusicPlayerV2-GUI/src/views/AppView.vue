@@ -100,7 +100,8 @@
     } );
 
     const logout = () => {
-        location.href = localStorage.getItem( 'url' ) + '/logout?return=' + location.href;
+        // location.href = 'http://localhost:8080/logout?return=' + location.href;
+        location.href = 'https://id.janishutz.com/logout?return=' + location.href;
     }
 </script>
 
