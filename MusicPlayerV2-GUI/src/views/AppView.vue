@@ -100,8 +100,7 @@
     } );
 
     const logout = () => {
-        location.href = 'http://localhost:8080/logout?return=http://localhost:8081';
-        // location.href = 'https://id.janishutz.com/logout?return=https://music.janishutz.com';
+        location.href = localStorage.getItem( 'url' ) + '/logout?return=' + location.href;
     }
 </script>
 
