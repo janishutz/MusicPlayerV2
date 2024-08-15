@@ -8,7 +8,7 @@
             <div style="margin-top: 20px;">
                 <a href="https://store.janishutz.com/product/com.janishutz.MusicPlayer" class="fancy-button" target="_blank">Subscribe</a>
                 <a href="/" class="fancy-button" style="margin-left: 10px;" v-if="!reasonForRedirectHere">Log in</a>
-                <button href="/" class="fancy-button" style="margin-left: 10px;" v-if="!reasonForRedirectHere" @click="logout()">Log out</button>
+                <button href="/" class="fancy-button" style="margin-left: 10px;" v-if="reasonForRedirectHere" @click="logout()">Log out</button>
                 <a href="https://github.com/simplePCBuilding/MusicPlayerV2" class="fancy-button" style="margin-left: 10px;" target="_blank">GitHub</a>
             </div>
         </div>
