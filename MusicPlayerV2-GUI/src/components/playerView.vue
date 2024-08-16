@@ -315,30 +315,53 @@
                 if ( res.status === 200 ) {
                     res.blob().then( blob => {
                         parseBlob( blob ).then( data => {
-                            player.findSongOnAppleMusic( data.common.title ?? songDetails.filename.split( '.' )[ 0 ] ).then( d => {
-                                let url = d.data.results.songs.data[ 0 ].attributes.artwork.url;
-                                url = url.replace( '{w}', String( d.data.results.songs.data[ 0 ].attributes.artwork.width ) );
-                                url = url.replace( '{h}', String( d.data.results.songs.data[ 0 ].attributes.artwork.height ) );
-                                const song: Song = {
-                                    artist: data.common.artist ?? d.data.results.songs.data[ 0 ].attributes.artistName,
-                                    title: data.common.title ?? d.data.results.songs.data[ 0 ].attributes.name,
-                                    duration: data.format.duration ?? ( d.data.results.songs.data[ 0 ].attributes.durationInMillis / 1000 ),
-                                    id: songDetails.url,
-                                    origin: 'disk',
-                                    cover: url
-                                }
-                                resolve( song );
-                            } ).catch( e => {
-                                reject( e );
-                            } );
+                            try {
+                                player.findSongOnAppleMusic( data.common.title ?? songDetails.filename.split( '.' )[ 0 ] ).then( d => {
+                                    let url = d.data.results.songs.data[ 0 ].attributes.artwork.url;
+                                    url = url.replace( '{w}', String( d.data.results.songs.data[ 0 ].attributes.artwork.width ) );
+                                    url = url.replace( '{h}', String( d.data.results.songs.data[ 0 ].attributes.artwork.height ) );
+                                    const song: Song = {
+                                        artist: data.common.artist ?? d.data.results.songs.data[ 0 ].attributes.artistName,
+                                        title: data.common.title ?? d.data.results.songs.data[ 0 ].attributes.name,
+                                        duration: data.format.duration ?? ( d.data.results.songs.data[ 0 ].attributes.durationInMillis / 1000 ),
+                                        id: songDetails.url,
+                                        origin: 'disk',
+                                        cover: url
+                                    }
+                                    resolve( song );
+                                } ).catch( e => {
+                                    console.error( e );
+                                    const song: Song = {
+                                        artist: data.common.artist ?? 'Unknown artist',
+                                        title: data.common.title ?? 'Unknown song title',
+                                        duration: data.format.duration ?? 1000,
+                                        id: songDetails.url,
+                                        origin: 'disk',
+                                        cover: ''
+                                    }
+                                    resolve( song );
+                                } );
+                            } catch ( err ) {
+                                console.error( err );
+                                alert( 'One of your songs was not loadable. (finalization-error)' )
+                            }
                         } ).catch( e => {
+                            console.error( e );
+                            alert( 'One of your songs was not loadable. (parser-error)' );
                             reject( e );
                         } );
                     } ).catch( e => {
+                        console.error( e );
+                        alert( 'One of your songs was not loadable. (converter-error)' );
                         reject( e );
                     } );
+                } else {
+                    console.error( res.status );
+                    alert( 'One of your songs was not loadable. (invalid-response-code)' );
                 }
             } ).catch( e => {
+                console.error( e );
+                alert( 'One of your songs was not loadable. (could-not-connect)' );
                 reject( e );
             } );
         } );
