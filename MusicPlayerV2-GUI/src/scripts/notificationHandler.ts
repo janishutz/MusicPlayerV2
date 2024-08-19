@@ -21,6 +21,9 @@ class NotificationHandler {
     eventSource?: EventSource;
     toBeListenedForItems: SSEMap;
     reconnectRetryCount: number;
+    lastEmitTimestamp: number;
+    openConnectionsCount: number;
+    pendingRequestCount: number;
 
     constructor () {
         this.socket = io( localStorage.getItem( 'url' ) ?? '', {
@@ -32,6 +35,9 @@ class NotificationHandler {
         this.useSocket = localStorage.getItem( 'music-player-config' ) === 'ws';
         this.toBeListenedForItems = {};
         this.reconnectRetryCount = 0;
+        this.lastEmitTimestamp = 0;
+        this.pendingRequestCount = 0;
+        this.openConnectionsCount = 0;
     }
 
     /**
@@ -78,42 +84,50 @@ class NotificationHandler {
     sseConnect (): Promise<void> {
         return new Promise( ( resolve, reject ) => {
             if ( this.reconnectRetryCount < 5 ) {
-                fetch( localStorage.getItem( 'url' ) + '/socket/joinRoom?room=' + this.roomName, { credentials: 'include' } ).then( res => {
-                    if ( res.status === 200 ) {
-                        this.eventSource = new EventSource( localStorage.getItem( 'url' ) + '/socket/connection?room=' + this.roomName, { withCredentials: true } );
-                        this.eventSource.onopen = () => {
-                            this.isConnected = true;
-                            this.reconnectRetryCount = 0;
-                            resolve();
-                        }
-
-                        this.eventSource.onmessage = ( e ) => {
-                            const d = JSON.parse( e.data );
-                            if ( this.toBeListenedForItems[ d.type ] ) {
-                                this.toBeListenedForItems[ d.type ]( d.data );
+                if ( this.openConnectionsCount < 1 && !this.isConnected ) {
+                    this.openConnectionsCount += 1;
+                    fetch( localStorage.getItem( 'url' ) + '/socket/joinRoom?room=' + this.roomName, { credentials: 'include' } ).then( res => {
+                        if ( res.status === 200 ) {
+                            this.eventSource = new EventSource( localStorage.getItem( 'url' ) + '/socket/connection?room=' + this.roomName, { withCredentials: true } );
+                            this.eventSource.onopen = () => {
+                                this.isConnected = true;
+                                this.reconnectRetryCount = 0;
+                                console.log( '[ SSE Connection ] - ' + new Date().toISOString() + ': Connection successfully established!' );
+                                resolve();
                             }
-                        }
-
-                        this.eventSource.onerror = ( e ) => {
-                            if ( this.isConnected ) {
-                                this.isConnected = false;
-                                console.log( '[ SSE Connection ] - ' + new Date().toISOString() +  ': Reconnecting due to connection error!' );
-                                console.debug( e );
-                                
-                                this.eventSource = undefined;
-                                
-                                this.reconnectRetryCount += 1;
-                                setTimeout( () => {
-                                    this.sseConnect();
-                                }, 500 * this.reconnectRetryCount );
+                            
+                            this.eventSource.onmessage = ( e ) => {
+                                const d = JSON.parse( e.data );
+                                if ( this.toBeListenedForItems[ d.type ] ) {
+                                    this.toBeListenedForItems[ d.type ]( d.data );
+                                }
                             }
-                        };
-                    } else {
+                            
+                            this.eventSource.onerror = ( e ) => {
+                                if ( this.isConnected ) {
+                                    this.isConnected = false;
+                                    this.eventSource?.close();
+                                    this.openConnectionsCount -= 1;
+                                    console.log( '[ SSE Connection ] - ' + new Date().toISOString() +  ': Reconnecting due to connection error!' );
+                                    console.debug( e );
+                                    
+                                    this.eventSource = undefined;
+                                    
+                                    this.reconnectRetryCount += 1;
+                                    setTimeout( () => {
+                                        this.sseConnect();
+                                    }, 500 * this.reconnectRetryCount );
+                                }
+                            };
+                        } else {
+                            reject( 'ERR_ROOM_CONNECTING' );
+                        }
+                    } ).catch( () => {
                         reject( 'ERR_ROOM_CONNECTING' );
-                    }
-                } ).catch( () => {
-                    reject( 'ERR_ROOM_CONNECTING' );
-                } );
+                    } );
+                } else {
+                    resolve();
+                }
             } else {
                 if ( confirm( 'Connection lost and it could not be reestablished. Please click ok to retry or press cancel to stop retrying. Your share will be deleted as a result thereof.' ) ) {
                     this.reconnectRetryCount = 0;
@@ -136,17 +150,32 @@ class NotificationHandler {
             if ( this.useSocket ) {
                 this.socket.emit( event, { 'roomToken': this.roomToken, 'roomName': this.roomName, 'data': data } );
             } else {
-                fetch( localStorage.getItem( 'url' ) + '/socket/update', {
-                    method: 'post',
-                    body: JSON.stringify( { 'event': event, 'roomName': this.roomName, 'roomToken': this.roomToken, 'data': data } ),
-                    credentials: 'include',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'charset': 'utf-8'
-                    }
-                } ).catch( () => {} );
+                const now = new Date().getTime();
+                if ( this.lastEmitTimestamp < now - 250 ) {
+                    this.lastEmitTimestamp = now;
+                    this.sendEmitConventionally( event, data );
+                } else {
+                    this.pendingRequestCount += 1;
+                    setTimeout( () => {
+                        this.pendingRequestCount = 0;
+                        this.lastEmitTimestamp = now;
+                        this.sendEmitConventionally( event, data );
+                    }, 250 * this.pendingRequestCount );
+                }
             }
         }
+    }
+
+    sendEmitConventionally ( event: string, data: any ): void {
+        fetch( localStorage.getItem( 'url' ) + '/socket/update', {
+            method: 'post',
+            body: JSON.stringify( { 'event': event, 'roomName': this.roomName, 'roomToken': this.roomToken, 'data': data } ),
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json',
+                'charset': 'utf-8'
+            }
+        } ).catch( () => {} );
     }
 
     /**
@@ -169,7 +198,7 @@ class NotificationHandler {
      * Disconnect from the server
      * @returns {any}
      */
-    disconnect (): void {
+    async disconnect (): Promise<void> {
         if ( this.isConnected ) {
             if ( this.useSocket ) {
                 this.socket.emit( 'delete-room', {
@@ -180,6 +209,7 @@ class NotificationHandler {
                     if ( !res.status ) {
                         alert( 'Unable to delete the room you were just in. The name will be blocked until the next server restart!' );
                     }
+                    return;
                 } );
             } else {
                 fetch( localStorage.getItem( 'url' ) + '/socket/deleteRoom', {
@@ -196,7 +226,10 @@ class NotificationHandler {
                     } else {
                         alert( 'Unable to delete the room you were just in. The name will be blocked until the next server restart!' );
                     }
-                } ).catch( () => {} );
+                    return;
+                } ).catch( () => {
+                    return;
+                } );
             }
         }
     }

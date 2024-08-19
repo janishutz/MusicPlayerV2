@@ -149,12 +149,28 @@
             if ( isNaN( progressBar.value ) ) {
                 progressBar.value = 0;
             }
+
+            if ( playlist.value[ playingSong.value ].duration + 10 - pos.value < 0 ) {
+                stopTimeTracker();
+                alert( 'It looks like if you have been disconnected! We are trying to reconnect you now!' );
+                location.reload();
+            }
         }, 100 );
     }
     
     const stopTimeTracker = () => {
         clearInterval( timeTracker );
     }
+
+    document.addEventListener( 'visibilitychange', () => {
+        if ( !document.hidden ) {
+            if ( !conn.getStatus ) {
+                stopTimeTracker();
+                alert( 'It looks like if you have been disconnected! We are trying to reconnect you now!' );
+                location.reload();
+            }
+        }
+    } );
 </script>
 
 <style>
@@ -233,7 +249,7 @@
         margin-left: 10px;
         margin-right: auto;
         width: 65%;
-        text-align: justify;
+        text-align: left;
     }
 
     .pause-icon {
@@ -315,7 +331,7 @@
     }
 
     .additional-info {
-        font-size: 250%;
+        font-size: 1.2rem;
         margin: 0;
         font-weight: bolder;
     }

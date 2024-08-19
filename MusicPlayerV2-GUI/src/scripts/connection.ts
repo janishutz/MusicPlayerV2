@@ -20,6 +20,7 @@ class SocketConnection {
     eventSource?: EventSource;
     toBeListenedForItems: SSEMap;
     reconnectRetryCount: number;
+    openConnectionsCount: number;
 
     constructor () {
         this.socket = io( localStorage.getItem( 'url' ) ?? '', {
@@ -30,6 +31,7 @@ class SocketConnection {
         this.useSocket = localStorage.getItem( 'music-player-config' ) === 'ws';
         this.toBeListenedForItems = {};
         this.reconnectRetryCount = 0;
+        this.openConnectionsCount = 0;
     }
 
     /**
@@ -51,40 +53,55 @@ class SocketConnection {
                         }
                     } );
                 } else {
-                    fetch( localStorage.getItem( 'url' ) + '/socket/joinRoom?room=' + this.roomName, { credentials: 'include' } ).then( res => {
-                        if ( res.status === 200 ) {
-                            this.eventSource = new EventSource( localStorage.getItem( 'url' ) + '/socket/connection?room=' + this.roomName, { withCredentials: true } );
+                    if ( this.openConnectionsCount < 1 && !this.isConnected ) {
+                        this.openConnectionsCount += 1;
+                        fetch( localStorage.getItem( 'url' ) + '/socket/joinRoom?room=' + this.roomName, { credentials: 'include' } ).then( res => {
+                            if ( res.status === 200 ) {
+                                this.eventSource = new EventSource( localStorage.getItem( 'url' ) + '/socket/connection?room=' + this.roomName, { withCredentials: true } );
 
-                            this.eventSource.onmessage = ( e ) => {
-                                const d = JSON.parse( e.data );
-                                if ( this.toBeListenedForItems[ d.type ] ) {
-                                    this.toBeListenedForItems[ d.type ]( d.data );
-                                } else if ( d.type === 'basics' ) {
+                                this.eventSource.onopen = () => {
                                     this.isConnected = true;
-                                    resolve( d.data );
+                                    this.reconnectRetryCount = 0;
+                                    console.log( '[ SSE Connection ] - ' + new Date().toISOString() + ': Connection successfully established!' );
                                 }
-                            }
 
-                            this.eventSource.onerror = ( e ) => {
-                                if ( this.isConnected ) {
-                                    this.isConnected = false;
-                                    console.log( '[ SSE Connection ] - ' + new Date().toISOString() +  ': Reconnecting due to connection error!' );
-                                    console.debug( e );
-                                    
-                                    this.eventSource = undefined;
-                                    
-                                    this.reconnectRetryCount += 1;
-                                    setTimeout( () => {
-                                        this.connect();
-                                    }, 500 * this.reconnectRetryCount );
+                                this.eventSource.onmessage = ( e ) => {
+                                    const d = JSON.parse( e.data );
+                                    if ( this.toBeListenedForItems[ d.type ] ) {
+                                        this.toBeListenedForItems[ d.type ]( d.data );
+                                    } else if ( d.type === 'basics' ) {
+                                        resolve( d.data );
+                                    }
                                 }
-                            };
-                        } else {
+
+                                this.eventSource.onerror = () => {
+                                    if ( this.isConnected ) {
+                                        this.isConnected = false;
+                                        this.openConnectionsCount -= 1;
+                                        this.eventSource?.close();
+                                        console.log( '[ SSE Connection ] - ' + new Date().toISOString() +  ': Reconnecting due to connection error!' );
+                                        // console.debug( e );
+                                        
+                                        this.eventSource = undefined;
+                                        
+                                        this.reconnectRetryCount += 1;
+                                        setTimeout( () => {
+                                            this.connect();
+                                        }, 500 * this.reconnectRetryCount );
+                                    }
+                                };
+                            } else {
+                                console.log( '[ SSE Connection ] - ' + new Date().toISOString() + ': Could not connect due to error ' + res.status );
+                                reject( 'ERR_ROOM_CONNECTING' );
+                            }
+                        } ).catch( () => {
+                            console.log( '[ SSE Connection ] - ' + new Date().toISOString() + ': Could not connect due to error.' );
                             reject( 'ERR_ROOM_CONNECTING' );
-                        }
-                    } ).catch( () => {
-                        reject( 'ERR_ROOM_CONNECTING' );
-                    } );
+                        } );
+                    } else {
+                        console.log( '[ SSE Connection ]: Trimmed connections' );
+                        reject( 'ERR_TOO_MANY_CONNECTIONS' );
+                    }
                 }
             } else {
                 alert( 'Could not reconnect to the share. Please reload the page to retry!' );
@@ -144,6 +161,17 @@ class SocketConnection {
             } else {
                 this.eventSource!.close();
             }
+        }
+    }
+
+    getStatus (): boolean {
+        if ( this.useSocket ) {
+            return true;
+        } else {
+            if ( this.eventSource ) {
+                return this.eventSource!.OPEN && this.isConnected;
+            }
+            return false;
         }
     }
 }

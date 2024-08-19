@@ -451,7 +451,7 @@
                     niceDuration.value += secondCounts;
                 }
             }
-        }, 50 );
+        }, 100 );
     }
 
     const prepNiceDurationTime = ( playingSong: Song ) => {
@@ -596,8 +596,8 @@
         }
     }
 
-    window.addEventListener( 'beforeunload', () => {
-        notificationHandler.disconnect();
+    window.addEventListener( 'beforeunload', async () => {
+        await notificationHandler.disconnect();
     } );
 
     defineExpose( {

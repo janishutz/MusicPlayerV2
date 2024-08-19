@@ -283,7 +283,7 @@
         justify-content: center;
         align-items: center;
         flex-direction: column;
-        text-align: justify;
+        text-align: left;
         color: white;
     }
 
@@ -379,7 +379,7 @@
         display: block;
         margin-left: 10px;
         margin-right: auto;
-        text-align: justify;
+        text-align: left;
     }
 
     .song-list .song-image {
