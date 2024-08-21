@@ -5,8 +5,8 @@
         <button @click="addNewSongs()" class="small-buttons" title="Load selected files"><span class="material-symbols-outlined">upload</span></button>
         <button @click="openSearch()" v-if="$props.isLoggedIntoAppleMusic" class="small-buttons" title="Search Apple Music for the song"><span class="material-symbols-outlined">search</span></button>
         <button @click="clearPlaylist()" class="small-buttons" title="Clear the playlist"><span class="material-symbols-outlined">delete</span></button>
-        <p v-if="!hasSelectedSongs">Please select at least one song to proceed</p>
         <button title="Transmit additional information" class="small-buttons" @click="sendAdditionalInfo()"><span class="material-symbols-outlined">send</span></button>
+        <p v-if="!hasSelectedSongs">Please select at least one song to proceed</p>
         <div class="playlist-box" id="pl-box">
             <!-- TODO: Allow editing additionalInfo. Think also how to make it persist over reloads... Export to JSON and then best-guess add them? Very easy for Apple Music 'cause ID, but how for local songs? Maybe using retrieved ID from Apple Music? -->
             <!-- TODO: Handle long AppleMusic Playlists, as AppleMusic doesn't automatically load all songs of a playlist -->
