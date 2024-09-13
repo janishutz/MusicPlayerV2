@@ -87,7 +87,7 @@ class SocketConnection {
                                         this.reconnectRetryCount += 1;
                                         setTimeout( () => {
                                             this.connect();
-                                        }, 500 * this.reconnectRetryCount );
+                                        }, 1000 * this.reconnectRetryCount );
                                     }
                                 };
                             } else {

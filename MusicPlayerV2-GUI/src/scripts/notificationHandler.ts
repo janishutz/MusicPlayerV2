@@ -24,6 +24,7 @@ class NotificationHandler {
     lastEmitTimestamp: number;
     openConnectionsCount: number;
     pendingRequestCount: number;
+    connectionWasSuccessful: boolean;
 
     constructor () {
         this.socket = io( localStorage.getItem( 'url' ) ?? '', {
@@ -38,6 +39,7 @@ class NotificationHandler {
         this.lastEmitTimestamp = 0;
         this.pendingRequestCount = 0;
         this.openConnectionsCount = 0;
+        this.connectionWasSuccessful = false;
     }
 
     /**
@@ -74,6 +76,8 @@ class NotificationHandler {
                     } );
                 } else if ( res.status === 409 ) {
                     reject( 'ERR_CONFLICT' );
+                } else if ( res.status === 403 || res.status === 401 ) {
+                    reject( 'ERR_UNAUTHORIZED' );
                 } else {
                     reject( 'ERR_ROOM_CREATING' );
                 }
@@ -89,8 +93,10 @@ class NotificationHandler {
                     fetch( localStorage.getItem( 'url' ) + '/socket/joinRoom?room=' + this.roomName, { credentials: 'include' } ).then( res => {
                         if ( res.status === 200 ) {
                             this.eventSource = new EventSource( localStorage.getItem( 'url' ) + '/socket/connection?room=' + this.roomName, { withCredentials: true } );
+
                             this.eventSource.onopen = () => {
                                 this.isConnected = true;
+                                this.connectionWasSuccessful = true;
                                 this.reconnectRetryCount = 0;
                                 console.log( '[ SSE Connection ] - ' + new Date().toISOString() + ': Connection successfully established!' );
                                 resolve();
@@ -108,22 +114,37 @@ class NotificationHandler {
                                     this.isConnected = false;
                                     this.eventSource?.close();
                                     this.openConnectionsCount -= 1;
-                                    console.log( '[ SSE Connection ] - ' + new Date().toISOString() +  ': Reconnecting due to connection error!' );
                                     console.debug( e );
+                                    console.log( '[ SSE Connection ] - ' + new Date().toISOString() +  ': Reconnecting due to connection error!' );
                                     
                                     this.eventSource = undefined;
                                     
                                     this.reconnectRetryCount += 1;
                                     setTimeout( () => {
                                         this.sseConnect();
-                                    }, 500 * this.reconnectRetryCount );
+                                    }, 1000 * this.reconnectRetryCount );
                                 }
                             };
+                        } else if ( res.status === 403 || res.status === 401 || res.status === 404 ) {
+                            document.dispatchEvent( new Event( 'musicplayer:autherror' ) );
+                            reject( 'ERR_UNAUTHORIZED' );
                         } else {
-                            reject( 'ERR_ROOM_CONNECTING' );
+                            reject( 'ERR_ROOM_CONNECTING_STATUS_CODE' );
                         }
                     } ).catch( () => {
-                        reject( 'ERR_ROOM_CONNECTING' );
+                        if ( !this.connectionWasSuccessful ) {
+                            reject( 'ERR_ROOM_CONNECTING' );
+                        } else {
+                            this.openConnectionsCount -= 1;
+                            console.log( '[ SSE Connection ] - ' + new Date().toISOString() +  ': Reconnecting due to severe connection error!' );
+                            
+                            this.eventSource = undefined;
+                            
+                            this.reconnectRetryCount += 1;
+                            setTimeout( () => {
+                                this.sseConnect();
+                            }, 1000 * this.reconnectRetryCount );
+                        }
                     } );
                 } else {
                     resolve();

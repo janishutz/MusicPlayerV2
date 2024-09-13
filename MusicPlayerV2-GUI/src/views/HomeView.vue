@@ -61,6 +61,11 @@
                 if ( res.status ) {
                     store.isUserAuth = true;
                     store.username = res.username;
+                    if ( localStorage.getItem( 'close-tab' ) ) {
+                        localStorage.removeItem( 'close-tab' );
+                        window.close();
+                    } 
+                    localStorage.setItem( 'login-ok', 'true' );
                     router.push( localStorage.getItem( 'redirect' ) ?? '/app' );
                     localStorage.removeItem( 'redirect' );
                 } else {

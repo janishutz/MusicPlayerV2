@@ -40,6 +40,7 @@
         priority: string;
         id: number;
         redirect?: string;
+        openInNewTab?: boolean;
     }
 
     interface NotificationList {
@@ -58,7 +59,11 @@
     const notificationAction = () => {
         if ( notifications.value[ currentDID.value ] ) {
             if ( notifications.value[ currentDID.value ].redirect ) {
-                router.push( notifications.value[ currentDID.value ].redirect ?? '' );
+                if ( notifications.value[ currentDID.value ].openInNewTab ) {
+                    window.open( notifications.value[ currentDID.value ].redirect ?? '' );
+                } else {
+                    router.push( notifications.value[ currentDID.value ].redirect ?? '' );
+                }
             }
         }
     };
@@ -67,11 +72,11 @@
      * Create a notification that will be displayed using the internal notification scheduler
      * @param {string} message The message to show. Can only be plain text (no HTML)
      * @param {number} showDuration The duration in seconds for which to show the notification
-     * @param {string} messageType Type of notification to show. Will dictate how it looks: 'ok', 'error', 'info', 'warn', 'progress'
+     * @param {string} msgType Type of notification to show. Will dictate how it looks: 'ok', 'error', 'info', 'warn', 'progress'
      * @param {string} priority The priority of the message: 'low', 'normal', 'critical'
      * @returns {number}
      */
-    const createNotification = ( message: string, showDuration: number, msgType: string, priority: string, redirect?: string ): number => {
+    const createNotification = ( message: string, showDuration: number, msgType: string, priority: string, redirect?: string, openInNewTab?: boolean ): number => {
         /* 
                 Takes a notification options array that contains: message, showDuration (in seconds), msgType (ok, error, progress, info) and priority (low, normal, critical).
                 Returns a notification ID which can be used to cancel the notification. The component will throttle notifications and display
@@ -89,7 +94,7 @@
             currentID.value[ 'low' ] += 1;
             id = currentID.value[ 'low' ];
         }
-        notifications.value[ id ] = { 'message': message, 'showDuration': showDuration, 'messageType': msgType, 'priority': priority, 'id': id, redirect: redirect };
+        notifications.value[ id ] = { 'message': message, 'showDuration': showDuration, 'messageType': msgType, 'priority': priority, 'id': id, redirect: redirect, openInNewTab: openInNewTab };
         queue.value.push( id );
         console.log( 'scheduled notification: ' + id + ' (' + message + ')' );
         if ( ( new Date().getTime() - notificationDisplayStartTime.value ) / 1000 >= ( notifications.value[ currentDID.value ] ? notifications.value[ currentDID.value ].showDuration : 0 ) || messageType.value === 'hide' ) {

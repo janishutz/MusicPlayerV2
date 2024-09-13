@@ -111,8 +111,23 @@
     const roomName = ref( '' );
     const isShowingWarning = ref( false );
     let currentlyOpenPopup = '';
+    let logoutErrorNotification = -1;
 
     const emits = defineEmits( [ 'playerStateChange' ] );
+
+    document.addEventListener( 'musicplayer:autherror', () => {
+        localStorage.setItem( 'close-tab', 'true' );
+        isConnectedToNotifier.value = false;
+        logoutErrorNotification = notifications.value.createNotification( 'You appear to have been logged out. Click to log in again!', 600, 'error', 'critical', '/', true );
+    } );
+
+    window.addEventListener( 'storage', () => {
+        if ( localStorage.getItem( 'login-ok' ) === 'true' ) {
+            notifications.value.cancelNotification( logoutErrorNotification );
+            notifications.value.createNotification( 'Logged in again. You will have to reconnect to the share!', 20, 'ok', 'normal' );
+            localStorage.removeItem( 'login-ok' );
+        }
+    } );
 
     const playPause = () => {
         isPlaying.value = !isPlaying.value;
@@ -588,6 +603,10 @@
                 if ( e === 'ERR_CONFLICT' ) {
                     notifications.value.createNotification( 'A share with this name exists already!', 5, 'error', 'normal' );
                     control( 'start-share' );
+                } else if ( e === 'ERR_UNAUTHORIZED' ) {
+                    console.error( e );
+                    localStorage.setItem( 'close-tab', 'true' );
+                    logoutErrorNotification = notifications.value.createNotification( 'You appear to have been logged out. Click to log in again!', 20, 'error', 'normal', '/', true );
                 } else {
                     console.error( e );
                     notifications.value.createNotification( 'Could not create share!', 5, 'error', 'normal' );
