@@ -6,7 +6,6 @@
 <div id="badges" align="center">
     <img alt="Project License" src="https://img.shields.io/github/license/simplePCBuilding/MusicPlayerV2.svg">
     <img alt="GitHub Repo size" src="https://img.shields.io/github/repo-size/simplePCBuilding/MusicPlayerV2.svg">
-    <img alt="Project code lines count" src="https://img.shields.io/tokei/lines/github/simplePCBuilding/MusicPlayerV2">
     <img alt="GitHub Repo issues" src="https://img.shields.io/github/issues-pr-raw/simplePCBuilding/MusicPlayerV2">
     <img alt="Top Languages" src="https://img.shields.io/github/languages/top/simplePCBuilding/MusicPlayerV2">
     <img alt="GitHub Repo filecount" src="https://img.shields.io/github/directory-file-count/simplePCBuilding/MusicPlayerV2.svg">
