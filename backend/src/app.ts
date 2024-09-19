@@ -12,6 +12,8 @@ import type { Room, Song } from './definitions';
 import storeSDK from 'store.janishutz.com-sdk';
 import bodyParser from 'body-parser';
 
+const isFossVersion = true;
+
 declare let __dirname: string | undefined
 if ( typeof( __dirname ) === 'undefined' ) {
     __dirname = path.resolve( path.dirname( '' ) );
@@ -27,30 +29,35 @@ const run = () => {
         credentials: true,
         origin: true 
     } ) );
-    // storeSDK.configure( JSON.parse( '' + fs.readFileSync( path.join( __dirname + '/config/store-sdk.config.testing.json' ) ) ) );
-    storeSDK.configure( JSON.parse( '' + fs.readFileSync( path.join( __dirname + '/config/store-sdk.config.secret.json' ) ) ) );
+
+    if ( !isFossVersion ) {
+        // storeSDK.configure( JSON.parse( '' + fs.readFileSync( path.join( __dirname + '/config/store-sdk.config.testing.json' ) ) ) );
+        storeSDK.configure( JSON.parse( '' + fs.readFileSync( path.join( __dirname + '/config/store-sdk.config.secret.json' ) ) ) );
+    }
 
     const httpServer = createServer( app );
 
-    // Load id.janishutz.com SDK and allow signing in
-    sdk.routes( app, ( uid: string ) => { 
-        return new Promise( ( resolve, reject ) => {
-            account.checkUser( uid ).then( stat => {
-                resolve( stat );
-            } ).catch( e => {
-                reject( e );
+    if ( !isFossVersion ) {
+        // Load id.janishutz.com SDK and allow signing in
+        sdk.routes( app, ( uid: string ) => { 
+            return new Promise( ( resolve, reject ) => {
+                account.checkUser( uid ).then( stat => {
+                    resolve( stat );
+                } ).catch( e => {
+                    reject( e );
+                } );
             } );
-        } );
-    }, 
-    ( uid: string, email: string, username: string ) => {
-        return new Promise( ( resolve, reject ) => {
-            account.createUser( uid, username, email ).then( stat => {
-                resolve( stat );
-            } ).catch( e => {
-                reject( e );
+        }, 
+        ( uid: string, email: string, username: string ) => {
+            return new Promise( ( resolve, reject ) => {
+                account.createUser( uid, username, email ).then( stat => {
+                    resolve( stat );
+                } ).catch( e => {
+                    reject( e );
+                } );
             } );
-        } );
-    }, sdkConfig );
+        }, sdkConfig );
+    }
 
     // Websocket for events
     interface SocketData {
