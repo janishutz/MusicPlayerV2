@@ -26,14 +26,6 @@ declare module 'express-session' {
     }
 }
 
-const routes = ( app: express.Application, 
-    check_user: ( uid: string ) => Promise<boolean>, 
-    save_user: ( uid: string, email: string, username: string ) => Promise<boolean>,
-    conf?: AuthSDKConfig
-): undefined => {
-    
-}
-
 const getUserData = ( request: express.Request ) => {
     if ( !request.session.uid ) {
         request.session.uid = crypto.randomUUID();
@@ -45,6 +37,5 @@ const getUserData = ( request: express.Request ) => {
 
 export default {
     checkAuth,
-    routes,
     getUserData
 }

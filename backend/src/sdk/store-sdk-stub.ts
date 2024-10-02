@@ -6,11 +6,6 @@ const getSubscriptions = ( uid: string ) => {
     } ];
 }
 
-const configure = ( config: object ) => {
-
-}
-
 export default {
     getSubscriptions,
-    configure
 }
