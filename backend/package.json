@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/simplePCBuilding/MusicPlayerV2#readme",
   "devDependencies": {
+    "@types/express-session": "^1.18.0",
     "typescript": "^5.4.5"
   },
   "dependencies": {
@@ -27,6 +28,7 @@
     "body-parser": "^1.20.2",
     "cors": "^2.8.5",
     "express": "^4.19.2",
+    "express-session": "^1.18.0",
     "jsonwebtoken": "^9.0.2",
     "node-mysql": "^0.4.2",
     "oauth-janishutz-client-server": "file:../../oauth/client/server/dist",
