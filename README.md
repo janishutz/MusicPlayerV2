@@ -1,12 +1,11 @@
 <div id="title" align="center">
     <img src="./assets/logo.png" width="300">
-    <h1>MusicPlayerV2</h1>
+    <h1>MusicPlayer</h1>
 </div>
 
 <div id="badges" align="center">
     <img alt="Project License" src="https://img.shields.io/github/license/simplePCBuilding/MusicPlayerV2.svg">
     <img alt="GitHub Repo size" src="https://img.shields.io/github/repo-size/simplePCBuilding/MusicPlayerV2.svg">
-    <img alt="Project code lines count" src="https://img.shields.io/tokei/lines/github/simplePCBuilding/MusicPlayerV2">
     <img alt="GitHub Repo issues" src="https://img.shields.io/github/issues-pr-raw/simplePCBuilding/MusicPlayerV2">
     <img alt="Top Languages" src="https://img.shields.io/github/languages/top/simplePCBuilding/MusicPlayerV2">
     <img alt="GitHub Repo filecount" src="https://img.shields.io/github/directory-file-count/simplePCBuilding/MusicPlayerV2.svg">
@@ -22,16 +21,18 @@
     <img alt="App Version" src="https://img.shields.io/github/package-json/v/simplePCBuilding/MusicPlayerV2.svg?label=Development Version">
 </div>
 
+A music player, specifically created for displaying song information on multiple different displays that are connected to the same network, just from the browser. 
+
+The [hosted version](https://music.janishutz.com) of this MusicPlayer, which is fully set up for you will be subscription-based and can be paid for on my [store](https://store.janishutz.com/product/com.janishutz.MusicPlayer). Not available yet though!
+
 <div id="donate" align="center">
     <a href="https://store.janishutz.com/donate" target="_blank"><img src="https://store-cdn.janishutz.com/static/support-me.jpg" width="150px"></a>
 </div>
 
-A music player, specifically created for displaying song information from a CSV or JSON file on multiple different displays that are connected
-to the same network, just from the browser. 
-
 # Features
-- Electron App that runs on all major Desktop OS (Linux, MacOS & Windows)
-- Show all song information over the local network on any amount of client displays
-- Client displays show the playback position and all information from the metadata and CSV / JSON file that contains all song information
+- Browser based App that runs on all OS (Linux, MacOS, Windows, iOS, Android, iPadOS, ...)
+- Fully featured Music Player
+- Show all song information over the Internet on any amount of client displays
+- Client displays show the playback position and all information from song metadata fetched from the Apple Music API
 - Play most common music files
-- Backend to allow users to connect over the internet
+- No setup required when using the hosted version at [music.janishutz.com](https://music.janishutz.com)
