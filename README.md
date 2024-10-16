@@ -25,6 +25,10 @@ A music player, specifically created for displaying song information on multiple
 
 The [hosted version](https://music.janishutz.com) of this MusicPlayer, which is fully set up for you will be subscription-based and can be paid for on my [store](https://store.janishutz.com/product/com.janishutz.MusicPlayer). Not available yet though!
 
+<div id="donate" align="center">
+    <a href="https://store.janishutz.com/donate" target="_blank"><img src="https://store-cdn.janishutz.com/static/support-me.jpg" width="150px"></a>
+</div>
+
 # Features
 - Browser based App that runs on all OS (Linux, MacOS, Windows, iOS, Android, iPadOS, ...)
 - Fully featured Music Player
