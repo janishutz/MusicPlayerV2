@@ -407,7 +407,8 @@
     }
 
 
-    let progressTracker = 0;
+    let progressTracker: ReturnType<typeof setInterval> = setInterval( () => {}, 1000 );
+    clearInterval( progressTracker );
     let hasReachedEnd = false;
     let hasStarted = false;
     const startProgressTracker = () => {
@@ -432,14 +433,16 @@
             }
 
             if ( pos.value > 0 && !hasStarted ) {
-                getDetails();
-                playingSong = player.getPlayingSong();
-                pos.value = player.getPlaybackPos();
-                prepNiceDurationTime( playingSong );
-                notificationHandler.emit( 'playlist-index-update', currentlyPlayingSongIndex.value );
-                notificationHandler.emit( 'playback-update', isPlaying.value );
-                notificationHandler.emit( 'playback-start-update', new Date().getTime() - pos.value * 1000 );
-                hasStarted = true;
+                if ( player.getPlaying() ) {
+                    getDetails();
+                    playingSong = player.getPlayingSong();
+                    pos.value = player.getPlaybackPos();
+                    prepNiceDurationTime( playingSong );
+                    notificationHandler.emit( 'playlist-index-update', currentlyPlayingSongIndex.value );
+                    notificationHandler.emit( 'playback-update', isPlaying.value );
+                    notificationHandler.emit( 'playback-start-update', new Date().getTime() - pos.value * 1000 );
+                    hasStarted = true;
+                }
             }
 
             const minuteCount = Math.floor( pos.value / 60 );
