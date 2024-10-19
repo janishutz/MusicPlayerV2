@@ -434,6 +434,7 @@
             if ( pos.value > 0 && !hasStarted ) {
                 getDetails();
                 playingSong = player.getPlayingSong();
+                pos.value = player.getPlaybackPos();
                 prepNiceDurationTime( playingSong );
                 notificationHandler.emit( 'playlist-index-update', currentlyPlayingSongIndex.value );
                 notificationHandler.emit( 'playback-update', isPlaying.value );
