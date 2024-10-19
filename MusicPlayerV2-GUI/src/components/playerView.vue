@@ -434,14 +434,16 @@
 
             if ( pos.value > 0 && !hasStarted ) {
                 if ( player.getPlaying() ) {
-                    getDetails();
-                    playingSong = player.getPlayingSong();
-                    pos.value = player.getPlaybackPos();
-                    prepNiceDurationTime( playingSong );
-                    notificationHandler.emit( 'playlist-index-update', currentlyPlayingSongIndex.value );
-                    notificationHandler.emit( 'playback-update', isPlaying.value );
-                    notificationHandler.emit( 'playback-start-update', new Date().getTime() - pos.value * 1000 );
-                    hasStarted = true;
+                    setTimeout( () => {
+                        getDetails();
+                        playingSong = player.getPlayingSong();
+                        pos.value = player.getPlaybackPos();
+                        prepNiceDurationTime( playingSong );
+                        notificationHandler.emit( 'playlist-index-update', currentlyPlayingSongIndex.value );
+                        notificationHandler.emit( 'playback-update', isPlaying.value );
+                        notificationHandler.emit( 'playback-start-update', new Date().getTime() - pos.value * 1000 );
+                        hasStarted = true;
+                    }, 2000 );
                 }
             }
 
