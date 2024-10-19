@@ -184,6 +184,7 @@
                 getDetails();
                 notificationHandler.emit( 'playlist-update', playlist.value );
             }
+            notificationHandler.emit( 'playlist-index-update', player.getQueueID() );
             getDetails();
         } else if ( action === 'forward' ) {
             clickCountForward.value += 1;
