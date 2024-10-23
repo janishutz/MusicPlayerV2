@@ -23,7 +23,7 @@
 
 A music player, specifically created for displaying song information on multiple different displays that are connected to the same network, just from the browser. 
 
-The [hosted version](https://music.janishutz.com) of this MusicPlayer, which is fully set up for you will be subscription-based and can be paid for on my [store](https://store.janishutz.com/product/com.janishutz.MusicPlayer). Not available yet though!
+The [hosted version](https://music.janishutz.com) of this MusicPlayer, which is fully set up for you is subscription-based and can be paid for on my [store](https://store.janishutz.com/product/com.janishutz).
 
 <div id="donate" align="center">
     <a href="https://store.janishutz.com/donate" target="_blank"><img src="https://store-cdn.janishutz.com/static/support-me.jpg" width="150px"></a>
