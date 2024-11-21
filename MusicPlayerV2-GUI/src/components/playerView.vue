@@ -337,8 +337,8 @@
                                     url = url.replace( '{w}', String( d.data.results.songs.data[ 0 ].attributes.artwork.width ) );
                                     url = url.replace( '{h}', String( d.data.results.songs.data[ 0 ].attributes.artwork.height ) );
                                     const song: Song = {
-                                        artist: data.common.artist ?? d.data.results.songs.data[ 0 ].attributes.artistName,
-                                        title: data.common.title ?? d.data.results.songs.data[ 0 ].attributes.name,
+                                        artist: d.data.results.songs.data[ 0 ].attributes.artistName,
+                                        title: d.data.results.songs.data[ 0 ].attributes.name,
                                         duration: data.format.duration ?? ( d.data.results.songs.data[ 0 ].attributes.durationInMillis / 1000 ),
                                         id: songDetails.url,
                                         origin: 'disk',
