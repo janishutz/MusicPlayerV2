@@ -90,7 +90,7 @@
                     router.push( '/get' );
                 }
             } );
-        } else if ( res.status === 404 ) {
+        } else if ( res.status === 402 ) {
             userStore.setSubscriptionStatus( false );
             router.push( '/get' );
             sessionStorage.setItem( 'getRedirectionReason', 'notOwned' );

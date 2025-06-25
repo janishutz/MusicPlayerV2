@@ -125,7 +125,7 @@ class NotificationHandler {
                                     }, 1000 * this.reconnectRetryCount );
                                 }
                             };
-                        } else if ( res.status === 403 || res.status === 401 || res.status === 404 ) {
+                        } else if ( res.status === 403 || res.status === 401 || res.status === 404 || res.status === 402 ) {
                             document.dispatchEvent( new Event( 'musicplayer:autherror' ) );
                             reject( 'ERR_UNAUTHORIZED' );
                         } else {
