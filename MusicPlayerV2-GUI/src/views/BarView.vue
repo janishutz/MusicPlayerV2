@@ -51,7 +51,7 @@
             totalPrice += o * offering.value[ keys[ i ] ].price;
         }
 
-        return totalPrice;
+        return totalPrice / 100;
     } );
 
     const changeValue = ( id: string, amount: number ) => {
@@ -77,13 +77,15 @@
                         <p>{{ offer.name }} (CHF {{ offer.price / 100 }})</p>
                     </td>
                     <td>
-                        <button class="inc-dec" @click="changeValue( offer.id, 1 )">
-                            +
-                        </button>
-                        <p>{{ selection[ offer.id ] }}</p>
-                        <button class="inc-dec" @click="changeValue( offer.id, -1 )">
-                            -
-                        </button>
+                        <div>
+                            <button class="inc-dec" @click="changeValue( offer.id, 1 )">
+                                +
+                            </button>
+                            <p>{{ selection[ offer.id ] }}</p>
+                            <button class="inc-dec" @click="changeValue( offer.id, -1 )">
+                                -
+                            </button>
+                        </div>
                     </td>
                 </tr>
             </tbody>
@@ -93,32 +95,45 @@
 
 <style lang="scss" scoped>
 .bar-utility {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+
     >.offering-wrapper {
-        display: flex;
-        justify-content: center;
-        flex-direction: column;
-        align-items: center;
+        .offering {
+            >td {
+                p {
+                    margin: 0;
+                    margin-right: 15px;
+                    text-align: start;
+                }
 
-        >.offering {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin-bottom: 5px;
+                >div {
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    flex-direction: row;
 
-            p {
-                margin: 0;
-            }
+                    p {
+                        margin-left: 5px;
+                        margin-right: 5px;
+                    }
 
-            >.inc-dec {
-                background: none;
-                border: solid var( --primary-color ) 1px;
-                border-radius: 20px;
-                width: 1.5rem;
-                height: 1.5rem;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                font-size: 1rem;
+                    >.inc-dec {
+                        user-select: none;
+                        cursor: pointer;
+                        background: none;
+                        border: solid var( --primary-color ) 1px;
+                        border-radius: 20px;
+                        width: 2rem;
+                        height: 2rem;
+                        display: flex;
+                        justify-content: center;
+                        align-items: center;
+                        font-size: 1.5rem;
+                    }
+                }
             }
         }
     }
