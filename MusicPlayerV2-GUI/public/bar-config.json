@@ -1,0 +1,12 @@
+{
+    "test": {
+        "name": "Test drink",
+        "price": 700,
+        "id": "test"
+    },
+    "test-2": {
+        "name": "Test drink 2",
+        "price": 500,
+        "id": "test-2"
+    }
+}

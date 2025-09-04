@@ -50,6 +50,15 @@ const router = createRouter( {
                 'title': 'Fancy View'
             }
         },
+        {
+            path: '/tools/bar',
+            name: 'tool-bar',
+            component: () => import( '../views/BarView.vue' ),
+            meta: {
+                'authRequired': false,
+                'title': 'Bar utility'
+            }
+        },
         { 
             path: '/:pathMatch(.*)*', 
             name: 'NotFound', 
