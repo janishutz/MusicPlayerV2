@@ -69,23 +69,58 @@
         <button @click="reset()">
             Reset
         </button>
-        <div>
-            <div v-for="offer in offering" :key="offer.price">
-                <p>{{ offer.name }} (CHF {{ offer.price / 100 }})</p>
-                <button class="inc-dec" @click="changeValue( offer.id, 1 )">
-                    +
-                </button>
-                <button class="inc-dec" @click="changeValue( offer.id, -1 )">
-                    -
-                </button>
-            </div>
-        </div>
-        <p>Total: {{ total }}</p>
+        <p>Total: CHF {{ total }}</p>
+        <table class="offering-wrapper">
+            <tbody>
+                <tr v-for="offer in offering" :key="offer.id" class="offering">
+                    <td>
+                        <p>{{ offer.name }} (CHF {{ offer.price / 100 }})</p>
+                    </td>
+                    <td>
+                        <button class="inc-dec" @click="changeValue( offer.id, 1 )">
+                            +
+                        </button>
+                        <p>{{ selection[ offer.id ] }}</p>
+                        <button class="inc-dec" @click="changeValue( offer.id, -1 )">
+                            -
+                        </button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
     </div>
 </template>
 
 <style lang="scss" scoped>
 .bar-utility {
-    
+    >.offering-wrapper {
+        display: flex;
+        justify-content: center;
+        flex-direction: column;
+        align-items: center;
+
+        >.offering {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 5px;
+
+            p {
+                margin: 0;
+            }
+
+            >.inc-dec {
+                background: none;
+                border: solid var( --primary-color ) 1px;
+                border-radius: 20px;
+                width: 1.5rem;
+                height: 1.5rem;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                font-size: 1rem;
+            }
+        }
+    }
 }
 </style>
