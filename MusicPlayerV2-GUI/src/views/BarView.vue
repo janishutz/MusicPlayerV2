@@ -103,6 +103,7 @@
     >.offering-wrapper {
         .offering {
             >td {
+                padding: 5px;
                 p {
                     margin: 0;
                     margin-right: 15px;
@@ -132,6 +133,8 @@
                         justify-content: center;
                         align-items: center;
                         font-size: 1.5rem;
+                        color: var( --primary-color );
+                        touch-action: manipulation;
                     }
                 }
             }
