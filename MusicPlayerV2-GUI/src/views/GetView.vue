@@ -3,13 +3,35 @@
         <div class="top-view">
             <img src="https://github.com/simplePCBuilding/MusicPlayerV2/raw/master/assets/logo.png" alt="MusicPlayer Logo" class="logo">
             <h1>MusicPlayer</h1>
-            <p v-if="reasonForRedirectHere" style="color: red;">{{ reasons[ reasonForRedirectHere ] }}</p>
-            <p v-if="!reasonForRedirectHere"><i>An Open Source, browser-based MusicPlayer with beautiful graphics</i></p>
+            <p v-if="reasonForRedirectHere" style="color: red;">
+                {{ reasons[ reasonForRedirectHere ] }}
+            </p>
+            <p v-if="!reasonForRedirectHere">
+                <i>An Open Source, browser-based MusicPlayer with beautiful graphics</i>
+            </p>
             <div style="margin-top: 20px;">
                 <a href="https://store.janishutz.com/product/com.janishutz.MusicPlayer" class="fancy-button" target="_blank">Subscribe</a>
-                <a href="/" class="fancy-button" style="margin-left: 10px;" v-if="!reasonForRedirectHere">Log in</a>
-                <button href="/" class="fancy-button" style="margin-left: 10px;" v-if="reasonForRedirectHere" @click="logout()">Log out</button>
-                <a href="https://github.com/simplePCBuilding/MusicPlayerV2" class="fancy-button" style="margin-left: 10px;" target="_blank">GitHub</a>
+                <a
+                    v-if="!reasonForRedirectHere"
+                    href="/"
+                    class="fancy-button"
+                    style="margin-left: 10px;"
+                >Log in</a>
+                <button
+                    v-if="reasonForRedirectHere"
+                    href="/"
+                    class="fancy-button"
+                    style="margin-left: 10px;"
+                    @click="logout()"
+                >
+                    Log out
+                </button>
+                <a
+                    href="https://github.com/simplePCBuilding/MusicPlayerV2"
+                    class="fancy-button"
+                    style="margin-left: 10px;"
+                    target="_blank"
+                >GitHub</a>
             </div>
         </div>
         <div>
@@ -20,7 +42,10 @@
             <p>Use MusicPlayer in conjunction with Apple Music</p>
 
             <h2>Share your playlist</h2>
-            <p>You can share your playlist on a beautifully animated public page, so that other people can join in and view your playlist</p>
+            <p>
+                You can share your playlist on a beautifully animated public page,
+                so that other people can join in and view your playlist
+            </p>
 
             <h2>Fully browser based</h2>
             <p>No installation required when using MusicPlayer on <a href="https://music.janishutz.com">music.janishutz.com</a></p>
@@ -29,7 +54,9 @@
 </template>
 
 <script setup lang="ts">
-    import { ref, type Ref } from 'vue';
+    import {
+        ref, type Ref
+    } from 'vue';
 
     interface Reasons {
         [key: string]: string;
@@ -39,12 +66,13 @@
         'notOwned': 'Please subscribe to use MusicPlayer here, or download and install it manually from GitHub!',
     } );
     const reasonForRedirectHere = ref( sessionStorage.getItem( 'getRedirectionReason' ) );
+
     sessionStorage.removeItem( 'getRedirectionReason' );
 
     const logout = () => {
         // location.href = 'http://localhost:8080/logout?return=' + location.href;
         location.href = 'https://id.janishutz.com/logout?return=' + location.href;
-    }
+    };
 </script>
 
 <style scoped>
@@ -60,7 +88,7 @@
         display: flex;
         justify-content: center;
         align-items: center;
-        flex-direction: column; 
+        flex-direction: column;
     }
 
     .full-height {

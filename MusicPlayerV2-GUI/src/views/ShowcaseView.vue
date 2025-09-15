@@ -1,34 +1,66 @@
 <template>
     <div>
-        <span class="anti-tamper material-symbols-outlined" v-if="isAntiTamperEnabled" @click="secureModeInfo( 'toggle' )">lock</span>
-        <div class="anti-tamper-info" v-if="isShowingSecureModeInfo && isAntiTamperEnabled" @click="secureModeInfo( 'hide' )">Anti-Tamper is enabled. Leaving this window will cause a notification to be dispatched to the player!</div>
-        <div class="info">Designed and developed by Janis Hutz <a href="https://janishutz.com" target="_blank" style="text-decoration: none; color: white;">https://janishutz.com</a></div>
+        <span
+            v-if="isAntiTamperEnabled"
+            class="anti-tamper material-symbols-outlined"
+            @click="secureModeInfo( 'toggle' )"
+        >lock</span>
+        <div
+            v-if="isShowingSecureModeInfo && isAntiTamperEnabled"
+            class="anti-tamper-info"
+            @click="secureModeInfo( 'hide' )"
+        >
+            Anti-Tamper is enabled. Leaving this window will cause a notification to be dispatched to the player!
+        </div>
+        <div class="info">
+            Designed and developed by Janis Hutz <a href="https://janishutz.com" target="_blank" style="text-decoration: none; color: white;">https://janishutz.com</a>
+        </div>
         <div class="remote-view">
             <div v-if="hasLoaded && !showCouldNotFindRoom" class="showcase-wrapper">
                 <div class="current-song-wrapper">
-                    <img v-if="playlist[ playingSong ]" :src="playlist[ playingSong ].cover" class="fancy-view-song-art" id="current-image" crossorigin="anonymous">
+                    <img
+                        v-if="playlist[ playingSong ]"
+                        id="current-image"
+                        :src="playlist[ playingSong ].cover"
+                        class="fancy-view-song-art"
+                        crossorigin="anonymous"
+                    >
                     <span v-else class="material-symbols-outlined fancy-view-song-art">music_note</span>
                     <div class="current-song">
-                        <h1 style="margin-bottom: 5px;">{{ playlist[ playingSong ] ? playlist[ playingSong ].title : 'Not playing' }}</h1>
+                        <h1 style="margin-bottom: 5px;">
+                            {{ playlist[ playingSong ] ? playlist[ playingSong ].title : 'Not playing' }}
+                        </h1>
                         <p>{{ playlist[ playingSong ] ? playlist[ playingSong ].artist : '' }}</p>
-                        <p class="additional-info" v-if="playlist[ playingSong ] ? ( playlist[ playingSong ].additionalInfo !== '' ) : false">{{ playlist[ playingSong ] ? playlist[ playingSong ].additionalInfo : '' }}</p>
-                        <progress max="1000" id="progress" :value="progressBar"></progress>
+                        <p
+                            v-if="playlist[ playingSong ] ? ( playlist[ playingSong ].additionalInfo !== '' ) : false"
+                            class="additional-info"
+                        >
+                            {{ playlist[ playingSong ] ? playlist[ playingSong ].additionalInfo : '' }}
+                        </p>
+                        <progress id="progress" max="1000" :value="progressBar"></progress>
                     </div>
                 </div>
                 <div class="mode-selector-wrapper">
                     <select v-model="visualizationSettings" @change="handleAnimationChange()">
-                        <option value="mic">Microphone (Mic access required)</option>
-                        <option value="off">No visualization except background</option>
+                        <option value="mic">
+                            Microphone (Mic access required)
+                        </option>
+                        <option value="off">
+                            No visualization except background
+                        </option>
                     </select>
                 </div>
                 <div class="song-list-wrapper">
-                    <div v-for="song in songQueue" v-bind:key="song.id" class="song-list">
+                    <div v-for="song in songQueue" :key="song.id" class="song-list">
                         <img :src="song.cover" class="song-image">
-                        <div v-if="( playlist[ playingSong ] ? playlist[ playingSong ].id : '' ) === song.id && isPlaying" class="playing-symbols">
+                        <div
+                            v-if="( playlist[ playingSong ] ? playlist[ playingSong ].id : '' ) === song.id && isPlaying"
+                            class="playing-symbols"
+                        >
                             <div class="playing-symbols-wrapper">
-                                <div class="playing-bar" id="bar-1"></div>
-                                <div class="playing-bar" id="bar-2"></div>
-                                <div class="playing-bar" id="bar-3"></div>
+                                <div id="bar-1" class="playing-bar"></div>
+                                <div id="bar-2" class="playing-bar"></div>
+                                <div id="bar-3" class="playing-bar"></div>
                             </div>
                         </div>
                         <div class="song-details-wrapper">
@@ -47,10 +79,12 @@
             </div>
             <div v-else class="showcase-wrapper">
                 <h1>Couldn't connect!</h1>
-                <p>There does not appear to be a share with the specified name, or an error occurred when connecting.</p>
+                <p>
+                    There does not appear to be a share with the specified name, or an error occurred when connecting.
+                </p>
                 <p>You may reload the page to try again!</p>
             </div>
-            <div class="background" id="background">
+            <div id="background" class="background">
                 <div class="beat-manual"></div>
             </div>
         </div>
@@ -59,8 +93,12 @@
 
 <script setup lang="ts">
     import SocketConnection from '@/scripts/connection';
-    import type { Song } from '@/scripts/song';
-    import { computed, ref, type Ref } from 'vue';
+    import type {
+        Song
+    } from '@/scripts/song';
+    import {
+        computed, ref, type Ref
+    } from 'vue';
     import bizualizer from '@/scripts/bizualizer';
 
     const isPlaying = ref( false );
@@ -71,10 +109,11 @@
     const hasLoaded = ref( false );
     const showCouldNotFindRoom = ref( false );
     const playbackStart = ref( 0 );
+
     let timeTracker = 0;
+
     const visualizationSettings = ref( 'mic' );
     const isAntiTamperEnabled = ref( false );
-
     const conn = new SocketConnection();
 
     conn.connect().then( d => {
@@ -82,22 +121,29 @@
         isPlaying.value = d.playbackStatus;
         playingSong.value = d.playlistIndex;
         playbackStart.value = d.playbackStart;
+
         if ( isPlaying.value ) {
             startTimeTracker();
         }
+
         pos.value = ( new Date().getTime() - parseInt( d.playbackStart ) ) / 1000;
-        progressBar.value = ( pos.value / ( playlist.value[ playingSong.value ] ? playlist.value[ playingSong.value ].duration : 1 ) ) * 1000;
+        progressBar.value
+            = ( pos.value / ( playlist.value[ playingSong.value ]
+                ? playlist.value[ playingSong.value ].duration : 1 ) ) * 1000;
         hasLoaded.value = true;
+
         if ( d.useAntiTamper ) {
             isAntiTamperEnabled.value = true;
             notifier();
         }
-        conn.registerListener( 'playlist', ( data ) => {
+
+        conn.registerListener( 'playlist', data => {
             playlist.value = data;
         } );
 
-        conn.registerListener( 'playback', ( data ) => {
+        conn.registerListener( 'playback', data => {
             isPlaying.value = data;
+
             if ( isPlaying.value ) {
                 startTimeTracker();
             } else {
@@ -105,12 +151,12 @@
             }
         } );
 
-        conn.registerListener( 'playback-start', ( data ) => {
+        conn.registerListener( 'playback-start', data => {
             playbackStart.value = data;
             pos.value = ( new Date().getTime() - parseInt( data ) ) / 1000;
         } );
 
-        conn.registerListener( 'playlist-index', ( data ) => {
+        conn.registerListener( 'playlist-index', data => {
             playingSong.value = parseInt( data );
             setTimeout( () => {
                 setBackground();
@@ -118,58 +164,64 @@
         } );
 
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        conn.registerListener( 'delete-share', ( _ ) => {
+        conn.registerListener( 'delete-share', _ => {
             alert( 'This share was just deleted. It is no longer available. This page will reload automatically!' );
             conn.disconnect();
             location.reload();
         } );
-    } ).catch( e => {
-        console.error( e );
-        showCouldNotFindRoom.value = true;
-    } );
+    } )
+        .catch( e => {
+            console.error( e );
+            showCouldNotFindRoom.value = true;
+        } );
 
     const songQueue = computed( () => {
         let ret: Song[] = [];
         let pos = 0;
+
         for ( let song in playlist.value ) {
             if ( pos >= playingSong.value ) {
                 ret.push( playlist.value[ song ] );
             }
+
             pos += 1;
         }
+
         return ret;
     } );
-
-    // TODO: Handle disconnect from updater (=> have it disconnect)
-
     const getTimeUntil = computed( () => {
         return ( song: string ) => {
             let timeRemaining = 0;
+
             for ( let i = playingSong.value; i < Object.keys( playlist.value ).length - 1; i++ ) {
                 if ( playlist.value[ i ].id == song ) {
                     break;
                 }
+
                 timeRemaining += playlist.value[ i ].duration;
             }
+
             if ( isPlaying.value ) {
                 if ( timeRemaining === 0 ) {
                     return 'Currently playing';
                 } else {
-                    return 'Playing in less than ' + Math.ceil( timeRemaining / 60 - pos.value / 60 )  + 'min';
+                    return 'Playing in less than ' + Math.ceil( ( timeRemaining / 60 ) - ( pos.value / 60 ) ) + 'min';
                 }
             } else {
                 if ( timeRemaining === 0 ) {
                     return 'Plays next';
                 } else {
-                    return 'Playing less than ' + Math.ceil( timeRemaining / 60 - pos.value / 60 )  + 'min after starting to play';
+                    return 'Playing less than '
+                        + Math.ceil( ( timeRemaining / 60 ) - ( pos.value / 60 ) ) + 'min after starting to play';
                 }
             }
-        }
+        };
     } );
 
     const startTimeTracker = () => {
         try {
             clearInterval( timeTracker );
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch ( err ) { /* empty */ }
 
         setTimeout( () => {
@@ -179,21 +231,23 @@
         timeTracker = setInterval( () => {
             pos.value = ( new Date().getTime() - playbackStart.value ) / 1000;
             progressBar.value = ( pos.value / playlist.value[ playingSong.value ].duration ) * 1000;
+
             if ( isNaN( progressBar.value ) ) {
                 progressBar.value = 0;
             }
         }, 100 );
-    }
-    
+    };
+
     const stopTimeTracker = () => {
         clearInterval( timeTracker );
 
         handleAnimationChange();
-    }
+    };
 
     const animateBeat = () => {
         $( '.beat-manual' ).stop();
         const duration = Math.ceil( 60 / 180 * 500 ) - 50;
+
         $( '.beat-manual' ).fadeIn( 50 );
         setTimeout( () => {
             $( '.beat-manual' ).fadeOut( duration );
@@ -202,30 +256,31 @@
                 $( '.beat-manual' ).stop();
             }, duration );
         }, 50 );
-    }
+    };
 
     const handleAnimationChange = () => {
         if ( visualizationSettings.value === 'mic' && isPlaying.value ) {
             bizualizer.subscribeToBeatUpdate( animateBeat );
         } else {
-            bizualizer.unsubscribeFromBeatUpdate()
+            bizualizer.unsubscribeFromBeatUpdate();
         }
-    }
+    };
 
     const setBackground = () => {
         bizualizer.createBackground().then( bg => {
             $( '#background' ).css( 'background', bg );
         } );
-    }
+    };
 
     const notifier = () => {
         Notification.requestPermission();
 
         console.warn( '[ notifier ]: Status is now enabled \n\n-> Any leaving or tampering with the website will send a notification to the host' );
+
         // Detect if window is currently in focus
         window.onblur = () => {
             sendNotification();
-        }
+        };
 
         // Detect if browser window becomes hidden (also with blur event)
         document.onvisibilitychange = () => {
@@ -233,18 +288,19 @@
                 sendNotification();
             }
         };
-    }
+    };
 
     const sendNotification = () => {
-        new Notification( 'YOU ARE UNDER SURVEILLANCE', { 
-            body: 'Please return to the original webpage immediately!',
-            requireInteraction: true,
+        new Notification( 'YOU ARE UNDER SURVEILLANCE', {
+            'body': 'Please return to the original webpage immediately!',
+            'requireInteraction': true,
         } );
 
         conn.emit( 'tampering', '' );
-    }
+    };
 
     const isShowingSecureModeInfo = ref( false );
+
     const secureModeInfo = ( action: string ) => {
         if ( action === 'toggle' ) {
             isShowingSecureModeInfo.value = !isShowingSecureModeInfo.value;
@@ -253,7 +309,7 @@
         } else {
             isShowingSecureModeInfo.value = false;
         }
-    }
+    };
 </script>
 
 <style scoped>

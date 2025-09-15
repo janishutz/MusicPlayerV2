@@ -1,25 +1,39 @@
-import type { SearchResult, Song, SongMove } from "./song";
+import type {
+    SearchResult, Song, SongMove
+} from './song';
 
 interface Config {
-    devToken: string;
-    userToken: string;
+    'devToken': string;
+    'userToken': string;
 }
 
 type ControlAction = 'play' | 'pause' | 'next' | 'previous' | 'skip-10' | 'back-10';
 type RepeatMode = 'off' | 'once' | 'all';
 
 class MusicKitJSWrapper {
+
     playingSongID: number;
+
     playlist: Song[];
+
     queue: number[];
+
     config: Config;
+
     musicKit: any;
+
     isLoggedIn: boolean;
+
     isPreparedToPlay: boolean;
+
     repeatMode: RepeatMode;
+
     isShuffleEnabled: boolean;
+
     hasEncounteredAuthError: boolean;
+
     queuePos: number;
+
     audioPlayer: HTMLAudioElement;
 
     constructor () {
@@ -27,8 +41,8 @@ class MusicKitJSWrapper {
         this.playlist = [];
         this.queue = [];
         this.config = {
-            devToken: '',
-            userToken: '',
+            'devToken': '',
+            'userToken': '',
         };
         this.isShuffleEnabled = false;
         this.repeatMode = 'off';
@@ -58,16 +72,18 @@ class MusicKitJSWrapper {
             this.musicKit.authorize().then( () => {
                 this.isLoggedIn = true;
                 this.init();
-            } ).catch( () => {
-                this.hasEncounteredAuthError = true;
-            } );
+            } )
+                .catch( () => {
+                    this.hasEncounteredAuthError = true;
+                } );
         } else {
             this.musicKit.authorize().then( () => {
                 this.isLoggedIn = true;
                 this.init();
-            } ).catch( () => {
-                this.hasEncounteredAuthError = true;
-            } );
+            } )
+                .catch( () => {
+                    this.hasEncounteredAuthError = true;
+                } );
         }
     }
 
@@ -76,25 +92,29 @@ class MusicKitJSWrapper {
      * @returns {void}
      */
     init (): void {
-        fetch( localStorage.getItem( 'url' ) + '/getAppleMusicDevToken', { credentials: 'include' } ).then( res => {
+        fetch( localStorage.getItem( 'url' ) + '/getAppleMusicDevToken', {
+            'credentials': 'include'
+        } ).then( res => {
             if ( res.status === 200 ) {
                 res.text().then( token => {
                     this.audioPlayer = document.getElementById( 'local-audio' ) as HTMLAudioElement;
                     // MusicKit global is now defined
                     MusicKit.configure( {
-                        developerToken: token,
-                        app: {
-                            name: 'MusicPlayer',
-                            build: '3'
+                        'developerToken': token,
+                        'app': {
+                            'name': 'MusicPlayer',
+                            'build': '3'
                         },
-                        storefrontId: 'CH',
+                        'storefrontId': 'CH',
                     } ).then( () => {
                         this.config.devToken = token;
                         this.musicKit = MusicKit.getInstance();
+
                         if ( this.musicKit.isAuthorized ) {
                             this.isLoggedIn = true;
                             this.config.userToken = this.musicKit.musicUserToken;
                         }
+
                         this.musicKit.shuffleMode = MusicKit.PlayerShuffleMode.off;
                     } );
                 } );
@@ -107,7 +127,10 @@ class MusicKitJSWrapper {
      * @returns {boolean[]} Returns an array, where the first element indicates login status, the second one, if an error was encountered
      */
     getAuth (): boolean[] {
-        return [ this.isLoggedIn, this.hasEncounteredAuthError ];
+        return [
+            this.isLoggedIn,
+            this.hasEncounteredAuthError
+        ];
     }
 
     /**
@@ -119,8 +142,8 @@ class MusicKitJSWrapper {
     apiGetRequest ( url: string, callback: ( data: object ) => void ): void {
         if ( this.config.devToken != '' && this.config.userToken != '' ) {
             fetch( url, {
-                method: 'GET',
-                headers: {
+                'method': 'GET',
+                'headers': {
                     'Authorization': `Bearer ${ this.config.devToken }`,
                     'Music-User-Token': this.config.userToken
                 }
@@ -128,13 +151,19 @@ class MusicKitJSWrapper {
                 if ( res.status === 200 ) {
                     res.json().then( json => {
                         try {
-                            callback( { 'status': 'ok', 'data': json } );
-                        } catch( err ) { /* empty */}
+                            callback( {
+                                'status': 'ok',
+                                'data': json
+                            } );
+                        } catch ( err ) { /* empty */ }
                     } );
                 } else {
                     try {
-                        callback( { 'status': 'error', 'error': res.status } );
-                    } catch( err ) { /* empty */}
+                        callback( {
+                            'status': 'error',
+                            'error': res.status
+                        } );
+                    } catch ( err ) { /* empty */ }
                 }
             } );
         } else return;
@@ -152,34 +181,41 @@ class MusicKitJSWrapper {
 
     setPlaylistByID ( id: string ): Promise<void> {
         return new Promise( ( resolve, reject ) => {
-            this.musicKit.setQueue( { playlist: id } ).then( () => {
+            this.musicKit.setQueue( {
+                'playlist': id
+            } ).then( () => {
                 const pl = this.musicKit.queue.items;
                 const songs: Song[] = [];
+
                 for ( const item in pl ) {
                     let url = pl[ item ].attributes.artwork.url;
+
                     url = url.replace( '{w}', pl[ item ].attributes.artwork.width );
                     url = url.replace( '{h}', pl[ item ].attributes.artwork.height );
                     const song: Song = {
-                        artist: pl[ item ].attributes.artistName,
-                        cover: url,
-                        duration: pl[ item ].attributes.durationInMillis / 1000,
-                        id: pl[ item ].id,
-                        origin: 'apple-music',
-                        title: pl[ item ].attributes.name,
-                        genres: pl[ item ].attributes.genreNames            
-                    }
+                        'artist': pl[ item ].attributes.artistName,
+                        'cover': url,
+                        'duration': pl[ item ].attributes.durationInMillis / 1000,
+                        'id': pl[ item ].id,
+                        'origin': 'apple-music',
+                        'title': pl[ item ].attributes.name,
+                        'genres': pl[ item ].attributes.genreNames
+                    };
+
                     songs.push( song );
                 }
+
                 this.playlist = songs;
                 this.setShuffle( this.isShuffleEnabled );
                 this.queuePos = 0;
                 this.playingSongID = this.queue[ 0 ];
                 this.prepare( this.playingSongID );
                 resolve();
-            } ).catch( err => {
-                console.error( err );
-                reject( err );
-            } );
+            } )
+                .catch( err => {
+                    console.error( err );
+                    reject( err );
+                } );
         } );
     }
 
@@ -192,20 +228,25 @@ class MusicKitJSWrapper {
         if ( this.playlist.length > 0 ) {
             this.playingSongID = playlistID;
             this.isPreparedToPlay = true;
+
             for ( const el in this.queue ) {
                 if ( this.queue[ el ] === playlistID ) {
                     this.queuePos = parseInt( el );
                     break;
                 }
             }
+
             if ( this.playlist[ this.playingSongID ].origin === 'apple-music' ) {
-                this.musicKit.setQueue( { 'song': this.playlist[ this.playingSongID ].id } ).then( () => {
+                this.musicKit.setQueue( {
+                    'song': this.playlist[ this.playingSongID ].id
+                } ).then( () => {
                     setTimeout( () => {
                         this.control( 'play' );
                     }, 500 );
-                } ).catch( ( err ) => {
-                    console.log( err );
-                } );
+                } )
+                    .catch( err => {
+                        console.log( err );
+                    } );
             } else {
                 this.audioPlayer = document.getElementById( 'local-audio' ) as HTMLAudioElement;
                 this.audioPlayer.src = this.playlist[ this.playingSongID ].id;
@@ -213,6 +254,7 @@ class MusicKitJSWrapper {
                     this.control( 'play' );
                 }, 500 );
             }
+
             return true;
         } else {
             return false;
@@ -226,50 +268,63 @@ class MusicKitJSWrapper {
      */
     control ( action: ControlAction ): boolean {
         switch ( action ) {
-            case "play":
+            case 'play':
                 if ( this.isPreparedToPlay ) {
                     this.control( 'pause' );
+
                     if ( this.playlist[ this.playingSongID ].origin === 'apple-music' ) {
                         this.musicKit.play();
+
                         return false;
                     } else {
                         this.audioPlayer.play();
+
                         return false;
                     }
                 } else {
                     return false;
                 }
-            case "pause":
+
+            case 'pause':
                 if ( this.isPreparedToPlay ) {
                     if ( this.playlist[ this.playingSongID ].origin === 'apple-music' ) {
                         this.musicKit.pause();
+
                         return false;
                     } else {
                         this.audioPlayer.pause();
+
                         return false;
                     }
                 } else {
                     return false;
                 }
-            case "back-10":
+
+            case 'back-10':
                 if ( this.playlist[ this.playingSongID ].origin === 'apple-music' ) {
                     this.musicKit.seekToTime( this.musicKit.currentPlaybackTime > 10 ? this.musicKit.currentPlaybackTime - 10 : 0 );
+
                     return false;
                 } else {
                     this.audioPlayer.currentTime = this.audioPlayer.currentTime > 10 ? this.audioPlayer.currentTime - 10 : 0;
+
                     return false;
                 }
-            case "skip-10":
+
+            case 'skip-10':
                 if ( this.playlist[ this.playingSongID ].origin === 'apple-music' ) {
                     if ( this.musicKit.currentPlaybackTime < ( this.playlist[ this.playingSongID ].duration - 10 ) ) {
                         this.musicKit.seekToTime( this.musicKit.currentPlaybackTime + 10 );
+
                         return false;
                     } else {
                         if ( this.repeatMode !== 'once' ) {
                             this.control( 'next' );
+
                             return true;
                         } else {
                             this.musicKit.seekToTime( 0 );
+
                             return false;
                         }
                     }
@@ -283,32 +338,42 @@ class MusicKitJSWrapper {
                             this.audioPlayer.currentTime = 0;
                         }
                     }
+
                     return false;
                 }
-            case "next":
+
+            case 'next':
                 this.control( 'pause' );
+
                 if ( this.queuePos < this.queue.length - 1 ) {
                     this.queuePos += 1;
                     this.prepare( this.queue[ this.queuePos ] );
+
                     return true;
                 } else {
                     this.queuePos = 0;
+
                     if ( this.repeatMode !== 'all' ) {
                         this.control( 'pause' );
                     } else {
                         this.playingSongID = this.queue[ this.queuePos ];
                         this.prepare( this.queue[ this.queuePos ] );
                     }
+
                     return true;
                 }
-            case "previous":
+
+            case 'previous':
                 this.control( 'pause' );
+
                 if ( this.queuePos > 0 ) {
                     this.queuePos -= 1;
                     this.prepare( this.queue[ this.queuePos ] );
+
                     return true;
                 } else {
                     this.queuePos = this.queue.length - 1;
+
                     return true;
                 }
         }
@@ -317,15 +382,22 @@ class MusicKitJSWrapper {
     setShuffle ( enabled: boolean ) {
         this.isShuffleEnabled = enabled;
         this.queue = [];
+
         if ( enabled ) {
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const d = [];
+
             for ( const el in this.playlist ) {
                 d.push( parseInt( el ) );
             }
-            this.queue = d.map( value => ( { value, sort: Math.random() } ) )
-            .sort( ( a, b ) => a.sort - b.sort )
-            .map( ( { value } ) => value );
+
+            this.queue = d.map( value => ( {
+                value,
+                'sort': Math.random()
+            } ) )
+                .sort( ( a, b ) => a.sort - b.sort )
+                .map( ( {
+                    value
+                } ) => value );
             this.queue.splice( this.queue.indexOf( this.playingSongID ), 1 );
             this.queue.push( this.playingSongID );
             this.queue.reverse();
@@ -334,6 +406,7 @@ class MusicKitJSWrapper {
                 this.queue.push( parseInt( song ) );
             }
         }
+
         // Find current song ID in queue
         for ( const el in this.queue ) {
             if ( this.queue[ el ] === this.playingSongID ) {
@@ -359,29 +432,37 @@ class MusicKitJSWrapper {
     moveSong ( move: SongMove ) {
         const newQueue = [];
         const finishedQueue = [];
+
         let songID = 0;
+
         for ( const song in this.playlist ) {
             if ( this.playlist[ song ].id === move.songID ) {
                 songID = parseInt( song );
                 break;
             }
         }
+
         for ( const el in this.queue ) {
             if ( this.queue[ el ] !== songID ) {
                 newQueue.push( this.queue[ el ] );
             }
         }
+
         let hasBeenAdded = false;
+
         for ( const el in newQueue ) {
             if ( parseInt( el ) === move.newPos ) {
                 finishedQueue.push( songID );
                 hasBeenAdded = true;
             }
+
             finishedQueue.push( newQueue[ el ] );
         }
+
         if ( !hasBeenAdded ) {
             finishedQueue.push( songID );
         }
+
         this.queue = finishedQueue;
     }
 
@@ -435,9 +516,11 @@ class MusicKitJSWrapper {
      */
     getQueue (): Song[] {
         const data = [];
+
         for ( const el in this.queue ) {
             data.push( this.playlist[ this.queue[ el ] ] );
         }
+
         return data;
     }
 
@@ -449,13 +532,14 @@ class MusicKitJSWrapper {
     getUserPlaylists ( cb: ( data: object ) => void ): boolean {
         if ( this.isLoggedIn ) {
             this.apiGetRequest( 'https://api.music.apple.com/v1/me/library/playlists', cb );
+
             return true;
         } else {
             return false;
         }
     }
 
-    getPlaying (  ): boolean {
+    getPlaying ( ): boolean {
         if ( this.playlist[ this.playingSongID ].origin === 'apple-music' ) {
             return this.musicKit.isPlaying;
         } else {
@@ -466,18 +550,21 @@ class MusicKitJSWrapper {
     findSongOnAppleMusic ( searchTerm: string ): Promise<SearchResult> {
         // TODO: Make storefront adjustable
         return new Promise( ( resolve, reject ) => {
-            const queryParameters = { 
-                term: ( searchTerm ), 
-                types: [ 'songs' ],
+            const queryParameters = {
+                'term': searchTerm,
+                'types': [ 'songs' ],
             };
-            this.musicKit.api.music( `v1/catalog/ch/search`, queryParameters ).then( results => {
+
+            this.musicKit.api.music( 'v1/catalog/ch/search', queryParameters ).then( results => {
                 resolve( results );
-            } ).catch( e => {
-                console.error( e );
-                reject( e );
-            } );
+            } )
+                .catch( e => {
+                    console.error( e );
+                    reject( e );
+                } );
         } );
     }
+
 }
 
 export default MusicKitJSWrapper;

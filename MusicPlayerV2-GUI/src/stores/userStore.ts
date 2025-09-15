@@ -1,23 +1,22 @@
-/*
-*				LanguageSchoolHossegorBookingSystem - userStore.js
-*
-*	Created by Janis Hutz 10/27/2023, Licensed under a proprietary License
-*			https://janishutz.com, development@janishutz.com
-*
-*
-*/
-
-import { defineStore } from 'pinia';
+import {
+    defineStore
+} from 'pinia';
 
 
 // FOSS-VERSION: To enable the UI to be used with the FOSS version, change "isUserAuth" to true, you will be "logged in"
 export const useUserStore = defineStore( 'user', {
-    state: () => ( { 'isUserAuth': true, 'hasSubscribed': false, 'isUsingKeyboard': false, 'username': '', 'isFOSSVersion': false } ),
-    getters: {
-        getUserAuthenticated: ( state ) => state.isUserAuth,
-        getSubscriptionStatus: ( state ) => state.hasSubscribed,
+    'state': () => ( {
+        'isUserAuth': true,
+        'hasSubscribed': false,
+        'isUsingKeyboard': false,
+        'username': '',
+        'isFOSSVersion': false
+    } ),
+    'getters': {
+        'getUserAuthenticated': state => state.isUserAuth,
+        'getSubscriptionStatus': state => state.hasSubscribed,
     },
-    actions: { 
+    'actions': {
         setUserAuth ( auth: boolean ) {
             this.isUserAuth = auth;
         },

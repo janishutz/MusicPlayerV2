@@ -4,90 +4,90 @@ export interface Song {
     /**
      * The ID. Either the apple music ID, or if from local disk, an ID starting in local_
      */
-    id: string;
+    'id': string;
 
     /**
      * Origin of the song
      */
-    origin: Origin;
+    'origin': Origin;
 
     /**
      * The cover image as a URL
      */
-    cover: string;
+    'cover': string;
 
     /**
      * The artist of the song
      */
-    artist: string;
+    'artist': string;
 
     /**
      * The name of the song
      */
-    title: string;
+    'title': string;
 
     /**
      * Duration of the song in milliseconds
      */
-    duration: number;
+    'duration': number;
 
     /**
      * (OPTIONAL) The genres this song belongs to. Can be displayed on the showcase screen, but requires settings there
      */
-    genres?: string[];
+    'genres'?: string[];
 
     /**
      * (OPTIONAL) This will be displayed in brackets on the showcase screens
      */
-    additionalInfo?: string;
+    'additionalInfo'?: string;
 }
 
 export interface SongTransmitted {
-    title: string;
-    artist: string;
-    duration: number;
-    cover: string;
-    additionalInfo?: string;
+    'title': string;
+    'artist': string;
+    'duration': number;
+    'cover': string;
+    'additionalInfo'?: string;
 }
 
 
 export interface ReadFile {
-    url: string;
-    filename: string;
+    'url': string;
+    'filename': string;
 }
 
 export interface SearchResult {
-    data: {
-        results: {
-            songs: {
-                data: AppleMusicSongData[],
-                href: string;
+    'data': {
+        'results': {
+            'songs': {
+                'data': AppleMusicSongData[],
+                'href': string;
             }
         };
     }
 }
 
 export interface AppleMusicSongData {
-    id: string,
-    type: string;
-    href: string;
-    attributes: {
-        albumName: string;
-        artistName: string;
-        artwork: {
-            width: number,
-            height: number,
-            url: string
+    'id': string,
+    'type': string;
+    'href': string;
+    'attributes': {
+        'albumName': string;
+        'artistName': string;
+        'artwork': {
+            'width': number,
+            'height': number,
+            'url': string
         },
-        name: string;
-        genreNames: string[];
-        durationInMillis: number;
+        'name': string;
+        'genreNames': string[];
+        'durationInMillis': number;
     }
 }
 
 export interface SongMove {
-    songID: string;
-    newPos: number;
+    'songID': string;
+    'newPos': number;
 }
 
 export interface SSEMap {

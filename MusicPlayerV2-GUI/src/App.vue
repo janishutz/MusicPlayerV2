@@ -1,22 +1,51 @@
-<!--
-*				libreevent - App.vue
-*
-*	Created by Janis Hutz 05/14/2023, Licensed under the GPL V3 License
-*			https://janishutz.com, development@janishutz.com
-*
-*
--->
-
 <template>
     <div>
-        <button @click="changeTheme();" id="themeSelector" title="Toggle between light and dark mode"><span class="material-symbols-outlined" v-html="theme"></span></button>
-        <router-view v-slot="{ Component, route }" id="main-view">
+        <button id="themeSelector" title="Toggle between light and dark mode" @click="changeTheme();">
+            <!-- eslint-disable-next-line vue/no-v-html -->
+            <span class="material-symbols-outlined" v-html="theme"></span>
+        </button>
+        <router-view id="main-view" v-slot="{ Component, route }">
             <transition :name="route.meta.transition ? String( route.meta.transition ) : 'fade'" mode="out-in">
-                <component :is="Component"></component>
+                <component :is="Component" />
             </transition>
         </router-view>
     </div>
 </template>
+
+<script setup lang="ts">
+    import {
+        ref
+    } from 'vue';
+    import {
+        RouterView
+    } from 'vue-router';
+
+    const theme = ref( 'light_mode' );
+
+    const changeTheme = () => {
+        if ( theme.value === 'dark_mode' ) {
+            document.documentElement.classList.remove( 'dark' );
+            document.documentElement.classList.add( 'light' );
+            localStorage.setItem( 'theme', 'light_mode' );
+            theme.value = 'light_mode';
+        } else if ( theme.value === 'light_mode' ) {
+            document.documentElement.classList.remove( 'light' );
+            document.documentElement.classList.add( 'dark' );
+            localStorage.setItem( 'theme', 'dark_mode' );
+            theme.value = 'dark_mode';
+        }
+    };
+
+    theme.value = localStorage.getItem( 'theme' ) ?? '';
+
+    if ( window.matchMedia( '(prefers-color-scheme: dark)' ).matches || theme.value === 'dark_mode' ) {
+        document.documentElement.classList.add( 'dark' );
+        theme.value = 'dark_mode';
+    } else {
+        document.documentElement.classList.add( 'light' );
+        theme.value = 'light_mode';
+    }
+</script>
 
 <style>
     body {
@@ -178,33 +207,3 @@
         background-position: 0px;
     }
 </style>
-
-<script setup lang="ts">
-    import { ref } from 'vue';
-    import { RouterView } from 'vue-router';
-
-    const theme = ref( 'light_mode' );
-
-    const changeTheme = () => {
-        if ( theme.value === 'dark_mode' ) {
-            document.documentElement.classList.remove( 'dark' );
-            document.documentElement.classList.add( 'light' );
-            localStorage.setItem( 'theme', 'light_mode' );
-            theme.value = 'light_mode';
-        } else if ( theme.value === 'light_mode' ) {
-            document.documentElement.classList.remove( 'light' );
-            document.documentElement.classList.add( 'dark' );
-            localStorage.setItem( 'theme', 'dark_mode' );
-            theme.value = 'dark_mode';
-        }
-    }
-
-    theme.value = localStorage.getItem( 'theme' ) ?? '';
-    if ( window.matchMedia( '(prefers-color-scheme: dark)' ).matches || theme.value === 'dark_mode' ) {
-        document.documentElement.classList.add( 'dark' );
-        theme.value = 'dark_mode';
-    } else {
-        document.documentElement.classList.add( 'light' );
-        theme.value = 'light_mode';
-    }
-</script>

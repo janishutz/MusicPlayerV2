@@ -75,7 +75,7 @@ const style = {
         ],
         '@stylistic/eol-last': [
             'error',
-            'always'
+            'never'
         ],
         '@stylistic/function-call-spacing': [
             'error',
@@ -83,7 +83,9 @@ const style = {
         ],
         '@stylistic/function-paren-newline': [
             'error',
-            'multiline'
+            {
+                'minItems': 3
+            }
         ],
         '@stylistic/function-call-argument-newline': [
             'error',

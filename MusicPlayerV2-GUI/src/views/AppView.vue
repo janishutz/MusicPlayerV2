@@ -1,20 +1,40 @@
 <template>
     <div class="app-view">
-        <button id="logout" @click="logout()"><span class="material-symbols-outlined">logout</span></button>
-        <div class="loading-view" v-if="!hasFinishedLoading">
+        <button id="logout" @click="logout()">
+            <span class="material-symbols-outlined">logout</span>
+        </button>
+        <div v-if="!hasFinishedLoading" class="loading-view">
             <h1>Loading...</h1>
         </div>
-        <div class="home-view" v-else-if="hasFinishedLoading && isReady">
-            <libraryView class="library-view" :playlists="playlists" @selected-playlist="( id ) => { selectPlaylist( id ) }" 
-                :is-logged-in="isLoggedIntoAppleMusic" @custom-playlist="( pl ) => selectCustomPlaylist( pl )"></libraryView>
+        <div v-else-if="hasFinishedLoading && isReady" class="home-view">
+            <libraryView
+                class="library-view"
+                :playlists="playlists"
+                :is-logged-in="isLoggedIntoAppleMusic"
+                @selected-playlist="( id ) => { selectPlaylist( id ) }"
+                @custom-playlist="( pl ) => selectCustomPlaylist( pl )"
+            />
         </div>
         <div v-else class="login-view">
             <img src="@/assets/appleMusicIcon.svg" alt="Apple Music Icon">
-            <button class="fancy-button" style="margin-top: 20px;" @click="logIntoAppleMusic()">Log into Apple Music</button>
-            <button class="fancy-button" title="This allows you to use local playlists only. Cover images for your songs will be fetched from the apple music api as good as possible" @click="skipLogin()">Continue without logging in</button>
+            <button class="fancy-button" style="margin-top: 20px;" @click="logIntoAppleMusic()">
+                Log into Apple Music
+            </button>
+            <button
+                class="fancy-button"
+                title="This allows you to use local playlists only.
+                Cover images for your songs will be fetched from the apple music api as good as possible"
+                @click="skipLogin()"
+            >
+                Continue without logging in
+            </button>
         </div>
-        <playerView :class="'player-view' + ( isReady ? ( isShowingFullScreenPlayer ? ' full-screen-player' : '' ) : ' player-hidden' )" @player-state-change="( state ) => { handlePlayerStateChange( state ) }"
-            ref="player"></playerView>
+        <playerView
+            ref="player"
+            :class="'player-view'
+                + ( isReady ? ( isShowingFullScreenPlayer ? ' full-screen-player' : '' ) : ' player-hidden' )"
+            @player-state-change="( state ) => { handlePlayerStateChange( state ) }"
+        />
         <!-- TODO: Call to backend to check if user has access -->
     </div>
 </template>
@@ -22,11 +42,17 @@
 <script setup lang="ts">
     import playerView from '@/components/playerView.vue';
     import libraryView from '@/components/libraryView.vue';
-    import { ref } from 'vue';
-    import type { ReadFile } from '@/scripts/song';
+    import {
+        ref
+    } from 'vue';
+    import type {
+        ReadFile
+    } from '@/scripts/song';
     import router from '@/router';
-    import { useUserStore } from '@/stores/userStore';
-    
+    import {
+        useUserStore
+    } from '@/stores/userStore';
+
     const isLoggedIntoAppleMusic = ref( false );
     const isReady = ref( false );
     const isShowingFullScreenPlayer = ref( false );
@@ -41,7 +67,7 @@
         } else {
             isShowingFullScreenPlayer.value = true;
         }
-    }
+    };
 
     let loginChecker = 0;
 
@@ -51,7 +77,7 @@
             if ( player.value.getAuth()[ 0 ] ) {
                 isLoggedIntoAppleMusic.value = true;
                 isReady.value = true;
-                player.value.getPlaylists( ( data ) => {
+                player.value.getPlaylists( data => {
                     playlists.value = data.data.data;
                 } );
                 clearInterval( loginChecker );
@@ -60,25 +86,27 @@
                 alert( 'An error occurred when logging you in. Please try again!' );
             }
         }, 500 );
-    }
+    };
 
     const skipLogin = () => {
         isReady.value = true;
         isLoggedIntoAppleMusic.value = false;
         player.value.skipLogin();
-    }
+    };
 
     const selectPlaylist = ( id: string ) => {
         player.value.selectPlaylist( id );
         player.value.controlUI( 'show' );
-    }
+    };
 
     const selectCustomPlaylist = ( playlist: ReadFile[] ) => {
         player.value.selectCustomPlaylist( playlist );
         player.value.controlUI( 'show' );
-    }
+    };
 
-    fetch( localStorage.getItem( 'url' ) + '/checkUserStatus', { credentials: 'include' } ).then( res => {
+    fetch( localStorage.getItem( 'url' ) + '/checkUserStatus', {
+        'credentials': 'include'
+    } ).then( res => {
         if ( res.status === 200 ) {
             res.text().then( text => {
                 if ( text === 'ok' ) {
@@ -102,7 +130,7 @@
     const logout = () => {
         // location.href = 'http://localhost:8080/logout?return=' + location.href;
         location.href = 'https://id.janishutz.com/logout?return=' + location.href;
-    }
+    };
 </script>
 
 <style scoped>
