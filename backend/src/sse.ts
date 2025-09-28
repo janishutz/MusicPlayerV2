@@ -9,6 +9,8 @@ const useSSE = (
     app: express.Application,
     socketData: SocketData,
     corsOpts: cors.CorsOptions,
+    getSessionID: ( request: express.Request ) => string,
+    getSignedIn: ( request: express.Request ) => boolean
 ) => {
     /*
         ROUTES FOR SERVER SENT EVENTS VERSION
@@ -51,9 +53,9 @@ const useSSE = (
                         'type': 'basics',
                         'data': socketData[ String( request.query.room ) ]
                     } ) }\n\n` );
-                    const sid = sdk.getSessionID( request );
+                    const sid = getSessionID( request );
 
-                    if ( sdk.getSignedIn( request ) ) {
+                    if ( getSignedIn( request ) ) {
                         importantClients[ sid ] = {
                             'response': response,
                             'room': String( request.query.room )

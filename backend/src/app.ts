@@ -19,6 +19,8 @@ const isFossVersion = false;
 
 import storeSDK from '@janishutz/store-sdk';
 import sdk from '@janishutz/login-sdk-server';
+import sse from './sse';
+import socket from './socket';
 
 // const isFossVersion = true;
 //
@@ -97,6 +99,9 @@ const run = () => {
         Configuration of SSE or WebSocket
     */
     const socketData: SocketData = {};
+
+    sse.useSSE( app, socketData, corsOpts, sdk.getSessionID, sdk.getSignedIn );
+    socket.useWebSocket( httpServer, socketData );
 
 
     /*
