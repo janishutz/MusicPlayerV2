@@ -24,36 +24,24 @@
 
 <script setup lang="ts">
 // TODO: Make possible to install and use without account, if using FOSS version
-    import router from '@/router';
     import {
         RouterLink
     } from 'vue-router';
-    import {
-        useUserStore
-    } from '@/stores/userStore';
     import notificationsModule from '@/components/notificationsModule.vue';
     import {
         ref
     } from 'vue';
+    import router from '@/router';
+    import sdk from '@janishutz/login-sdk-browser';
+    import {
+        useUserStore
+    } from '@/stores/userStore';
 
     const notifications = ref( notificationsModule );
     const isTryingToSignIn = ref( true );
 
-    interface JanishutzIDSDK {
-        'setLoginSDKURL': ( url: string ) => undefined;
-        'createSession': () => undefined;
-        'verifySession': () => Promise<JHIDSessionStatus>
-    }
-
-    interface JHIDSessionStatus {
-        'status': boolean;
-        'username': string;
-    }
-
-    let sdk: JanishutzIDSDK;
-
     const login = () => {
-        sdk.createSession();
+        sdk.login();
     };
 
     const store = useUserStore();
@@ -62,11 +50,10 @@
         router.push( localStorage.getItem( 'redirect' ) ?? '/app' );
         localStorage.removeItem( 'redirect' );
     } else {
-        if ( typeof sdk !== 'undefined' ) {
-            sdk.verifySession().then( res => {
-                if ( res.status ) {
+        sdk.verifyFull()
+            .then( res => {
+                if ( res ) {
                     store.isUserAuth = true;
-                    store.username = res.username;
 
                     if ( localStorage.getItem( 'close-tab' ) ) {
                         localStorage.removeItem( 'close-tab' );
@@ -80,7 +67,6 @@
                     isTryingToSignIn.value = false;
                 }
             } );
-        }
     }
 </script>
 

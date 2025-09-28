@@ -6,10 +6,9 @@ import {
 // FOSS-VERSION: To enable the UI to be used with the FOSS version, change "isUserAuth" to true, you will be "logged in"
 export const useUserStore = defineStore( 'user', {
     'state': () => ( {
-        'isUserAuth': true,
+        'isUserAuth': false,
         'hasSubscribed': false,
         'isUsingKeyboard': false,
-        'username': '',
         'isFOSSVersion': false
     } ),
     'getters': {
@@ -22,9 +21,6 @@ export const useUserStore = defineStore( 'user', {
         },
         setSubscriptionStatus ( status: boolean ) {
             this.hasSubscribed = status;
-        },
-        setUsername ( username: string ) {
-            this.username = username;
         },
         setKeyboardUsageStatus ( status: boolean ) {
             this.isUsingKeyboard = status;

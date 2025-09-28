@@ -19,7 +19,7 @@ import bodyParser from 'body-parser';
 // ┌                                               ┐
 // │          Handle FOSS vs paid version          │
 // └                                               ┘
-const isFossVersion = true;
+const isFossVersion = false;
 
 import storeSDK from '@janishutz/store-sdk';
 import sdk from '@janishutz/login-sdk-server';

@@ -20,6 +20,16 @@ const style = {
         '**/*.jsx'
     ],
     'rules': {
+        'sort-imports': [
+            'error',
+            {
+                "ignoreCase": false,
+                "ignoreDeclarationSort": false,
+                "ignoreMemberSort": false,
+                "memberSyntaxSortOrder": ["none", "all", "multiple", "single"],
+                "allowSeparatedGroups": false
+            }
+        ],
         // Formatting
         '@stylistic/array-bracket-newline': [
             'error',
@@ -75,7 +85,7 @@ const style = {
         ],
         '@stylistic/eol-last': [
             'error',
-            'never'
+            'always'
         ],
         '@stylistic/function-call-spacing': [
             'error',
