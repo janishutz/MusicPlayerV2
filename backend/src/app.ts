@@ -6,14 +6,10 @@ import cors from 'cors';
 import {
     createServer
 } from 'node:http';
-import {
-    Server
-} from 'socket.io';
 import crypto from 'node:crypto';
-import type {
-    Room, Song
+import {
+    SocketData
 } from './definitions';
-import bodyParser from 'body-parser';
 
 
 // ┌                                               ┐
@@ -23,28 +19,35 @@ const isFossVersion = false;
 
 import storeSDK from '@janishutz/store-sdk';
 import sdk from '@janishutz/login-sdk-server';
+
+// const isFossVersion = true;
+//
 // import storeSDK from './sdk/store-sdk-stub';
 // import sdk from '@janishutz/login-sdk-server-stubs';
 
 
+const corsOpts: cors.CorsOptions = {
+    'credentials': true,
+    'origin': ( origin, cb ) => {
+        if ( isFossVersion ) cb( null, true );
+        else cb( null, origin === 'https://music.janishutz.com' );
+    }
+};
+
+
 const run = () => {
     const app = express();
-
-    app.use( cors( {
-        'credentials': true,
-        'origin': true
-    } ) );
+    const httpServer = createServer( app );
 
     if ( !isFossVersion ) {
+        console.error( '[ APP ] Starting in non-FOSS version' );
+
         storeSDK.configure( JSON.parse( fs.readFileSync( path.join(
             __dirname,
             '/config/store-sdk.config.secret.json'
         ) ).toString() ) );
-    }
 
-    const httpServer = createServer( app );
-
-    if ( !isFossVersion ) {
+        // ───────────────────────────────────────────────────────────────────
         const sdkConfig = JSON.parse( fs.readFileSync( path.join(
             __dirname,
             '/config/sdk.config.secret.json'
@@ -63,7 +66,7 @@ const run = () => {
                 'frontendURL': 'https://music.janishutz.com',
                 'corsWhitelist': [ 'https://music.janishutz.com' ],
                 'recheckTimeout': 300 * 1000,
-                'advancedVerification': 'sdk'
+                'advancedVerification': 'sdk',
             },
             app,
             () => {
@@ -86,406 +89,14 @@ const run = () => {
                     resolve( true );
                 } );
             },
-            sdkConfig
         );
     }
 
-    // Websocket for events
-    interface SocketData {
-        [key: string]: Room;
-    }
-    const socketData: SocketData = {};
-    const io = new Server( httpServer, {
-        'cors': {
-            'origin': true,
-            'credentials': true,
-        }
-    } );
-
-    io.on( 'connection', socket => {
-        socket.on( 'create-room', ( room: {
-            'name': string,
-            'token': string
-        }, cb: ( res: {
-            'status': boolean,
-            'msg': string
-        } ) => void ) => {
-            if ( socketData[ room.name ] ) {
-                if ( room.token === socketData[ room.name ].roomToken ) {
-                    socket.join( room.name );
-                    cb( {
-                        'status': true,
-                        'msg': 'ADDED_TO_ROOM'
-                    } );
-                } else {
-                    cb( {
-                        'status': false,
-                        'msg': 'ERR_TOKEN_INVALID'
-                    } );
-                }
-            } else {
-                cb( {
-                    'status': false,
-                    'msg': 'ERR_NAME_INVALID'
-                } );
-            }
-        } );
-
-        socket.on( 'delete-room', ( room: {
-            'name': string,
-            'token': string
-        }, cb: ( res: {
-            'status': boolean,
-            'msg': string
-        } ) => void ) => {
-            if ( socketData[ room.name ] ) {
-                if ( room.token === socketData[ room.name ].roomToken ) {
-                    socket.leave( room.name );
-                    socket.to( room.name ).emit( 'delete-share', room.name );
-                    socketData[ room.name ] = undefined;
-                    cb( {
-                        'status': true,
-                        'msg': 'ROOM_DELETED'
-                    } );
-                } else {
-                    cb( {
-                        'status': false,
-                        'msg': 'ERR_TOKEN_INVALID'
-                    } );
-                }
-            } else {
-                cb( {
-                    'status': false,
-                    'msg': 'ERR_NAME_INVALID'
-                } );
-            }
-        } );
-
-        socket.on( 'join-room', ( room: string, cb: ( res: {
-            'status': boolean,
-            'msg': string,
-            'data'?: {
-                'playbackStatus': boolean,
-                'playbackStart': number,
-                'playlist': Song[],
-                'playlistIndex': number,
-                'useAntiTamper': boolean
-            }
-        } ) => void ) => {
-            if ( socketData[ room ] ) {
-                socket.join( room );
-                cb( {
-                    'data': {
-                        'playbackStart': socketData[ room ].playbackStart,
-                        'playbackStatus': socketData[ room ].playbackStatus,
-                        'playlist': socketData[ room ].playlist,
-                        'playlistIndex': socketData[ room ].playlistIndex,
-                        'useAntiTamper': socketData[ room ].useAntiTamper,
-                    },
-                    'msg': 'STATUS_OK',
-                    'status': true,
-                } );
-            } else {
-                cb( {
-                    'msg': 'ERR_NO_ROOM_WITH_THIS_ID',
-                    'status': false,
-                } );
-                socket.disconnect();
-            }
-        } );
-
-        socket.on( 'tampering', ( data: {
-            'msg': string,
-            'roomName': string
-        } ) => {
-            if ( data.roomName ) {
-                socket.to( data.roomName ).emit( 'tampering-msg', data.msg );
-            }
-        } );
-
-        socket.on( 'playlist-update', ( data: {
-            'roomName': string,
-            'roomToken': string,
-            'data': Song[]
-        } ) => {
-            if ( socketData[ data.roomName ] ) {
-                if ( socketData[ data.roomName ].roomToken === data.roomToken ) {
-                    if ( socketData[ data.roomName ].playlist !== data.data ) {
-                        socketData[ data.roomName ].playlist = data.data;
-                        io.to( data.roomName ).emit( 'playlist', data.data );
-                    }
-                }
-            }
-        } );
-
-        socket.on( 'playback-update', ( data: {
-            'roomName': string,
-            'roomToken': string,
-            'data': boolean
-        } ) => {
-            if ( socketData[ data.roomName ] ) {
-                if ( socketData[ data.roomName ].roomToken === data.roomToken ) {
-                    socketData[ data.roomName ].playbackStatus = data.data;
-                    io.to( data.roomName ).emit( 'playback', data.data );
-                }
-            }
-        } );
-
-        socket.on( 'playlist-index-update', ( data: {
-            'roomName': string,
-            'roomToken': string,
-            'data': number
-        } ) => {
-            if ( socketData[ data.roomName ] ) {
-                if ( socketData[ data.roomName ].roomToken === data.roomToken ) {
-                    socketData[ data.roomName ].playlistIndex = data.data;
-                    io.to( data.roomName ).emit( 'playlist-index', data.data );
-                }
-            }
-        } );
-
-        socket.on( 'playback-start-update', ( data: {
-            'roomName': string,
-            'roomToken': string,
-            'data': number
-        } ) => {
-            if ( socketData[ data.roomName ] ) {
-                if ( socketData[ data.roomName ].roomToken === data.roomToken ) {
-                    socketData[ data.roomName ].playbackStart = data.data;
-                    io.to( data.roomName ).emit( 'playback-start', data.data );
-                }
-            }
-        } );
-    } );
-
 
     /*
-        ROUTES FOR SERVER SENT EVENTS VERSION
+        Configuration of SSE or WebSocket
     */
-    // Connected clients have their session ID as key
-    interface SocketClientList {
-        [key: string]: SocketClient;
-    }
-
-    interface SocketClient {
-        'response': express.Response;
-        'room': string;
-    }
-
-    interface ClientReferenceList {
-        /**
-         * Find all clients connected to one room
-         */
-        [key: string]: string[];
-    }
-
-    const importantClients: SocketClientList = {};
-    const connectedClients: SocketClientList = {};
-    const clientReference: ClientReferenceList = {};
-
-    app.get(
-        '/socket/connection',
-        ( request: express.Request, response: express.Response ) => {
-            if ( request.query.room ) {
-                if ( socketData[ String( request.query.room ) ] ) {
-                    response.writeHead( 200, {
-                        'Content-Type': 'text/event-stream',
-                        'Cache-Control': 'no-cache',
-                        'Connection': 'keep-alive',
-                    } );
-                    response.status( 200 );
-                    response.flushHeaders();
-                    response.write( `data: ${ JSON.stringify( {
-                        'type': 'basics',
-                        'data': socketData[ String( request.query.room ) ]
-                    } ) }\n\n` );
-                    const sid = sdk.getSessionID( request );
-
-                    if ( sdk.getSignedIn( request ) ) {
-                        importantClients[ sid ] = {
-                            'response': response,
-                            'room': String( request.query.room )
-                        };
-                    }
-
-                    connectedClients[ sid ] = {
-                        'response': response,
-                        'room': String( request.query.room )
-                    };
-
-                    if ( !clientReference[ String( request.query.room ) ] ) {
-                        clientReference[ String( request.query.room ) ] = [];
-                    }
-
-                    if ( !clientReference[ String( request.query.room ) ]
-                        .includes( sid ) ) {
-                        clientReference[ String( request.query.room ) ].push( sid );
-                    }
-
-                    request.on( 'close', () => {
-                        try {
-                            importantClients[ sid ] = undefined;
-                            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                        } catch ( e ) { /* empty */ }
-
-                        const cl = clientReference[ String( request.query.room ) ];
-
-                        for ( const c in cl ) {
-                            if ( cl[ c ] === sid ) {
-                                cl.splice( parseInt( c ), 1 );
-                                break;
-                            }
-                        }
-
-                        connectedClients[ sid ] = undefined;
-                    } );
-                } else {
-                    response.status( 404 ).send( 'ERR_ROOM_NOT_FOUND' );
-                }
-            } else {
-                response.status( 404 ).send( 'ERR_NO_ROOM_SPECIFIED' );
-            }
-        }
-    );
-
-    app.get(
-        '/socket/getData',
-        ( request: express.Request, response: express.Response ) => {
-            if ( request.query.room ) {
-                response.send( socketData[ String( request.query.room ) ] );
-            } else {
-                response.status( 400 ).send( 'ERR_NO_ROOM_SPECIFIED' );
-            }
-        }
-    );
-
-    app.get(
-        '/socket/joinRoom',
-        ( request: express.Request, response: express.Response ) => {
-            if ( request.query.room ) {
-                if ( socketData[ String( request.query.room ) ] ) {
-                    response.send( 'ok' );
-                } else {
-                    response.status( 404 ).send( 'ERR_ROOM_NOT_FOUND' );
-                }
-            } else {
-                response.status( 404 ).send( 'ERR_NO_ROOM_SPECIFIED' );
-            }
-        }
-    );
-
-    app.post(
-        '/socket/update',
-        bodyParser.json(),
-        ( request: express.Request, response: express.Response ) => {
-            if ( socketData[ request.body.roomName ] ) {
-                if ( request.body.event === 'tampering' ) {
-                    const clients = clientReference[ request.body.roomName ];
-
-                    for ( const client in clients ) {
-                        if ( importantClients[ clients[ client ] ] ) {
-                            importantClients[ clients[ client ] ]
-                                .response.write( 'data: ' + JSON.stringify( {
-                                    'type': 'tampering-msg',
-                                    'data': true
-                                } ) + '\n\n' );
-                        }
-                    }
-
-                    response.send( 'ok' );
-                } else {
-                    if (
-                        socketData[ request.body.roomName ].roomToken
-                    === request.body.roomToken
-                    ) {
-                        let send = false;
-                        let update = '';
-
-                        if ( request.body.event === 'playback-start-update' ) {
-                            send = true;
-                            update = 'playback-start';
-                            socketData[ request.body.roomName ]
-                                .playbackStart = request.body.data;
-                        } else if ( request.body.event === 'playback-update' ) {
-                            send = true;
-                            update = 'playback';
-                            socketData[ request.body.roomName ]
-                                .playbackStatus = request.body.data;
-                        } else if ( request.body.event === 'playlist-update' ) {
-                            send = true;
-                            update = 'playlist';
-                            socketData[ request.body.roomName ]
-                                .playlist = request.body.data;
-                        } else if ( request.body.event === 'playlist-index-update' ) {
-                            send = true;
-                            update = 'playlist-index';
-                            socketData[ request.body.roomName ]
-                                .playlistIndex = request.body.data;
-                        }
-
-                        if ( send ) {
-                            const clients = clientReference[ request.body.roomName ];
-
-                            for ( const client in clients ) {
-                                if ( connectedClients[ clients[ client ] ] ) {
-                                    connectedClients[ clients[ client ] ]
-                                        .response.write( 'data: ' + JSON.stringify( {
-                                            'type': update,
-                                            'data': request.body.data
-                                        } ) + '\n\n' );
-                                }
-                            }
-
-                            response.send( 'ok' );
-                        } else {
-                            response.status( 404 ).send( 'ERR_CANNOT_SEND' );
-                        }
-                    } else {
-                        response.status( 403 ).send( 'ERR_UNAUTHORIZED' );
-                    }
-                }
-            } else {
-                response.status( 400 ).send( 'ERR_WRONG_REQUEST' );
-            }
-        }
-    );
-
-
-
-    app.post(
-        '/socket/deleteRoom',
-        bodyParser.json(),
-        ( request: express.Request, response: express.Response ) => {
-            if ( request.body.roomName ) {
-                if ( socketData[ request.body.roomName ] ) {
-                    if (
-                        socketData[ request.body.roomName ].roomToken
-                        === request.body.roomToken
-                    ) {
-                        socketData[ request.body.roomName ] = undefined;
-                        const clients = clientReference[ request.body.roomName ];
-
-                        for ( const client in clients ) {
-                            if ( connectedClients[ clients[ client ] ] ) {
-                                connectedClients[ clients[ client ] ]
-                                    .response.write( 'data: ' + JSON.stringify( {
-                                        'type': 'delete-share',
-                                        'data': true
-                                    } ) + '\n\n' );
-                            }
-                        }
-                    } else {
-                        response.send( 403 ).send( 'ERR_UNAUTHORIZED' );
-                    }
-                } else {
-                    response.status( 404 ).send( 'ERR_ROOM_NOT_FOUND' );
-                }
-            } else {
-                response.status( 400 ).send( 'ERR_NO_ROOM_NAME' );
-            }
-        }
-    );
-
+    const socketData: SocketData = {};
 
 
     /*
@@ -496,8 +107,10 @@ const run = () => {
     } );
 
 
+
     app.get(
         '/createRoomToken',
+        cors( corsOpts ),
         sdk.loginCheck(),
         ( request: express.Request, response: express.Response ) => {
             // eslint-disable-next-line no-constant-binary-expression
@@ -532,44 +145,49 @@ const run = () => {
     );
 
 
-    app.get( '/getAppleMusicDevToken', ( req, res ) => {
-        checkIfOwned( req ).then( owned => {
-            if ( owned ) {
+    app.get(
+        '/getAppleMusicDevToken',
+        cors( corsOpts ),
+        sdk.loginCheck(),
+        ( req, res ) => {
+            checkIfOwned( req ).then( owned => {
+                if ( owned ) {
                 // sign dev token
-                const privateKey = fs.readFileSync( path.join(
-                    __dirname,
-                    '/config/apple_private_key.p8'
-                ) ).toString();
-                const config = JSON.parse( fs.readFileSync( path.join(
-                    __dirname,
-                    '/config/apple-music-api.config.secret.json'
-                ) ).toString() );
-                const now = new Date().getTime();
-                const tomorrow = now + ( 24 * 3600 * 1000 );
-                const jwtToken = jwt.sign( {
-                    'iss': config.teamID,
-                    'iat': Math.floor( now / 1000 ),
-                    'exp': Math.floor( tomorrow / 1000 ),
-                }, privateKey, {
-                    'algorithm': 'ES256',
-                    'keyid': config.keyID
-                } );
+                    const privateKey = fs.readFileSync( path.join(
+                        __dirname,
+                        '/config/apple_private_key.p8'
+                    ) ).toString();
+                    const config = JSON.parse( fs.readFileSync( path.join(
+                        __dirname,
+                        '/config/apple-music-api.config.secret.json'
+                    ) ).toString() );
+                    const now = new Date().getTime();
+                    const tomorrow = now + ( 24 * 3600 * 1000 );
+                    const jwtToken = jwt.sign( {
+                        'iss': config.teamID,
+                        'iat': Math.floor( now / 1000 ),
+                        'exp': Math.floor( tomorrow / 1000 ),
+                    }, privateKey, {
+                        'algorithm': 'ES256',
+                        'keyid': config.keyID
+                    } );
 
-                res.send( jwtToken );
-            } else {
-                res.status( 402 ).send( 'ERR_NOT_OWNED' );
-            }
-        } )
-            .catch( e => {
-                if ( e === 'ERR_NOT_OWNED' ) {
-                    res.status( 402 ).send( e );
-                } else if ( e === 'ERR_AUTH_REQUIRED' ) {
-                    res.status( 401 ).send( e );
+                    res.send( jwtToken );
                 } else {
-                    res.send( 500 ).send( e );
+                    res.status( 402 ).send( 'ERR_NOT_OWNED' );
                 }
-            } );
-    } );
+            } )
+                .catch( e => {
+                    if ( e === 'ERR_NOT_OWNED' ) {
+                        res.status( 402 ).send( e );
+                    } else if ( e === 'ERR_AUTH_REQUIRED' ) {
+                        res.status( 401 ).send( e );
+                    } else {
+                        res.send( 500 ).send( e );
+                    }
+                } );
+        }
+    );
 
 
     const ownedCache = {};
@@ -612,6 +230,7 @@ const run = () => {
 
     app.get(
         '/checkUserStatus',
+        cors( corsOpts ),
         sdk.loginCheck(),
         ( request: express.Request, response: express.Response ) => {
             checkIfOwned( request )
