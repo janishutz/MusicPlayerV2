@@ -3,8 +3,6 @@ import path from 'path';
 import fs from 'fs';
 import jwt from 'jsonwebtoken';
 import cors from 'cors';
-import account from './account';
-import sdk from 'oauth-janishutz-client-server';
 import {
     createServer
 } from 'node:http';
@@ -15,26 +13,19 @@ import crypto from 'node:crypto';
 import type {
     Room, Song
 } from './definitions';
-import storeSDK from 'store.janishutz.com-sdk';
 import bodyParser from 'body-parser';
 
+
+// ┌                                               ┐
+// │          Handle FOSS vs paid version          │
+// └                                               ┘
 const isFossVersion = true;
 
-declare let __dirname: string | undefined;
+import storeSDK from '@janishutz/store-sdk';
+import sdk from '@janishutz/login-sdk-server';
+// import storeSDK from './sdk/store-sdk-stub';
+// import sdk from '@janishutz/login-sdk-server-stubs';
 
-if ( typeof __dirname === 'undefined' ) {
-    __dirname = path.resolve( path.dirname( '' ) );
-}
-
-// TODO: Change config file, as well as in main.ts, index.html, oauth, if deploying there
-// const sdkConfig = JSON.parse( fs.readFileSync( path.join(
-//     __dirname,
-//     '/config/sdk.config.testing.json'
-// ) ).toString() );
-const sdkConfig = JSON.parse( fs.readFileSync( path.join(
-    __dirname,
-    '/config/sdk.config.secret.json'
-) ).toString() );
 
 const run = () => {
     const app = express();
@@ -45,10 +36,6 @@ const run = () => {
     } ) );
 
     if ( !isFossVersion ) {
-        // storeSDK.configure( JSON.parse( fs.readFileSync( path.join(
-        //     __dirname,
-        //     '/config/store-sdk.config.testing.json'
-        // ) ).toString() ) );
         storeSDK.configure( JSON.parse( fs.readFileSync( path.join(
             __dirname,
             '/config/store-sdk.config.secret.json'
@@ -58,26 +45,49 @@ const run = () => {
     const httpServer = createServer( app );
 
     if ( !isFossVersion ) {
+        const sdkConfig = JSON.parse( fs.readFileSync( path.join(
+            __dirname,
+            '/config/sdk.config.secret.json'
+        ) ).toString() );
+
         // Load id.janishutz.com SDK and allow signing in
-        sdk.routes( app, ( uid: string ) => {
-            return new Promise( ( resolve, reject ) => {
-                account.checkUser( uid ).then( stat => {
-                    resolve( stat );
-                } )
-                    .catch( e => {
-                        reject( e );
-                    } );
-            } );
-        }, ( uid: string, email: string, username: string ) => {
-            return new Promise( ( resolve, reject ) => {
-                account.createUser( uid, username, email ).then( stat => {
-                    resolve( stat );
-                } )
-                    .catch( e => {
-                        reject( e );
-                    } );
-            } );
-        }, sdkConfig );
+        sdk.setUp(
+            {
+                'prod': false,
+                'service': {
+                    'serviceID': 'jh-music',
+                    'serviceToken': sdkConfig[ 'token' ]
+                },
+                'user-agent': sdkConfig[ 'ua' ],
+                'sessionType': 'memory',
+                'frontendURL': 'https://music.janishutz.com',
+                'corsWhitelist': [ 'https://music.janishutz.com' ],
+                'recheckTimeout': 300 * 1000,
+                'advancedVerification': 'sdk'
+            },
+            app,
+            () => {
+                return new Promise( resolve => {
+                    resolve( true );
+                } );
+            },
+            () => {
+                return new Promise( resolve => {
+                    resolve( true );
+                } );
+            },
+            () => {
+                return new Promise( resolve => {
+                    resolve( true );
+                } );
+            },
+            () => {
+                return new Promise( resolve => {
+                    resolve( true );
+                } );
+            },
+            sdkConfig
+        );
     }
 
     // Websocket for events
@@ -291,7 +301,7 @@ const run = () => {
                     } ) }\n\n` );
                     const sid = sdk.getSessionID( request );
 
-                    if ( sdk.checkAuth( request ) ) {
+                    if ( sdk.getSignedIn( request ) ) {
                         importantClients[ sid ] = {
                             'response': response,
                             'room': String( request.query.room )
@@ -488,38 +498,35 @@ const run = () => {
 
     app.get(
         '/createRoomToken',
+        sdk.loginCheck(),
         ( request: express.Request, response: express.Response ) => {
-            if ( sdk.checkAuth( request ) ) {
-                // eslint-disable-next-line no-constant-binary-expression
-                const roomName = String( request.query.roomName ) ?? '';
+            // eslint-disable-next-line no-constant-binary-expression
+            const roomName = String( request.query.roomName ) ?? '';
 
-                if ( !socketData[ roomName ] ) {
-                    const roomToken = crypto.randomUUID();
+            if ( !socketData[ roomName ] ) {
+                const roomToken = crypto.randomUUID();
 
-                    socketData[ roomName ] = {
-                        'playbackStart': 0,
-                        'playbackStatus': false,
-                        'playlist': [],
-                        'playlistIndex': 0,
-                        'roomName': roomName,
-                        'roomToken': roomToken,
-                        'ownerUID': sdk.getUserData( request ).uid,
-                        'useAntiTamper': request.query.useAntiTamper === 'true'
-                            ? true : false,
-                    };
-                    response.send( roomToken );
-                } else {
-                    if (
-                        socketData[ roomName ].ownerUID
-                        === sdk.getUserData( request ).uid
-                    ) {
-                        response.send( socketData[ roomName ].roomToken );
-                    } else {
-                        response.status( 409 ).send( 'ERR_CONFLICT' );
-                    }
-                }
+                socketData[ roomName ] = {
+                    'playbackStart': 0,
+                    'playbackStatus': false,
+                    'playlist': [],
+                    'playlistIndex': 0,
+                    'roomName': roomName,
+                    'roomToken': roomToken,
+                    'ownerUID': sdk.getUID( request ),
+                    'useAntiTamper': request.query.useAntiTamper === 'true'
+                        ? true : false,
+                };
+                response.send( roomToken );
             } else {
-                response.status( 403 ).send( 'ERR_FORBIDDEN' );
+                if (
+                    socketData[ roomName ].ownerUID
+                        === sdk.getUID( request )
+                ) {
+                    response.send( socketData[ roomName ].roomToken );
+                } else {
+                    response.status( 409 ).send( 'ERR_CONFLICT' );
+                }
             }
         }
     );
@@ -569,46 +576,43 @@ const run = () => {
 
     const checkIfOwned = ( request: express.Request ): Promise<boolean> => {
         return new Promise( ( resolve, reject ) => {
-            if ( sdk.checkAuth( request ) ) {
-                const userData = sdk.getUserData( request );
+            const uid = sdk.getUID( request );
 
-                if ( ownedCache[ userData.uid ] ) {
-                    resolve( ownedCache[ userData.uid ] );
-                } else {
-                    storeSDK.getSubscriptions( userData.uid )
-                        .then( stat => {
-                            const now = new Date().getTime();
+            if ( ownedCache[ uid ] ) {
+                resolve( ownedCache[ uid ] );
+            } else {
+                storeSDK.getSubscriptions( uid )
+                    .then( stat => {
+                        const now = new Date().getTime();
 
-                            for ( const sub in stat ) {
-                                if ( stat[ sub ].expires - now > 0
+                        for ( const sub in stat ) {
+                            if ( stat[ sub ].expires - now > 0
                                     && (
                                         stat[ sub ].id
                                         === 'com.janishutz.MusicPlayer.subscription'
                                     || stat[ sub ].id
                                         === 'com.janishutz.MusicPlayer.subscription-month'
                                     )
-                                ) {
-                                    ownedCache[ userData.uid ] = true;
-                                    resolve( true );
-                                }
+                            ) {
+                                ownedCache[ uid ] = true;
+                                resolve( true );
                             }
+                        }
 
-                            ownedCache[ userData.uid ] = false;
-                            resolve( false );
-                        } )
-                        .catch( e => {
-                            console.error( e );
-                            reject( 'ERR_NOT_OWNED' );
-                        } );
-                }
-            } else {
-                reject( 'ERR_AUTH_REQUIRED' );
+                        ownedCache[ uid ] = false;
+                        resolve( false );
+                    } )
+                    .catch( e => {
+                        console.error( e );
+                        reject( 'ERR_NOT_OWNED' );
+                    } );
             }
         } );
     };
 
     app.get(
         '/checkUserStatus',
+        sdk.loginCheck(),
         ( request: express.Request, response: express.Response ) => {
             checkIfOwned( request )
                 .then( owned => {

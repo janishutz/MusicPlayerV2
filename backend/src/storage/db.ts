@@ -11,20 +11,20 @@ import path from 'path';
 import fs from 'fs';
 import * as sqlDB from './mysqldb.js';
 
-declare let __dirname: string | undefined
-if ( typeof( __dirname ) === 'undefined' ) {
+declare let __dirname: string | undefined;
+
+if ( typeof __dirname === 'undefined' ) {
     __dirname = path.resolve( path.dirname( '' ) );
 } else {
     __dirname = __dirname + '/../';
 }
 
-const dbRef = { 
-    'user': 'music_users', 
+const dbRef = {
+    'user': 'music_users',
     'users': 'music_users',
 };
+const dbh = new sqlDB.SQLDB();
 
-
-let dbh = new sqlDB.SQLDB();
 dbh.connect();
 
 /**
@@ -32,7 +32,7 @@ dbh.connect();
  * @returns {undefined}
  */
 const initDB = (): undefined => {
-    ( async() =>  {
+    ( async () => {
         console.log( '[ DB ] Setting up...' );
         dbh.setupDB();
         console.log( '[ DB ] Setting up complete!' );
@@ -48,11 +48,16 @@ const initDB = (): undefined => {
  */
 const getDataSimple = ( db: string, column: string, searchQuery: string ): Promise<object> => {
     return new Promise( ( resolve, reject ) => {
-        dbh.query( { 'command': 'getFilteredData', 'property': column, 'searchQuery': searchQuery }, dbRef[ db ] ).then( data => {
+        dbh.query( {
+            'command': 'getFilteredData',
+            'property': column,
+            'searchQuery': searchQuery
+        }, dbRef[ db ] ).then( data => {
             resolve( data );
-        } ).catch( error => {
-            reject( error );
-        } );
+        } )
+            .catch( error => {
+                reject( error );
+            } );
     } );
 };
 
@@ -66,34 +71,36 @@ const getDataSimple = ( db: string, column: string, searchQuery: string ): Promi
  * @param {string} nameOfMatchingParam Which properties should be matched to get the data, e.g. order.user_id=users.id
  * @returns {Promise<Object | Error>} Returns all records from the db and all matching data specified with the matchingParam from the secondTable.
  */
-const getDataWithLeftJoinFunction = ( db: string, column: string, searchQuery: string, secondTable: string, columns: object, nameOfMatchingParam: string ): Promise<Object> => {
-    /* 
-    LeftJoin (Select values in first table and return all corresponding values of second table): 
-        - operation.property (the column to search for the value), 
+const getDataWithLeftJoinFunction = ( db: string, column: string, searchQuery: string, secondTable: string, columns: object, nameOfMatchingParam: string ): Promise<object> => {
+    /*
+    LeftJoin (Select values in first table and return all corresponding values of second table):
+        - operation.property (the column to search for the value),
         - operation.searchQuery (the value to search for [will be sanitised by method])
         - operation.columns (The columns of both tables to be selected, list of objects: { 'db': TABLE NAME, 'column': COLUMN NAME })
         - operation.secondTable (The second table to perform Join operation with)
         - operation.matchingParam (Which properties should be matched to get the data, e.g. order.user_id=users.id)
     */
     return new Promise( ( resolve, reject ) => {
-        let settings = { 
-            'command': 'LeftJoin', 
-            'property': column, 
-            'searchQuery': searchQuery, 
+        const settings = {
+            'command': 'LeftJoin',
+            'property': column,
+            'searchQuery': searchQuery,
             'selection': '',
-            'secondTable': dbRef[ secondTable ], 
+            'secondTable': dbRef[ secondTable ],
             'matchingParam': dbRef[ db ] + '.' + nameOfMatchingParam + '=' + dbRef[ secondTable ] + '.' + nameOfMatchingParam,
-        }
-        for ( let el in columns ) {
+        };
+
+        for ( const el in columns ) {
             settings.selection += dbRef[ columns[ el ].db ] + '.' + columns[ el ].column + ',';
         }
 
         settings.selection = settings.selection.slice( 0, settings.selection.length - 1 );
         dbh.query( settings, dbRef[ db ] ).then( data => {
             resolve( data );
-        } ).catch( error => {
-            reject( error );
-        } );
+        } )
+            .catch( error => {
+                reject( error );
+            } );
     } );
 };
 
@@ -102,13 +109,16 @@ const getDataWithLeftJoinFunction = ( db: string, column: string, searchQuery: s
  * @param {string} db The database of which all data should be retrieved
  * @returns {Promise<object>} Returns an object containing all data
  */
-const getData = ( db: string ): Promise<Object> => {
+const getData = ( db: string ): Promise<object> => {
     return new Promise( ( resolve, reject ) => {
-        dbh.query( { 'command': 'getAllData' }, dbRef[ db ] ).then( data => {
+        dbh.query( {
+            'command': 'getAllData'
+        }, dbRef[ db ] ).then( data => {
             resolve( data );
-        } ).catch( error => {
-            reject( error );
-        } );
+        } )
+            .catch( error => {
+                reject( error );
+            } );
     } );
 };
 
@@ -120,25 +130,40 @@ const getData = ( db: string ): Promise<Object> => {
  * @param {string} data The data to write. Also include the column & searchQuery parameters, if they also need to be added
  * @returns {Promise<object>} Returns a promise that resolves to the interaction module return.
  */
-const writeDataSimple = ( db: string, column: string, searchQuery: string, data: any ): Promise<Object> => {
+const writeDataSimple = ( db: string, column: string, searchQuery: string, data: any ): Promise<object> => {
     return new Promise( ( resolve, reject ) => {
-        dbh.query( { 'command': 'checkDataAvailability', 'property': column, 'searchQuery': searchQuery }, dbRef[ db ] ).then( res => {
+        dbh.query( {
+            'command': 'checkDataAvailability',
+            'property': column,
+            'searchQuery': searchQuery
+        }, dbRef[ db ] ).then( res => {
             if ( res.length > 0 ) {
-                dbh.query( { 'command': 'updateData', 'property': column, 'searchQuery': searchQuery, 'newValues': data }, dbRef[ db ] ).then( dat => {
+                dbh.query( {
+                    'command': 'updateData',
+                    'property': column,
+                    'searchQuery': searchQuery,
+                    'newValues': data
+                }, dbRef[ db ] ).then( dat => {
                     resolve( dat );
-                } ).catch( error => {
-                    reject( error );
-                } );
+                } )
+                    .catch( error => {
+                        reject( error );
+                    } );
             } else {
-                dbh.query( { 'command': 'addData', 'data': data }, dbRef[ db ] ).then( dat => {
+                dbh.query( {
+                    'command': 'addData',
+                    'data': data
+                }, dbRef[ db ] ).then( dat => {
                     resolve( dat );
-                } ).catch( error => {
-                    reject( error );
-                } );
+                } )
+                    .catch( error => {
+                        reject( error );
+                    } );
             }
-        } ).catch( error => {
-            reject( error );
-        } );
+        } )
+            .catch( error => {
+                reject( error );
+            } );
     } );
 };
 
@@ -151,11 +176,16 @@ const writeDataSimple = ( db: string, column: string, searchQuery: string, data:
  */
 const deleteDataSimple = ( db: string, column: string, searchQuery: string ): Promise<object> => {
     return new Promise( ( resolve, reject ) => {
-        dbh.query( { 'command': 'deleteData', 'property': column, 'searchQuery': searchQuery }, dbRef[ db ] ).then( dat => {
+        dbh.query( {
+            'command': 'deleteData',
+            'property': column,
+            'searchQuery': searchQuery
+        }, dbRef[ db ] ).then( dat => {
             resolve( dat );
-        } ).catch( error => {
-            reject( error );
-        } );
+        } )
+            .catch( error => {
+                reject( error );
+            } );
     } );
 };
 
@@ -168,15 +198,20 @@ const deleteDataSimple = ( db: string, column: string, searchQuery: string ): Pr
  */
 const checkDataAvailability = ( db: string, column: string, searchQuery: string ): Promise<boolean> => {
     return new Promise( ( resolve, reject ) => {
-        dbh.query( { 'command': 'checkDataAvailability', 'property': column, 'searchQuery': searchQuery }, dbRef[ db ] ).then( res => {
+        dbh.query( {
+            'command': 'checkDataAvailability',
+            'property': column,
+            'searchQuery': searchQuery
+        }, dbRef[ db ] ).then( res => {
             if ( res.length > 0 ) {
                 resolve( true );
             } else {
                 resolve( false );
             }
-        } ).catch( error => {
-            reject( error );
-        } );
+        } )
+            .catch( error => {
+                reject( error );
+            } );
     } );
 };
 
@@ -186,16 +221,18 @@ const checkDataAvailability = ( db: string, column: string, searchQuery: string 
  * @returns {Promise<object>} Returns the data from all files
  */
 const getJSONDataBatch = async ( files: Array<string> ): Promise<object> => {
-    let allFiles = {};
-    for ( let file in files ) {
+    const allFiles = {};
+
+    for ( const file in files ) {
         try {
             allFiles[ files[ file ] ] = await getJSONData( files[ file ] );
-        } catch( err ) {
+        } catch ( err ) {
             allFiles[ files[ file ] ] = 'ERROR: ' + err;
         }
     }
+
     return allFiles;
-}
+};
 
 /**
  * Load all data from a JSON file
@@ -245,7 +282,7 @@ const getJSONDataSimple = ( file: string, identifier: string ): Promise<object> 
  * @param {string} file The file to be loaded (path relative to root)
  * @returns {object} Returns the JSON file
  */
-const getJSONDataSync = ( file: string ): Object => {
+const getJSONDataSync = ( file: string ): object => {
     return JSON.parse( fs.readFileSync( path.join( __dirname + '/' + file ) ).toString() );
 };
 
@@ -263,14 +300,17 @@ const writeJSONDataSimple = ( db: string, identifier: string, values: any ) => {
                 reject( 'Error occurred: Error trace: ' + error );
             } else {
                 let dat = {};
+
                 if ( data.byteLength > 0 ) {
                     dat = JSON.parse( data.toString() ) ?? {};
                 }
+
                 dat[ identifier ] = values;
-                fs.writeFile( path.join( __dirname + '/../../data/' + db + '.json' ), JSON.stringify( dat ), ( error ) => {
+                fs.writeFile( path.join( __dirname + '/../../data/' + db + '.json' ), JSON.stringify( dat ), error => {
                     if ( error ) {
                         reject( 'Error occurred: Error trace: ' + error );
                     }
+
                     resolve( true );
                 } );
             }
@@ -286,7 +326,7 @@ const writeJSONDataSimple = ( db: string, identifier: string, values: any ) => {
  */
 const writeJSONData = ( db: string, data: object ): Promise<boolean> => {
     return new Promise( ( resolve, reject ) => {
-        fs.writeFile( path.join( __dirname + '/../../data/' + db + '.json' ), JSON.stringify( data ), ( error ) => {
+        fs.writeFile( path.join( __dirname + '/../../data/' + db + '.json' ), JSON.stringify( data ), error => {
             if ( error ) {
                 reject( 'Error occurred: Error trace: ' + error );
             } else {
@@ -309,14 +349,17 @@ const deleteJSONDataSimple = ( db: string, identifier: string ): Promise<boolean
                 reject( 'Error occurred: Error trace: ' + error );
             } else {
                 let dat = {};
+
                 if ( data.byteLength > 0 ) {
                     dat = JSON.parse( data.toString() ) ?? {};
                 }
+
                 delete dat[ identifier ];
-                fs.writeFile( path.join( __dirname + '/../../data/' + db + '.json' ), JSON.stringify( dat ), ( error ) => {
+                fs.writeFile( path.join( __dirname + '/../../data/' + db + '.json' ), JSON.stringify( dat ), error => {
                     if ( error ) {
                         reject( 'Error occurred: Error trace: ' + error );
                     }
+
                     resolve( true );
                 } );
             }
@@ -324,7 +367,19 @@ const deleteJSONDataSimple = ( db: string, identifier: string ): Promise<boolean
     } );
 };
 
-export default { initDB, checkDataAvailability, deleteDataSimple, deleteJSONDataSimple, getData, 
-    getDataSimple, getDataWithLeftJoinFunction, getJSONData, getJSONDataBatch, getJSONDataSimple, 
-    getJSONDataSync, writeDataSimple, writeJSONData, writeJSONDataSimple 
+export default {
+    initDB,
+    checkDataAvailability,
+    deleteDataSimple,
+    deleteJSONDataSimple,
+    getData,
+    getDataSimple,
+    getDataWithLeftJoinFunction,
+    getJSONData,
+    getJSONDataBatch,
+    getJSONDataSimple,
+    getJSONDataSync,
+    writeDataSimple,
+    writeJSONData,
+    writeJSONDataSimple
 };
