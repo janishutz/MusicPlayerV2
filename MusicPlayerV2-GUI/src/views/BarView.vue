@@ -1,8 +1,18 @@
 <script setup lang="ts">
     import {
-        computed,
-        ref, type Ref
+        type Ref,
+        computed, ref
     } from 'vue';
+
+    interface FullConfig {
+        'offering': BarConfig,
+        'ages': Ages
+    }
+
+    interface Ages {
+        '18+': string,
+        '16-18': string
+    }
 
     interface BarConfig {
         [id: string]: Offer;
@@ -18,13 +28,21 @@
         [id: string]: number;
     }
 
+    const ages: Ref<Ages> = ref( {
+        '18+': '',
+        '16-18': '',
+        'below': ''
+    } );
     const offering: Ref<BarConfig> = ref( {} );
     const selection: Ref<Selection> = ref( {} );
 
     fetch( '/bar-config.json' ).then( res => {
         if ( res.status === 200 ) {
             res.json().then( json => {
-                offering.value = json;
+                const data: FullConfig = json;
+
+                offering.value = data.offering;
+                ages.value = data.ages;
                 reset();
             } );
         } else {
@@ -66,6 +84,7 @@
 <template>
     <div class="bar-utility">
         <h1>Bar utility</h1>
+        <p>Check ages! (18+: {{ ages[ '18+' ] }}, 16-18: {{ ages[ '16-18' ] }})</p>
         <button @click="reset()">
             Reset
         </button>

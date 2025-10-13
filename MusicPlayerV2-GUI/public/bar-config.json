@@ -1,12 +1,19 @@
 {
-    "test": {
-        "name": "Test drink",
-        "price": 700,
-        "id": "test"
+    "ages": {
+        "below": "red",
+        "16-18": "",
+        "18+": "",
     },
-    "test-2": {
-        "name": "Test drink 2",
-        "price": 500,
-        "id": "test-2"
+    "offering": {
+        "test": {
+            "name": "Test drink",
+            "price": 700,
+            "id": "test"
+        },
+        "test-2": {
+            "name": "Test drink 2",
+            "price": 500,
+            "id": "test-2"
+        }
     }
 }
