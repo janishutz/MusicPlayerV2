@@ -20,30 +20,30 @@
         ref
     } from 'vue';
 
-    const theme = ref( '&#263C;' );
+    const theme = ref( '&#9788;' );
 
     const changeTheme = () => {
-        if ( theme.value === '&#263D;' ) {
+        if ( theme.value === '&#9789;' ) {
             document.documentElement.classList.remove( 'dark' );
             document.documentElement.classList.add( 'light' );
-            localStorage.setItem( 'theme', '&#263C' );
-            theme.value = '&#263C';
-        } else if ( theme.value === '&#263C' ) {
+            localStorage.setItem( 'theme', '&#9788' );
+            theme.value = '&#9788';
+        } else if ( theme.value === '&#9788' ) {
             document.documentElement.classList.remove( 'light' );
             document.documentElement.classList.add( 'dark' );
-            localStorage.setItem( 'theme', '&#263D' );
-            theme.value = '&#263D';
+            localStorage.setItem( 'theme', '&#9789' );
+            theme.value = '&#9789';
         }
     };
 
     theme.value = localStorage.getItem( 'theme' ) ?? '';
 
-    if ( window.matchMedia( '(prefers-color-scheme: dark)' ).matches || theme.value === '&#263D' ) {
+    if ( window.matchMedia( '(prefers-color-scheme: dark)' ).matches || theme.value === '&#9789' ) {
         document.documentElement.classList.add( 'dark' );
-        theme.value = '&#263D';
+        theme.value = '&#9789';
     } else {
         document.documentElement.classList.add( 'light' );
-        theme.value = '&#263C';
+        theme.value = '&#9788';
     }
 </script>
 
