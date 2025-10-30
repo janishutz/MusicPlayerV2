@@ -28,7 +28,7 @@
             document.documentElement.classList.add( 'light' );
             localStorage.setItem( 'theme', '&#9788;' );
             theme.value = '&#9788;';
-        } else if ( theme.value === '&#9788' ) {
+        } else if ( theme.value === '&#9788;' ) {
             document.documentElement.classList.remove( 'light' );
             document.documentElement.classList.add( 'dark' );
             localStorage.setItem( 'theme', '&#9789;' );
