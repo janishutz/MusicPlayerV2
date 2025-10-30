@@ -26,24 +26,24 @@
         if ( theme.value === '&#9789;' ) {
             document.documentElement.classList.remove( 'dark' );
             document.documentElement.classList.add( 'light' );
-            localStorage.setItem( 'theme', '&#9788' );
-            theme.value = '&#9788';
+            localStorage.setItem( 'theme', '&#9788;' );
+            theme.value = '&#9788;';
         } else if ( theme.value === '&#9788' ) {
             document.documentElement.classList.remove( 'light' );
             document.documentElement.classList.add( 'dark' );
-            localStorage.setItem( 'theme', '&#9789' );
-            theme.value = '&#9789';
+            localStorage.setItem( 'theme', '&#9789;' );
+            theme.value = '&#9789;';
         }
     };
 
     theme.value = localStorage.getItem( 'theme' ) ?? '';
 
-    if ( window.matchMedia( '(prefers-color-scheme: dark)' ).matches || theme.value === '&#9789' ) {
+    if ( window.matchMedia( '(prefers-color-scheme: dark)' ).matches || theme.value === '&#9789;' ) {
         document.documentElement.classList.add( 'dark' );
-        theme.value = '&#9789';
+        theme.value = '&#9789;';
     } else {
         document.documentElement.classList.add( 'light' );
-        theme.value = '&#9788';
+        theme.value = '&#9788;';
     }
 </script>
 
