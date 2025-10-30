@@ -20,30 +20,30 @@
         ref
     } from 'vue';
 
-    const theme = ref( 'light_mode' );
+    const theme = ref( '&#263C;' );
 
     const changeTheme = () => {
-        if ( theme.value === 'dark_mode' ) {
+        if ( theme.value === '&#263D;' ) {
             document.documentElement.classList.remove( 'dark' );
             document.documentElement.classList.add( 'light' );
-            localStorage.setItem( 'theme', 'light_mode' );
-            theme.value = 'light_mode';
-        } else if ( theme.value === 'light_mode' ) {
+            localStorage.setItem( 'theme', '&#263C' );
+            theme.value = '&#263C';
+        } else if ( theme.value === '&#263C' ) {
             document.documentElement.classList.remove( 'light' );
             document.documentElement.classList.add( 'dark' );
-            localStorage.setItem( 'theme', 'dark_mode' );
-            theme.value = 'dark_mode';
+            localStorage.setItem( 'theme', '&#263D' );
+            theme.value = '&#263D';
         }
     };
 
     theme.value = localStorage.getItem( 'theme' ) ?? '';
 
-    if ( window.matchMedia( '(prefers-color-scheme: dark)' ).matches || theme.value === 'dark_mode' ) {
+    if ( window.matchMedia( '(prefers-color-scheme: dark)' ).matches || theme.value === '&#263D' ) {
         document.documentElement.classList.add( 'dark' );
-        theme.value = 'dark_mode';
+        theme.value = '&#263D';
     } else {
         document.documentElement.classList.add( 'light' );
-        theme.value = 'light_mode';
+        theme.value = '&#263C';
     }
 </script>
 
