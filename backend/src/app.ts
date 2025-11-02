@@ -44,10 +44,14 @@ const run = () => {
     if ( !isFossVersion ) {
         console.error( '[ APP ] Starting in non-FOSS version' );
 
-        storeSDK.configure( JSON.parse( fs.readFileSync( path.join(
+        const storeConfig = JSON.parse( fs.readFileSync( path.join(
             __dirname,
             '/config/store-sdk.config.secret.json'
-        ) ).toString() ) );
+        ) ).toString() );
+
+        console.error( storeConfig );
+
+        storeSDK.configure( storeConfig );
 
         // ───────────────────────────────────────────────────────────────────
         const sdkConfig = JSON.parse( fs.readFileSync( path.join(
@@ -155,33 +159,34 @@ const run = () => {
         cors( corsOpts ),
         sdk.loginCheck(),
         ( req, res ) => {
-            checkIfOwned( req ).then( owned => {
-                if ( owned ) {
-                // sign dev token
-                    const privateKey = fs.readFileSync( path.join(
-                        __dirname,
-                        '/config/apple_private_key.p8'
-                    ) ).toString();
-                    const config = JSON.parse( fs.readFileSync( path.join(
-                        __dirname,
-                        '/config/apple-music-api.config.secret.json'
-                    ) ).toString() );
-                    const now = new Date().getTime();
-                    const tomorrow = now + ( 24 * 3600 * 1000 );
-                    const jwtToken = jwt.sign( {
-                        'iss': config.teamID,
-                        'iat': Math.floor( now / 1000 ),
-                        'exp': Math.floor( tomorrow / 1000 ),
-                    }, privateKey, {
-                        'algorithm': 'ES256',
-                        'keyid': config.keyID
-                    } );
+            checkIfOwned( req )
+                .then( owned => {
+                    if ( owned ) {
+                        // sign dev token
+                        const privateKey = fs.readFileSync( path.join(
+                            __dirname,
+                            '/config/apple_private_key.p8'
+                        ) ).toString();
+                        const config = JSON.parse( fs.readFileSync( path.join(
+                            __dirname,
+                            '/config/apple-music-api.config.secret.json'
+                        ) ).toString() );
+                        const now = new Date().getTime();
+                        const tomorrow = now + ( 24 * 3600 * 1000 );
+                        const jwtToken = jwt.sign( {
+                            'iss': config.teamID,
+                            'iat': Math.floor( now / 1000 ),
+                            'exp': Math.floor( tomorrow / 1000 ),
+                        }, privateKey, {
+                            'algorithm': 'ES256',
+                            'keyid': config.keyID
+                        } );
 
-                    res.send( jwtToken );
-                } else {
-                    res.status( 402 ).send( 'ERR_NOT_OWNED' );
-                }
-            } )
+                        res.send( jwtToken );
+                    } else {
+                        res.status( 402 ).send( 'ERR_NOT_OWNED' );
+                    }
+                } )
                 .catch( e => {
                     if ( e === 'ERR_NOT_OWNED' ) {
                         res.status( 402 ).send( e );
@@ -206,6 +211,7 @@ const run = () => {
             } else {
                 storeSDK.getSubscriptions( uid )
                     .then( stat => {
+                        console.error( 'Subscription check was successful' );
                         const now = new Date().getTime();
 
                         for ( const sub in stat ) {
@@ -226,7 +232,7 @@ const run = () => {
                         resolve( false );
                     } )
                     .catch( e => {
-                        console.error( e );
+                        console.error( 'Subscription check unsuccessful with error', e );
                         reject( 'ERR_NOT_OWNED' );
                     } );
             }
