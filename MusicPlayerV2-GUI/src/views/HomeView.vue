@@ -66,6 +66,10 @@
                 } else {
                     isTryingToSignIn.value = false;
                 }
+            } )
+            .catch( e => {
+                console.debug( e );
+                isTryingToSignIn.value = false;
             } );
     }
 </script>
