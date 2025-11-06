@@ -130,6 +130,7 @@ const useSSE = (
         }
     );
 
+    app.options( '/socket/update', cors( corsOpts ) );
     app.post(
         '/socket/update',
         cors( corsOpts ),
@@ -209,6 +210,7 @@ const useSSE = (
 
 
 
+    app.options( '/socket/deleteRoom', cors( corsOpts ) );
     app.post(
         '/socket/deleteRoom',
         cors( corsOpts ),

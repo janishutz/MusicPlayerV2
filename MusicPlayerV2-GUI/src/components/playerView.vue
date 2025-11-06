@@ -424,21 +424,16 @@
 
     const fetchSongData = ( songDetails: ReadFile ): Promise<Song> => {
         return new Promise( ( resolve, reject ) => {
-            console.info( 'Loading song', songDetails.filename );
             fetch( songDetails.url )
                 .then( res => {
                     if ( res.status === 200 ) {
                         res.blob().then( blob => {
-                            console.info( 'Song loaded for processing' );
                             parseBlob( blob )
                                 .then( data => {
-                                    console.info( 'Song metadata processing successful' );
-
                                     try {
                                         player.findSongOnAppleMusic( data.common.title
                                             ?? songDetails.filename.split( '.' )[ 0 ] )
                                             .then( d => {
-                                                console.info( 'Apple Music API lookup successful' );
                                                 let url = d.data.results.songs.data[ 0 ].attributes.artwork.url;
 
                                                 url = url.replace( '{w}', String( d.data.results.songs.data[ 0 ].attributes.artwork.width ) );
@@ -455,7 +450,6 @@
                                                 resolve( song );
                                             } )
                                             .catch( e => {
-                                                console.info( 'Apple Music API failed' );
                                                 console.error( e );
                                                 const song: Song = {
                                                     'artist': data.common.artist ?? 'Unknown artist',
