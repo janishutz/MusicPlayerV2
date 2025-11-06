@@ -1,6 +1,8 @@
 <template>
     <div class="playlists">
-        <h3 style="width: fit-content;">Your playlists</h3>
+        <h3 style="width: fit-content;">
+            Your playlists
+        </h3>
         <div v-if="( $props.playlists ? $props.playlists.length < 1 : true ) && $props.isLoggedIn">
             Loading...
             <!-- TODO: Make prettier -->
@@ -8,12 +10,27 @@
         <div v-else-if="!$props.isLoggedIn" class="not-logged-in">
             <p>You are not logged into Apple Music. We therefore can't show you your playlists. <a href="" title="Refreshes the page, allowing you to log in">Change that</a></p>
             <p>Use the button below to load songs from your local disk</p>
-            <input class="pl-loader-button" type="file" multiple="true" accept="audio/*" id="pl-loader"><br>
-            <button @click="loadPlaylistFromDisk()" class="pl-loader-button" id="load-button">Load</button>
-            <p v-if="!hasSelectedSongs">Please select at least one song to proceed!</p>
+            <input
+                id="pl-loader"
+                class="pl-loader-button"
+                type="file"
+                multiple="true"
+                accept="audio/*"
+            ><br>
+            <button id="load-button" class="pl-loader-button" @click="loadPlaylistFromDisk()">
+                Load
+            </button>
+            <p v-if="!hasSelectedSongs">
+                Please select at least one song to proceed!
+            </p>
         </div>
         <div class="playlist-wrapper">
-            <div v-for="pl in $props.playlists" v-bind:key="pl.id" class="playlist" @click="selectPlaylist( pl.id )">
+            <div
+                v-for="pl in $props.playlists"
+                :key="pl.id"
+                class="playlist"
+                @click="selectPlaylist( pl.id )"
+            >
                 {{ pl.attributes.name }}
             </div>
         </div>
@@ -21,8 +38,13 @@
 </template>
 
 <script setup lang="ts">
-    import type { ReadFile } from '@/scripts/song';
-    import { ref } from 'vue';
+    import type {
+        ReadFile
+    } from '@/scripts/song';
+    import {
+        ref
+    } from 'vue';
+
     const hasSelectedSongs = ref( true );
 
     defineProps( {
@@ -41,22 +63,31 @@
     const loadPlaylistFromDisk = () => {
         const fileURLList: ReadFile[] = [];
         const allFiles = ( document.getElementById( 'pl-loader' ) as HTMLInputElement ).files ?? [];
+
         if ( allFiles.length > 0 ) {
             hasSelectedSongs.value = true;
+
             for ( let file = 0; file < allFiles.length; file++ ) {
-                fileURLList.push( { 'url': URL.createObjectURL( allFiles[ file ] ), 'filename': allFiles[ file ].name } );
+                fileURLList.push( {
+                    'url': URL.createObjectURL( allFiles[ file ] ),
+                    'filename': allFiles[ file ].name
+                } );
             }
+
             emits( 'custom-playlist', fileURLList );
         } else {
             hasSelectedSongs.value = false;
         }
-    }
+    };
 
-    const emits = defineEmits( [ 'selected-playlist', 'custom-playlist' ] );
+    const emits = defineEmits( [
+        'selected-playlist',
+        'custom-playlist'
+    ] );
 
     const selectPlaylist = ( id: string ) => {
         emits( 'selected-playlist', id );
-    }
+    };
 </script>
 
 <style scoped>

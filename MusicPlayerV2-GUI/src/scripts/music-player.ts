@@ -555,9 +555,10 @@ class MusicKitJSWrapper {
                 'types': [ 'songs' ],
             };
 
-            this.musicKit.api.music( 'v1/catalog/ch/search', queryParameters ).then( results => {
-                resolve( results );
-            } )
+            this.musicKit.api.music( 'v1/catalog/ch/search', queryParameters )
+                .then( results => {
+                    resolve( results );
+                } )
                 .catch( e => {
                     console.error( e );
                     reject( e );

@@ -3,14 +3,18 @@
     <div id="notifications">
         <div class="message-box" :class="[ location, size ]" :style="'z-index: ' + ( messageType === 'hide' ? '-1' : '1000' )">
             <div class="message-container" :class="messageType">
-                <button @click="handleNotifications();" class="close-notification"><span class="material-symbols-outlined close-notification-icon">close</span></button>
-                <span class="material-symbols-outlined types hide" v-if="messageType == 'hide'">question_mark</span>
-                <span class="material-symbols-outlined types" v-else-if="messageType == 'ok'" style="background-color: green;">done</span>
-                <span class="material-symbols-outlined types" v-else-if="messageType == 'error'" style="background-color: red;">close</span>
-                <span class="material-symbols-outlined types progress-spinner" v-else-if="messageType == 'progress'" style="background-color: blue;">progress_activity</span>
-                <span class="material-symbols-outlined types" v-else-if="messageType == 'info'" style="background-color: lightblue;">info</span>
-                <span class="material-symbols-outlined types" v-else-if="messageType == 'warning'" style="background-color: orangered;">warning</span>
-                <p class="message" @click="notificationAction()">{{ notifications[ currentDID ] ? notifications[ currentDID ].message : '' }}</p>
+                <button class="close-notification" @click="handleNotifications();">
+                    <span class="material-symbols-outlined close-notification-icon">close</span>
+                </button>
+                <span v-if="messageType == 'hide'" class="material-symbols-outlined types hide">question_mark</span>
+                <span v-else-if="messageType == 'ok'" class="material-symbols-outlined types" style="background-color: green;">done</span>
+                <span v-else-if="messageType == 'error'" class="material-symbols-outlined types" style="background-color: red;">close</span>
+                <span v-else-if="messageType == 'progress'" class="material-symbols-outlined types progress-spinner" style="background-color: blue;">progress_activity</span>
+                <span v-else-if="messageType == 'info'" class="material-symbols-outlined types" style="background-color: lightblue;">info</span>
+                <span v-else-if="messageType == 'warning'" class="material-symbols-outlined types" style="background-color: orangered;">warning</span>
+                <p class="message" @click="notificationAction()">
+                    {{ notifications[ currentDID ] ? notifications[ currentDID ].message : '' }}
+                </p>
                 <div :class="'countdown countdown-' + messageType" :style="'width: ' + ( 100 - ( currentTime - notificationDisplayStartTime ) / ( notifications[ currentDID ] ? notifications[ currentDID ].showDuration : 1 ) / 10 ) + '%'"></div>
             </div>
         </div>
@@ -19,28 +23,30 @@
 
 <script setup lang="ts">
     import router from '@/router';
-    import { onUnmounted, ref, type Ref } from 'vue';
+    import {
+        type Ref, onUnmounted, ref
+    } from 'vue';
 
     defineProps( {
-        location: {
-            type: String,
+        'location': {
+            'type': String,
             'default': 'topleft',
         },
-        size: {
-            type: String,
+        'size': {
+            'type': String,
             'default': 'default',
         }
         // Size options: small, default (default option), big, bigger, huge
     } );
 
     interface Notification {
-        message: string;
-        showDuration: number;
-        messageType: string;
-        priority: string;
-        id: number;
-        redirect?: string;
-        openInNewTab?: boolean;
+        'message': string;
+        'showDuration': number;
+        'messageType': string;
+        'priority': string;
+        'id': number;
+        'redirect'?: string;
+        'openInNewTab'?: boolean;
     }
 
     interface NotificationList {
@@ -51,11 +57,17 @@
     const queue: Ref<number[]> = ref( [] );
     const currentDID: Ref<number> = ref( 0 );
     const messageType: Ref<string> = ref( 'hide' );
-    const currentID = ref( { 'critical': 0, 'medium': 1000, 'low': 10000 } );
+    const currentID = ref( {
+        'critical': 0,
+        'medium': 1000,
+        'low': 10000
+    } );
     const notificationDisplayStartTime: Ref<number> = ref( 0 );
     const currentTime: Ref<number> = ref( 0 );
+
     let progressBar = 0;
     let notificationTimeout = 0;
+
     const notificationAction = () => {
         if ( notifications.value[ currentDID.value ] ) {
             if ( notifications.value[ currentDID.value ].redirect ) {
@@ -76,8 +88,10 @@
      * @param {string} priority The priority of the message: 'low', 'normal', 'critical'
      * @returns {number}
      */
-    const createNotification = ( message: string, showDuration: number, msgType: string, priority: string, redirect?: string, openInNewTab?: boolean ): number => {
-        /* 
+    const createNotification = (
+        message: string, showDuration: number, msgType: string, priority: string, redirect?: string, openInNewTab?: boolean
+    ): number => {
+        /*
                 Takes a notification options array that contains: message, showDuration (in seconds), msgType (ok, error, progress, info) and priority (low, normal, critical).
                 Returns a notification ID which can be used to cancel the notification. The component will throttle notifications and display
                 one at a time and prioritize messages with higher priority. Use vue refs to access these methods.
@@ -94,14 +108,25 @@
             currentID.value[ 'low' ] += 1;
             id = currentID.value[ 'low' ];
         }
-        notifications.value[ id ] = { 'message': message, 'showDuration': showDuration, 'messageType': msgType, 'priority': priority, 'id': id, redirect: redirect, openInNewTab: openInNewTab };
+
+        notifications.value[ id ] = {
+            'message': message,
+            'showDuration': showDuration,
+            'messageType': msgType,
+            'priority': priority,
+            'id': id,
+            'redirect': redirect,
+            'openInNewTab': openInNewTab
+        };
         queue.value.push( id );
         console.log( 'scheduled notification: ' + id + ' (' + message + ')' );
+
         if ( ( new Date().getTime() - notificationDisplayStartTime.value ) / 1000 >= ( notifications.value[ currentDID.value ] ? notifications.value[ currentDID.value ].showDuration : 0 ) || messageType.value === 'hide' ) {
             handleNotifications();
         }
+
         return id;
-    }
+    };
 
     /**
      * Update a notification's message after creating it
@@ -113,7 +138,7 @@
         if ( notifications.value[ id ] ) {
             notifications.value[ id ].message = message;
         }
-    }
+    };
 
 
     /**
@@ -122,31 +147,36 @@
      * @returns {undefined}
      */
     const cancelNotification = ( id: number ): undefined => {
-        try { 
+        try {
             delete notifications.value[ id ];
         } catch ( error ) {
             console.log( 'notification to be deleted is nonexistent or currently being displayed' );
         }
+
         try {
             queue.value.splice( queue.value.indexOf( id ), 1 );
         } catch {
             console.debug( 'queue empty' );
         }
+
         if ( currentDID.value == id ) {
             try {
                 clearTimeout( notificationTimeout );
-            } catch (err) { /* empty */ }
+            } catch ( err ) { /* empty */ }
+
             handleNotifications();
         }
-    }
+    };
 
     const handleNotifications = () => {
         notificationDisplayStartTime.value = new Date().getTime();
         queue.value.sort();
+
         if ( queue.value.length > 0 ) {
             if ( currentDID.value !== 0 ) {
                 delete notifications.value[ currentDID.value ];
             }
+
             currentDID.value = notifications.value[ queue.value[ 0 ] ][ 'id' ];
             messageType.value = notifications.value[ queue.value[ 0 ] ].messageType;
             queue.value.reverse();
@@ -158,22 +188,24 @@
         } else {
             try {
                 clearInterval( progressBar );
-            } catch (err) { /* empty */ }
+            } catch ( err ) { /* empty */ }
+
             messageType.value = 'hide';
         }
-    }
+    };
 
     const progressBarHandler = () => {
         currentTime.value = new Date().getTime();
-    }
+    };
 
     onUnmounted( () => {
         try {
             clearInterval( progressBar );
-        } catch (err) { /* empty */ }
+        } catch ( err ) { /* empty */ }
+
         try {
             clearInterval( notificationTimeout );
-        } catch (err) { /* empty */ }
+        } catch ( err ) { /* empty */ }
     } );
 
     defineExpose( {
@@ -217,7 +249,7 @@
         left: 0;
         height: 5px;
     }
-    
+
     .message-container {
         display: flex;
         justify-content: center;
@@ -228,7 +260,7 @@
         transition: all 0.5s;
         cursor: default;
     }
-    
+
     .types {
         color: white;
         border-radius: 100%;
@@ -237,7 +269,7 @@
         padding: 1.5%;
         font-size: 200%;
     }
-    
+
     .message {
         margin-right: calc( 5% + 30px );
         text-align: end;
@@ -247,7 +279,7 @@
         align-items: center;
         cursor: pointer;
     }
-    
+
     .ok {
         background-color: rgb(1, 71, 1);
     }
@@ -255,7 +287,7 @@
     .countdown-ok {
         background-color: green;
     }
-    
+
     .error {
         background-color: rgb(114, 1, 1);
     }
@@ -263,7 +295,7 @@
     .countdown-error {
         background-color: red;
     }
-    
+
     .info {
         background-color: rgb(44, 112, 151);
     }
@@ -271,7 +303,7 @@
     .countdown-info {
         background-color: blue;
     }
-    
+
     .warning {
         background-color: orange;
     }
@@ -279,16 +311,16 @@
     .countdown-warning {
         background-color: orangered;
     }
-    
+
     .hide {
         opacity: 0;
     }
-    
+
     .progress {
         z-index: 100;
         background-color: rgb(0, 0, 99);
     }
-    
+
     .countdown-ok {
         background: none;
     }
@@ -296,7 +328,7 @@
     .progress-spinner {
         animation: spin 2s infinite linear;
     }
-    
+
     @keyframes spin {
         from {
             transform: rotate( 0deg );

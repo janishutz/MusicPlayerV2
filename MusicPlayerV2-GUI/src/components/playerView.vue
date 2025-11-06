@@ -4,51 +4,109 @@
             <h3>WARNING!</h3>
             <p>A client display is being tampered with!</p>
             <p>A desktop notification with a warning has already been dispatched.</p>
-            <button @click="dismissNotification()" class="simple-button">Ok</button>
+            <button class="simple-button" @click="dismissNotification()">
+                Ok
+            </button>
 
             <div class="flash"></div>
         </div>
         <div class="player">
             <div :class="'main-player' + ( isShowingFullScreenPlayer ? ' full-screen' : '' )">
                 <div :class="'song-name-wrapper' + ( isShowingFullScreenPlayer ? ' full-screen' : '' )" @click="controlUI( 'show' )">
-                    <img src="https://github.com/simplePCBuilding/MusicPlayerV2/raw/master/assets/logo.png" alt="MusicPlayer Logo" class="logo-player" v-if="coverArt === ''">
-                    <img :src="coverArt" alt="MusicPlayer Logo" class="logo-player" v-else>
+                    <img
+                        v-if="coverArt === ''"
+                        src="https://github.com/simplePCBuilding/MusicPlayerV2/raw/master/assets/logo.png"
+                        alt="MusicPlayer Logo"
+                        class="logo-player"
+                    >
+                    <img
+                        v-else
+                        :src="coverArt"
+                        alt="MusicPlayer Logo"
+                        class="logo-player"
+                    >
                     <div class="name-time">
-                        <p class="song-name">{{ currentlyPlayingSongName }} <i v-if="currentlyPlayingSongArtist">by {{ currentlyPlayingSongArtist }}</i></p>
-                        <div class="playback" v-if="!isShowingFullScreenPlayer">
+                        <p class="song-name">
+                            {{ currentlyPlayingSongName }} <i v-if="currentlyPlayingSongArtist">by {{ currentlyPlayingSongArtist }}</i>
+                        </p>
+                        <div v-if="!isShowingFullScreenPlayer" class="playback">
                             <div class="playback-pos-wrapper">
-                                <p class="playback-pos">{{ nicePlaybackPos }}</p>
+                                <p class="playback-pos">
+                                    {{ nicePlaybackPos }}
+                                </p>
                                 <p> / </p>
-                                <p class="playback-duration">{{ niceDuration }}</p> 
+                                <p class="playback-duration">
+                                    {{ niceDuration }}
+                                </p>
                             </div>
                         </div>
                     </div>
                 </div>
                 <div :class="'controls-wrapper' + ( isShowingFullScreenPlayer ? ' full-screen' : '' )" :style="playlist.length > 0 ? '' : 'pointer-events: none'">
                     <div class="main-controls">
-                        <span class="material-symbols-outlined controls next-previous" @click="control( 'previous' )" id="previous" v-if="isShowingFullScreenPlayer">skip_previous</span>
-                        <span class="material-symbols-outlined controls forward-back" @click="control( 'back' )" :style="'rotate: -' + 360 * clickCountBack + 'deg;'" v-if="isShowingFullScreenPlayer">replay_10</span>
-                        <span class="material-symbols-outlined controls" v-if="isPlaying" @click="playPause()" id="play-pause">pause</span>
-                        <span class="material-symbols-outlined controls" v-else @click="playPause()" id="play-pause">play_arrow</span>
-                        <span class="material-symbols-outlined controls forward-back" @click="control( 'forward' )" :style="'rotate: ' + 360 * clickCountForward + 'deg;'" v-if="isShowingFullScreenPlayer">forward_10</span>
-                        <span class="material-symbols-outlined controls next-previous" @click="control( 'next' )" id="next">skip_next</span>
-                    </div>
-                    
-                    <div class="slider-wrapper" v-if="isShowingFullScreenPlayer">
-                        <div class="slider-pb-pos">
-                            <p class="playback-pos">{{ nicePlaybackPos }}</p>
-                            <p class="playback-duration" @click="toggleRemaining()" title="Toggle between remaining time and song duration">{{ niceDuration }}</p> 
-                        </div>
-                        <sliderView :position="pos" :active="true" :duration="duration" name="main" @pos="( pos ) => goToPos( pos )"></sliderView>
+                        <span
+                            v-if="isShowingFullScreenPlayer"
+                            id="previous"
+                            class="material-symbols-outlined controls next-previous"
+                            @click="control( 'previous' )"
+                        >skip_previous</span>
+                        <span
+                            v-if="isShowingFullScreenPlayer"
+                            class="material-symbols-outlined controls forward-back"
+                            :style="'rotate: -' + 360 * clickCountBack + 'deg;'"
+                            @click="control( 'back' )"
+                        >replay_10</span>
+                        <span
+                            v-if="isPlaying"
+                            id="play-pause"
+                            class="material-symbols-outlined controls"
+                            @click="playPause()"
+                        >pause</span>
+                        <span
+                            v-else
+                            id="play-pause"
+                            class="material-symbols-outlined controls"
+                            @click="playPause()"
+                        >play_arrow</span>
+                        <span
+                            v-if="isShowingFullScreenPlayer"
+                            class="material-symbols-outlined controls forward-back"
+                            :style="'rotate: ' + 360 * clickCountForward + 'deg;'"
+                            @click="control( 'forward' )"
+                        >forward_10</span>
+                        <span id="next" class="material-symbols-outlined controls next-previous" @click="control( 'next' )">skip_next</span>
                     </div>
 
-                    <div class="shuffle-repeat" v-if="isShowingFullScreenPlayer">
-                        <span class="material-symbols-outlined controls" @click="control( 'repeat' )" style="margin-right: auto;">repeat{{ repeatMode }}</span>
+                    <div v-if="isShowingFullScreenPlayer" class="slider-wrapper">
+                        <div class="slider-pb-pos">
+                            <p class="playback-pos">
+                                {{ nicePlaybackPos }}
+                            </p>
+                            <p class="playback-duration" title="Toggle between remaining time and song duration" @click="toggleRemaining()">
+                                {{ niceDuration }}
+                            </p>
+                        </div>
+                        <sliderView
+                            :position="pos"
+                            :active="true"
+                            :duration="duration"
+                            name="main"
+                            @pos="( pos ) => goToPos( pos )"
+                        />
+                    </div>
+
+                    <div v-if="isShowingFullScreenPlayer" class="shuffle-repeat">
+                        <span class="material-symbols-outlined controls" style="margin-right: auto;" @click="control( 'repeat' )">repeat{{ repeatMode }}</span>
                         <div style="margin-right: auto; pointer-events: all;">
-                            <span class="material-symbols-outlined controls" @click="control( 'start-share' )" title="Share your playlist on a public playlist page (opens a configuration window)" v-if="!isConnectedToNotifier">share</span>
+                            <span
+                                v-if="!isConnectedToNotifier"
+                                class="material-symbols-outlined controls"
+                                title="Share your playlist on a public playlist page (opens a configuration window)"
+                                @click="control( 'start-share' )"
+                            >share</span>
                             <div v-else>
-                                <span class="material-symbols-outlined controls" @click="control( 'stop-share' )" title="Stop sharing your playlist on a public playlist page">close</span>
-                                <span class="material-symbols-outlined controls" @click="control( 'show-share' )" title="Show information on the share, including URL to connect to">info</span>
+                                <span class="material-symbols-outlined controls" title="Stop sharing your playlist on a public playlist page" @click="control( 'stop-share' )">close</span>
+                                <span class="material-symbols-outlined controls" title="Show information on the share, including URL to connect to" @click="control( 'show-share' )">info</span>
                             </div>
                         </div>
                         <span class="material-symbols-outlined controls" @click="control( 'shuffle' )">shuffle{{ shuffleMode }}</span>
@@ -58,33 +116,49 @@
         </div>
         <div :class="'playlist-view' + ( isShowingFullScreenPlayer ? '' : ' hidden' )">
             <span class="material-symbols-outlined close-fullscreen" @click="controlUI( 'hide' )">close</span>
-            <playlistView :playlist="playlist" class="pl-wrapper" :currently-playing="currentlyPlayingSongIndex" :is-playing="isPlaying" :pos="pos"
-                @control="( action ) => { control( action ) }" @play-song="( song ) => { playSong( song ) }"
-                @add-new-songs="( songs ) => addNewSongs( songs )" @playlist-reorder="( move ) => moveSong( move )"
+            <playlistView
+                :playlist="playlist"
+                class="pl-wrapper"
+                :currently-playing="currentlyPlayingSongIndex"
+                :is-playing="isPlaying"
+                :pos="pos"
                 :is-logged-into-apple-music="player.isLoggedIn"
+                @control="( action ) => { control( action ) }"
+                @play-song="( song ) => { playSong( song ) }"
+                @add-new-songs="( songs ) => addNewSongs( songs )"
+                @playlist-reorder="( move ) => moveSong( move )"
                 @add-new-songs-apple-music="( song ) => addNewSongFromObject( song )"
                 @delete-song="song => removeSongFromPlaylist( song )"
                 @clear-playlist="() => clearPlaylist()"
-                @send-additional-info="() => sendAdditionalInfo()"></playlistView>
+                @send-additional-info="() => sendAdditionalInfo()"
+            />
         </div>
-        <notificationsModule ref="notifications" location="bottomleft" size="bigger"></notificationsModule>
-        <popupModule @update="( data ) => popupReturnHandler( data )" ref="popup"></popupModule>
-        <audio src="" id="local-audio" controls="false"></audio>
+        <notificationsModule ref="notifications" location="bottomleft" size="bigger" />
+        <popupModule ref="popup" @update="( data ) => popupReturnHandler( data )" />
+        <audio id="local-audio" src="" controls="false"></audio>
     </div>
 </template>
 
 
 <script setup lang="ts">
-    import { ref, type Ref } from 'vue';
-    import playlistView from '@/components/playlistView.vue';
+    import type {
+        ReadFile, Song, SongMove
+    } from '@/scripts/song';
+    import {
+        type Ref, ref
+    } from 'vue';
     import MusicKitJSWrapper from '@/scripts/music-player';
-    import sliderView from './sliderView.vue';
-    import type { ReadFile, Song, SongMove } from '@/scripts/song';
-    import { parseBlob } from 'music-metadata-browser';
-    import notificationsModule from './notificationsModule.vue';
-    import { useUserStore } from '@/stores/userStore';
     import NotificationHandler from '@/scripts/notificationHandler';
+    import notificationsModule from './notificationsModule.vue';
+    import {
+        parseBlob
+    } from 'music-metadata';
+    import playlistView from '@/components/playlistView.vue';
     import popupModule from './popupModule.vue';
+    import sliderView from './sliderView.vue';
+    import {
+        useUserStore
+    } from '@/stores/userStore';
 
     const isPlaying = ref( false );
     const repeatMode = ref( '' );
@@ -100,7 +174,9 @@
     const nicePlaybackPos = ref( '00:00' );
     const niceDuration = ref( '00:00' );
     const isShowingRemainingTime = ref( false );
+
     let isShowingRemainingTimeBackend = false;
+
     const currentlyPlayingSongArtist = ref( '' );
     const pos = ref( 0 );
     const duration = ref( 0 );
@@ -110,6 +186,7 @@
     const popup = ref( popupModule );
     const roomName = ref( '' );
     const isShowingWarning = ref( false );
+
     let currentlyOpenPopup = '';
     let logoutErrorNotification = -1;
 
@@ -118,19 +195,24 @@
     document.addEventListener( 'musicplayer:autherror', () => {
         localStorage.setItem( 'close-tab', 'true' );
         isConnectedToNotifier.value = false;
-        logoutErrorNotification = notifications.value.createNotification( 'You appear to have been logged out. Click to log in again!', 600, 'error', 'critical', '/', true );
+        logoutErrorNotification = notifications.value.createNotification(
+            'You appear to have been logged out. Click to log in again!', 600, 'error', 'critical', '/', true
+        );
     } );
 
     window.addEventListener( 'storage', () => {
         if ( localStorage.getItem( 'login-ok' ) === 'true' ) {
             notifications.value.cancelNotification( logoutErrorNotification );
-            notifications.value.createNotification( 'Logged in again. You will have to reconnect to the share!', 20, 'ok', 'normal' );
+            notifications.value.createNotification(
+                'Logged in again. You will have to reconnect to the share!', 20, 'ok', 'normal'
+            );
             localStorage.removeItem( 'login-ok' );
         }
     } );
 
     const playPause = () => {
         isPlaying.value = !isPlaying.value;
+
         if ( isPlaying.value ) {
             player.control( 'play' );
             startProgressTracker();
@@ -138,17 +220,17 @@
             player.control( 'pause' );
             stopProgressTracker();
         }
-    }
+    };
 
     const goToPos = ( position: number ) => {
         player.goToPos( position );
         pos.value = position;
         notificationHandler.emit( 'playback-start-update', new Date().getTime() - pos.value * 1000 );
-    }
+    };
 
     const toggleRemaining = () => {
         isShowingRemainingTime.value = !isShowingRemainingTime.value;
-    }
+    };
 
     const control = ( action: string ) => {
         if ( action === 'pause' ) {
@@ -184,11 +266,13 @@
                 getDetails();
                 notificationHandler.emit( 'playlist-update', playlist.value );
             }
+
             notificationHandler.emit( 'playlist-index-update', player.getQueueID() );
             getDetails();
         } else if ( action === 'forward' ) {
             clickCountForward.value += 1;
-            if( player.control( 'skip-10' ) ) {
+
+            if ( player.control( 'skip-10' ) ) {
                 startProgressTracker();
             } else {
                 pos.value = player.getPlaybackPos();
@@ -196,7 +280,8 @@
             }
         } else if ( action === 'back' ) {
             clickCountBack.value += 1;
-            if( player.control( 'back-10' ) ) {
+
+            if ( player.control( 'back-10' ) ) {
                 startProgressTracker();
             } else {
                 pos.value = player.getPlaybackPos();
@@ -218,19 +303,19 @@
             startProgressTracker();
         } else if ( action === 'start-share' ) {
             popup.value.openPopup( {
-                title: 'Define a share name',
-                popupType: 'input',
-                subtitle: 'A share allows others to join your playlist and see the current song, the playback position and the upcoming songs. You can get the link to the page, once the share is set up. Please choose a name, which will then be part of the URL with which others can join the share. The anti tamper feature notifies you, whenever a user leaves the fancy view.',
-                data: [
+                'title': 'Define a share name',
+                'popupType': 'input',
+                'subtitle': 'A share allows others to join your playlist and see the current song, the playback position and the upcoming songs. You can get the link to the page, once the share is set up. Please choose a name, which will then be part of the URL with which others can join the share. The anti tamper feature notifies you, whenever a user leaves the fancy view.',
+                'data': [
                     {
-                        name: 'Share Name',
-                        dataType: 'text',
-                        id: 'roomName'
+                        'name': 'Share Name',
+                        'dataType': 'text',
+                        'id': 'roomName'
                     },
                     {
-                        name: 'Use Anti-Tamper?',
-                        dataType: 'checkbox',
-                        id: 'useAntiTamper'
+                        'name': 'Use Anti-Tamper?',
+                        'dataType': 'checkbox',
+                        'id': 'useAntiTamper'
                     }
                 ]
             } );
@@ -239,19 +324,21 @@
             if ( confirm( 'Do you really want to stop sharing?' ) ) {
                 notificationHandler.disconnect();
                 isConnectedToNotifier.value = false;
-                notifications.value.createNotification( 'Disconnected successfully!', 5, 'ok', 'normal' );
+                notifications.value.createNotification(
+                    'Disconnected successfully!', 5, 'ok', 'normal'
+                );
             }
         } else if ( action === 'show-share' ) {
             popup.value.openPopup( {
-                title: 'Details on share',
-                subtitle: 'You are currently connected to share "' + roomName.value 
-                + '". \nYou can connect to it via <a href="https://music.janishutz.com/share/' + roomName.value + '" target="_blank">https://music.janishutz.com/share/' + roomName.value + '</a>'
-                + '. \n\nYou can connect to the fancy showcase screen using this link: <a href="https://music.janishutz.com/fancy/' + roomName.value + '" target="_blank">https://music.janishutz.com/fancy/' + roomName.value + '</a>'
-                + '. Be aware that this one will use significantly more system AND network resources, so only use that for a screen that is front and center, not for a QR code to have all people connect to.'
+                'title': 'Details on share',
+                'subtitle': 'You are currently connected to share "' + roomName.value
+                    + '". \nYou can connect to it via <a href="https://music.janishutz.com/share/' + roomName.value + '" target="_blank">https://music.janishutz.com/share/' + roomName.value + '</a>'
+                    + '. \n\nYou can connect to the fancy showcase screen using this link: <a href="https://music.janishutz.com/fancy/' + roomName.value + '" target="_blank">https://music.janishutz.com/fancy/' + roomName.value + '</a>'
+                    + '. Be aware that this one will use significantly more system AND network resources, so only use that for a screen that is front and center, not for a QR code to have all people connect to.'
             } );
             currentlyOpenPopup = 'share-details';
         }
-    }
+    };
 
 
     const controlUI = ( action: string ) => {
@@ -263,28 +350,30 @@
             isShowingFullScreenPlayer.value = false;
             isShowingRemainingTimeBackend = isShowingRemainingTime.value;
             isShowingRemainingTime.value = false;
+
             try {
                 prepNiceDurationTime( player.getPlayingSong() );
             } catch ( err ) { /* empty */ }
+
             emits( 'playerStateChange', 'hide' );
         }
-    }
+    };
 
     const getPlaylists = ( cb: ( data: object ) => void ) => {
         player.getUserPlaylists( cb );
-    }
+    };
 
     const logIntoAppleMusic = () => {
         player.logIn();
-    }
+    };
 
     const getAuth = (): boolean[] => {
         return player.getAuth();
-    }
+    };
 
     const skipLogin = () => {
         player.init();
-    }
+    };
 
     const selectPlaylist = ( id: string ) => {
         currentlyPlayingSongArtist.value = '';
@@ -298,20 +387,26 @@
                 notificationHandler.emit( 'playlist-update', playlist.value );
             }, 2000 );
         } );
-    }
+    };
 
     const selectCustomPlaylist = async ( pl: ReadFile[] ) => {
-        let n = notifications.value.createNotification( 'Analyzing playlist', 200, 'progress', 'normal' );
+        let n = notifications.value.createNotification(
+            'Analyzing playlist', 200, 'progress', 'normal'
+        );
+
         playlist.value = [];
-        let plLoad: Song[] = [];
+        const plLoad: Song[] = [];
+
         for ( let element in pl ) {
             try {
                 plLoad.push( await fetchSongData( pl[ element ] ) );
             } catch ( e ) {
                 console.error( e );
             }
-            notifications.value.updateNotification( n, `Analyzing playlist (${element}/${pl.length})` );
+
+            notifications.value.updateNotification( n, `Analyzing playlist (${ element }/${ pl.length })` );
         }
+
         playlist.value = plLoad;
         player.setPlaylist( playlist.value );
         player.prepare( 0 );
@@ -322,82 +417,106 @@
             notificationHandler.emit( 'playlist-update', playlist.value );
         }, 2000 );
         notifications.value.cancelNotification( n );
-        notifications.value.createNotification( 'Playlist loaded', 10, 'ok', 'normal' );
-    }
+        notifications.value.createNotification(
+            'Playlist loaded', 10, 'ok', 'normal'
+        );
+    };
 
     const fetchSongData = ( songDetails: ReadFile ): Promise<Song> => {
         return new Promise( ( resolve, reject ) => {
-            fetch( songDetails.url ).then( res => {
-                if ( res.status === 200 ) {
-                    res.blob().then( blob => {
-                        parseBlob( blob ).then( data => {
-                            try {
-                                player.findSongOnAppleMusic( data.common.title ?? songDetails.filename.split( '.' )[ 0 ] ).then( d => {
-                                    let url = d.data.results.songs.data[ 0 ].attributes.artwork.url;
-                                    url = url.replace( '{w}', String( d.data.results.songs.data[ 0 ].attributes.artwork.width ) );
-                                    url = url.replace( '{h}', String( d.data.results.songs.data[ 0 ].attributes.artwork.height ) );
-                                    const song: Song = {
-                                        artist: d.data.results.songs.data[ 0 ].attributes.artistName,
-                                        title: d.data.results.songs.data[ 0 ].attributes.name,
-                                        duration: data.format.duration ?? ( d.data.results.songs.data[ 0 ].attributes.durationInMillis / 1000 ),
-                                        id: songDetails.url,
-                                        origin: 'disk',
-                                        cover: url
+            console.info( 'Loading song', songDetails.filename );
+            fetch( songDetails.url )
+                .then( res => {
+                    if ( res.status === 200 ) {
+                        res.blob().then( blob => {
+                            console.info( 'Song loaded for processing' );
+                            parseBlob( blob )
+                                .then( data => {
+                                    console.info( 'Song metadata processing successful' );
+
+                                    try {
+                                        player.findSongOnAppleMusic( data.common.title
+                                            ?? songDetails.filename.split( '.' )[ 0 ] )
+                                            .then( d => {
+                                                console.info( 'Apple Music API lookup successful' );
+                                                let url = d.data.results.songs.data[ 0 ].attributes.artwork.url;
+
+                                                url = url.replace( '{w}', String( d.data.results.songs.data[ 0 ].attributes.artwork.width ) );
+                                                url = url.replace( '{h}', String( d.data.results.songs.data[ 0 ].attributes.artwork.height ) );
+                                                const song: Song = {
+                                                    'artist': d.data.results.songs.data[ 0 ].attributes.artistName,
+                                                    'title': d.data.results.songs.data[ 0 ].attributes.name,
+                                                    'duration': data.format.duration ?? ( d.data.results.songs.data[ 0 ].attributes.durationInMillis / 1000 ),
+                                                    'id': songDetails.url,
+                                                    'origin': 'disk',
+                                                    'cover': url
+                                                };
+
+                                                resolve( song );
+                                            } )
+                                            .catch( e => {
+                                                console.info( 'Apple Music API failed' );
+                                                console.error( e );
+                                                const song: Song = {
+                                                    'artist': data.common.artist ?? 'Unknown artist',
+                                                    'title': data.common.title ?? 'Unknown song title',
+                                                    'duration': data.format.duration ?? 1000,
+                                                    'id': songDetails.url,
+                                                    'origin': 'disk',
+                                                    'cover': ''
+                                                };
+
+                                                resolve( song );
+                                            } );
+                                    } catch ( err ) {
+                                        console.error( err );
+                                        alert( 'One of your songs was not loadable. (finalization-error)' );
+                                        reject( err );
                                     }
-                                    resolve( song );
-                                } ).catch( e => {
+                                } )
+                                .catch( e => {
                                     console.error( e );
-                                    const song: Song = {
-                                        artist: data.common.artist ?? 'Unknown artist',
-                                        title: data.common.title ?? 'Unknown song title',
-                                        duration: data.format.duration ?? 1000,
-                                        id: songDetails.url,
-                                        origin: 'disk',
-                                        cover: ''
-                                    }
-                                    resolve( song );
+                                    alert( 'One of your songs was not loadable. (parser-error)' );
+                                    reject( e );
                                 } );
-                            } catch ( err ) {
-                                console.error( err );
-                                alert( 'One of your songs was not loadable. (finalization-error)' )
-                            }
-                        } ).catch( e => {
-                            console.error( e );
-                            alert( 'One of your songs was not loadable. (parser-error)' );
-                            reject( e );
-                        } );
-                    } ).catch( e => {
-                        console.error( e );
-                        alert( 'One of your songs was not loadable. (converter-error)' );
-                        reject( e );
-                    } );
-                } else {
-                    console.error( res.status );
-                    alert( 'One of your songs was not loadable. (invalid-response-code)' );
-                }
-            } ).catch( e => {
-                console.error( e );
-                alert( 'One of your songs was not loadable. (could-not-connect)' );
-                reject( e );
-            } );
+                        } )
+                            .catch( e => {
+                                console.error( e );
+                                alert( 'One of your songs was not loadable. (converter-error)' );
+                                reject( e );
+                            } );
+                    } else {
+                        console.error( res.status );
+                        alert( 'One of your songs was not loadable. (invalid-response-code)' );
+                        reject( res.status );
+                    }
+                } )
+                .catch( e => {
+                    console.error( e );
+                    alert( 'One of your songs was not loadable. (could-not-connect)' );
+                    reject( e );
+                } );
         } );
-    }
+    };
 
     const getDetails = () => {
         const details = player.getPlayingSong();
+
         currentlyPlayingSongName.value = details.title;
         coverArt.value = details.cover;
         currentlyPlayingSongIndex.value = player.getQueueID();
         playlist.value = player.getQueue();
         currentlyPlayingSongArtist.value = details.artist;
-    }
+    };
 
     const playSong = ( id: string ) => {
         const p = player.getPlaylist();
+
         currentlyPlayingSongArtist.value = '';
         coverArt.value = '';
         currentlyPlayingSongName.value = 'Loading...';
         stopProgressTracker();
+
         for ( const s in p ) {
             if ( p[ s ].id === id ) {
                 player.prepare( parseInt( s ) );
@@ -405,24 +524,29 @@
                 break;
             }
         }
-    }
+    };
 
 
     let progressTracker: ReturnType<typeof setInterval> = setInterval( () => {}, 1000 );
+
     clearInterval( progressTracker );
     let hasReachedEnd = false;
     let hasStarted = false;
+
     const startProgressTracker = () => {
         hasReachedEnd = false;
         isPlaying.value = true;
         let playingSong = player.getPlayingSong();
+
         hasStarted = false;
         pos.value = 0;
         progressTracker = setInterval( () => {
             pos.value = player.getPlaybackPos();
+
             if ( pos.value > playingSong.duration - 1 && !hasReachedEnd ) {
                 stopProgressTracker();
                 hasReachedEnd = true;
+
                 if ( repeatMode.value === '_one_on' ) {
                     player.goToPos( 0 );
                     setTimeout( () => {
@@ -449,11 +573,15 @@
             }
 
             const minuteCount = Math.floor( pos.value / 60 );
+
             nicePlaybackPos.value = minuteCount + ':';
+
             if ( ( '' + minuteCount ).length === 1 ) {
                 nicePlaybackPos.value = '0' + minuteCount + ':';
             }
+
             const secondCount = Math.floor( pos.value - minuteCount * 60 );
+
             if ( ( '' + secondCount ).length === 1 ) {
                 nicePlaybackPos.value += '0' + secondCount;
             } else {
@@ -462,11 +590,15 @@
 
             if ( isShowingRemainingTime.value ) {
                 const minuteCounts = Math.floor( ( playingSong.duration - pos.value ) / 60 );
+
                 niceDuration.value = '-' + String( minuteCounts ) + ':';
+
                 if ( ( '' + minuteCounts ).length === 1 ) {
                     niceDuration.value = '-0' + minuteCounts + ':';
                 }
+
                 const secondCounts = Math.floor( ( playingSong.duration - pos.value ) - minuteCounts * 60 );
+
                 if ( ( '' + secondCounts ).length === 1 ) {
                     niceDuration.value += '0' + secondCounts;
                 } else {
@@ -474,82 +606,101 @@
                 }
             }
         }, 100 );
-    }
+    };
 
     const prepNiceDurationTime = ( playingSong: Song ) => {
         duration.value = playingSong.duration;
-        const minuteCounts = Math.floor( ( playingSong.duration ) / 60 );
+        const minuteCounts = Math.floor( playingSong.duration / 60 );
+
         niceDuration.value = String( minuteCounts ) + ':';
+
         if ( ( '' + minuteCounts ).length === 1 ) {
             niceDuration.value = '0' + minuteCounts + ':';
         }
-        const secondCounts = Math.floor( ( playingSong.duration ) - minuteCounts * 60 );
+
+        const secondCounts = Math.floor( playingSong.duration - minuteCounts * 60 );
+
         if ( ( '' + secondCounts ).length === 1 ) {
             niceDuration.value += '0' + secondCounts;
         } else {
             niceDuration.value += secondCounts;
         }
-    }
+    };
 
     const stopProgressTracker = () => {
         try {
             clearInterval( progressTracker );
         } catch ( _ ) { /* empty */ }
+
         isPlaying.value = false;
         notificationHandler.emit( 'playback-update', isPlaying.value );
-    }
+    };
 
     const moveSong = ( move: SongMove ) => {
         player.moveSong( move );
         getDetails();
         notificationHandler.emit( 'playlist-update', playlist.value );
-    }
+    };
 
     const addNewSongs = async ( songs: ReadFile[] ) => {
-        let n = notifications.value.createNotification( 'Analyzing new songs', 200, 'progress', 'normal' );
+        let n = notifications.value.createNotification(
+            'Analyzing new songs', 200, 'progress', 'normal'
+        );
+
         playlist.value = player.getQueue();
+
         for ( let element in songs ) {
             try {
                 playlist.value.push( await fetchSongData( songs[ element ] ) );
             } catch ( e ) {
                 console.error( e );
             }
-            notifications.value.updateNotification( n, `Analyzing new songs (${element}/${songs.length})` );
+
+            notifications.value.updateNotification( n, `Analyzing new songs (${ element }/${ songs.length })` );
         }
+
         player.setPlaylist( playlist.value );
+
         if ( !isPlaying.value ) {
             player.prepare( 0 );
             isPlaying.value = true;
             startProgressTracker();
         }
+
         notifications.value.cancelNotification( n );
-        notifications.value.createNotification( 'New songs added', 10, 'ok', 'normal' );
+        notifications.value.createNotification(
+            'New songs added', 10, 'ok', 'normal'
+        );
         notificationHandler.emit( 'playlist-update', playlist.value );
-    }
+    };
 
     const addNewSongFromObject = ( song: Song ) => {
         playlist.value = player.getQueue();
         playlist.value.push( song );
         player.setPlaylist( playlist.value );
+
         if ( !isPlaying.value ) {
             player.prepare( 0 );
             isPlaying.value = true;
             startProgressTracker();
         }
+
         notificationHandler.emit( 'playlist-update', playlist.value );
-    }
+    };
 
     const removeSongFromPlaylist = ( song: number ) => {
         playlist.value = player.getQueue();
         playlist.value.splice( song, 1 );
         player.setPlaylist( playlist.value );
+
         if ( !isPlaying.value ) {
             player.prepare( 0 );
             isPlaying.value = true;
             startProgressTracker();
         }
+
         notificationHandler.emit( 'playlist-update', playlist.value );
-    }
+    };
 
     const clearPlaylist = () => {
         playlist.value = [];
@@ -562,18 +713,20 @@
         coverArt.value = '';
         pos.value = 0;
         notificationHandler.emit( 'playlist-update', playlist.value );
-    }
+    };
 
     const sendAdditionalInfo = () => {
-        notifications.value.createNotification( 'Additional song info transmitted', 5, 'ok', 'normal' );
+        notifications.value.createNotification(
+            'Additional song info transmitted', 5, 'ok', 'normal'
+        );
         notificationHandler.emit( 'playlist-update', playlist.value );
-    }
+    };
 
     emits( 'playerStateChange', isShowingFullScreenPlayer.value ? 'show' : 'hide' );
 
     const userStore = useUserStore();
 
-    document.addEventListener( 'keydown', ( e ) => {
+    document.addEventListener( 'keydown', e => {
         if ( !userStore.isUsingKeyboard ) {
             if ( e.key === ' ' ) {
                 e.preventDefault();
@@ -590,7 +743,7 @@
 
     const dismissNotification = () => {
         isShowingWarning.value = false;
-    }
+    };
 
     const popupReturnHandler = ( data: any ) => {
         if ( currentlyOpenPopup === 'create-share' ) {
@@ -601,26 +754,35 @@
                 notificationHandler.emit( 'playback-update', isPlaying.value );
                 notificationHandler.emit( 'playback-start-update', new Date().getTime() - pos.value * 1000 );
                 notificationHandler.emit( 'playlist-update', playlist.value );
-                notifications.value.createNotification( 'Joined share "' + data.roomName + '"!', 5, 'ok', 'normal' );
+                notifications.value.createNotification(
+                    'Joined share "' + data.roomName + '"!', 5, 'ok', 'normal'
+                );
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                notificationHandler.registerListener( 'tampering-msg', ( _ ) => {
+                notificationHandler.registerListener( 'tampering-msg', _ => {
                     isShowingWarning.value = true;
                 } );
-            } ).catch( e => {
-                if ( e === 'ERR_CONFLICT' ) {
-                    notifications.value.createNotification( 'A share with this name exists already!', 5, 'error', 'normal' );
-                    control( 'start-share' );
-                } else if ( e === 'ERR_UNAUTHORIZED' ) {
-                    console.error( e );
-                    localStorage.setItem( 'close-tab', 'true' );
-                    logoutErrorNotification = notifications.value.createNotification( 'You appear to have been logged out. Click to log in again!', 20, 'error', 'normal', '/', true );
-                } else {
-                    console.error( e );
-                    notifications.value.createNotification( 'Could not create share!', 5, 'error', 'normal' );
-                }
-            } );
+            } )
+                .catch( e => {
+                    if ( e === 'ERR_CONFLICT' ) {
+                        notifications.value.createNotification(
+                            'A share with this name exists already!', 5, 'error', 'normal'
+                        );
+                        control( 'start-share' );
+                    } else if ( e === 'ERR_UNAUTHORIZED' ) {
+                        console.error( e );
+                        localStorage.setItem( 'close-tab', 'true' );
+                        logoutErrorNotification = notifications.value.createNotification(
+                            'You appear to have been logged out. Click to log in again!', 20, 'error', 'normal', '/', true
+                        );
+                    } else {
+                        console.error( e );
+                        notifications.value.createNotification(
+                            'Could not create share!', 5, 'error', 'normal'
+                        );
+                    }
+                } );
         }
-    }
+    };
 
     window.addEventListener( 'beforeunload', async () => {
         await notificationHandler.disconnect();
@@ -709,7 +871,7 @@
         position: relative;
         z-index: 5;
     }
-    
+
     .slider-pb-pos {
         display: flex;
         justify-content: center;
