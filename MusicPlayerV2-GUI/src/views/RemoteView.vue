@@ -7,7 +7,7 @@
             <div v-if="hasLoaded && !showCouldNotFindRoom" style="width: 100%">
                 <div class="current-song-wrapper">
                     <img
-                        v-if="playlist[ playingSong ]"
+                        v-if="playlist[ playingSong ] && playlist[ playingSong ].cover"
                         id="current-image"
                         :src="playlist[ playingSong ].cover"
                         class="fancy-view-song-art"

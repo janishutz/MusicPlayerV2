@@ -19,7 +19,7 @@
             <div v-if="hasLoaded && !showCouldNotFindRoom" class="showcase-wrapper">
                 <div class="current-song-wrapper">
                     <img
-                        v-if="playlist[ playingSong ]"
+                        v-if="playlist[ playingSong ] && playlist[ playingSong ].cover"
                         id="current-image"
                         :src="playlist[ playingSong ].cover"
                         class="fancy-view-song-art"
@@ -52,7 +52,8 @@
                 </div>
                 <div class="song-list-wrapper">
                     <div v-for="song in songQueue" :key="song.id" class="song-list">
-                        <img :src="song.cover" class="song-image">
+                        <img v-if="song.cover" :src="song.cover" class="song-image">
+                        <span v-else class="material-symbols-outlined song-cover">music_note</span>
                         <div
                             v-if="( playlist[ playingSong ] ? playlist[ playingSong ].id : '' ) === song.id && isPlaying"
                             class="playing-symbols"
@@ -97,7 +98,7 @@
         Song
     } from '@/scripts/song';
     import {
-        computed, ref, type Ref
+        type Ref, computed, ref
     } from 'vue';
     import bizualizer from '@/scripts/bizualizer';
 

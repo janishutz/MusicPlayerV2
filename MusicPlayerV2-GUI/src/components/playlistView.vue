@@ -38,7 +38,13 @@
                 :class="( song.id === ( $props.playlist ? $props.playlist [ $props.currentlyPlaying ?? 0 ].id : '' ) && isPlaying ? 'playing' : ' not-playing' )
                     + ( ( !isPlaying && ( song.id === ( $props.playlist ? $props.playlist [ $props.currentlyPlaying ?? 0 ].id : '' ) ) ) ? ' active-song' : '' )"
             >
-                <img :src="song.cover" alt="Song cover" class="song-cover">
+                <img
+                    v-if="song.cover"
+                    :src="song.cover"
+                    alt="Song cover"
+                    class="song-cover"
+                >
+                <span v-else class="material-symbols-outlined song-cover">music_note</span>
                 <div v-if="song.id === ( $props.playlist ? $props.playlist [ $props.currentlyPlaying ?? 0 ].id : '' ) && $props.isPlaying" class="playing-symbols">
                     <div class="playing-symbols-wrapper">
                         <div id="bar-1" class="playing-bar"></div>

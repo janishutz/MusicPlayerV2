@@ -432,27 +432,45 @@
                                 .then( data => {
                                     try {
                                         const searchTerm = data.common.title
-                                            ? data.common.title + ' ' + data.common.artist
-                                            : songDetails.filename.split( '.' )[ 0 ];
+                                            ? data.common.title + ( data.common.artist ? ' ' + data.common.artist : '' )
+                                            : songDetails.filename.split( '.' )[ 0 ].replace( '_', ' ' );
 
-                                        console.debug( 'Searching for', searchTerm );
 
                                         player.findSongOnAppleMusic( searchTerm )
                                             .then( d => {
-                                                let url = d.data.results.songs.data[ 0 ].attributes.artwork.url;
+                                                if ( d.data.results.songs ) {
+                                                    let url = d.data.results.songs.data[ 0 ].attributes.artwork.url;
 
-                                                url = url.replace( '{w}', String( d.data.results.songs.data[ 0 ].attributes.artwork.width ) );
-                                                url = url.replace( '{h}', String( d.data.results.songs.data[ 0 ].attributes.artwork.height ) );
-                                                const song: Song = {
-                                                    'artist': d.data.results.songs.data[ 0 ].attributes.artistName,
-                                                    'title': d.data.results.songs.data[ 0 ].attributes.name,
-                                                    'duration': data.format.duration ?? ( d.data.results.songs.data[ 0 ].attributes.durationInMillis / 1000 ),
-                                                    'id': songDetails.url,
-                                                    'origin': 'disk',
-                                                    'cover': url
-                                                };
+                                                    console.debug(
+                                                        'Result used for', searchTerm, 'is', d.data.results.songs.data[0]
+                                                    );
 
-                                                resolve( song );
+                                                    url = url.replace( '{w}', String( d.data.results.songs.data[ 0 ].attributes.artwork.width ) );
+                                                    url = url.replace( '{h}', String( d.data.results.songs.data[ 0 ].attributes.artwork.height ) );
+                                                    const song: Song = {
+                                                        'artist': d.data.results.songs.data[ 0 ].attributes.artistName,
+                                                        'title': d.data.results.songs.data[ 0 ].attributes.name,
+                                                        'duration': data.format.duration ?? ( d.data.results.songs.data[ 0 ].attributes.durationInMillis / 1000 ),
+                                                        'id': songDetails.url,
+                                                        'origin': 'disk',
+                                                        'cover': url
+                                                    };
+
+                                                    resolve( song );
+                                                } else {
+                                                    const song: Song = {
+                                                        'artist': data.common.artist ?? 'Unknown artist',
+                                                        'title': data.common.title ?? 'Unknown song title',
+                                                        'duration': data.format.duration ?? 1000,
+                                                        'id': songDetails.url,
+                                                        'origin': 'disk',
+                                                        'cover': ''
+                                                    };
+
+                                                    console.warn( 'No results found for', searchTerm );
+
+                                                    resolve( song );
+                                                }
                                             } )
                                             .catch( e => {
                                                 console.error( e );
