@@ -431,8 +431,13 @@
                             parseBlob( blob )
                                 .then( data => {
                                     try {
-                                        player.findSongOnAppleMusic( data.common.title
-                                            ?? songDetails.filename.split( '.' )[ 0 ] )
+                                        const searchTerm = data.common.title
+                                            ? data.common.title + ' ' + data.common.artist
+                                            : songDetails.filename.split( '.' )[ 0 ];
+
+                                        console.debug( 'Searching for', searchTerm );
+
+                                        player.findSongOnAppleMusic( searchTerm )
                                             .then( d => {
                                                 let url = d.data.results.songs.data[ 0 ].attributes.artwork.url;
 
@@ -560,7 +565,7 @@
                         prepNiceDurationTime( playingSong );
                         notificationHandler.emit( 'playlist-index-update', currentlyPlayingSongIndex.value );
                         notificationHandler.emit( 'playback-update', isPlaying.value );
-                        notificationHandler.emit( 'playback-start-update', new Date().getTime() - pos.value * 1000 );
+                        notificationHandler.emit( 'playback-start-update', new Date().getTime() - ( pos.value * 1000 ) );
                         hasStarted = true;
                     }, 2000 );
                 }
@@ -574,7 +579,7 @@
                 nicePlaybackPos.value = '0' + minuteCount + ':';
             }
 
-            const secondCount = Math.floor( pos.value - minuteCount * 60 );
+            const secondCount = Math.floor( pos.value - ( minuteCount * 60 ) );
 
             if ( ( '' + secondCount ).length === 1 ) {
                 nicePlaybackPos.value += '0' + secondCount;
@@ -591,7 +596,7 @@
                     niceDuration.value = '-0' + minuteCounts + ':';
                 }
 
-                const secondCounts = Math.floor( ( playingSong.duration - pos.value ) - minuteCounts * 60 );
+                const secondCounts = Math.floor( ( playingSong.duration - pos.value ) - ( minuteCounts * 60 ) );
 
                 if ( ( '' + secondCounts ).length === 1 ) {
                     niceDuration.value += '0' + secondCounts;
