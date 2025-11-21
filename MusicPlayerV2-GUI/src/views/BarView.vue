@@ -5,22 +5,32 @@
     } from 'vue';
 
     interface FullConfig {
-        'offering': BarConfig,
-        'ages': Ages
+        'offering': Bars;
+        'ages': Ages;
+    }
+
+    interface Bars {
+        [name: string]: {
+            'offering': BarConfig;
+            'name': string;
+            'id': string;
+        }
     }
 
     interface Ages {
-        '18+': string,
-        '16-18': string
+        '18+': string;
+        '16-18': string;
     }
 
     interface BarConfig {
-        [id: string]: Offer;
+        [id: string]: Offer
     }
 
     interface Offer {
         'name': string;
         'price': number; // In cents
+        'depot'?: number; // In cents
+        'showLine'?: boolean;
         'id': string;
     }
 
@@ -33,8 +43,12 @@
         '16-18': '',
         'below': ''
     } );
-    const offering: Ref<BarConfig> = ref( {} );
+    const offering: Ref<Bars> = ref( {} );
     const selection: Ref<Selection> = ref( {} );
+    const selectedBar: Ref<string> = ref( '' );
+    const enableDepotReminder = ref( true );
+
+    let cashinInDepot = false;
 
     fetch( '/bar-config.json' ).then( res => {
         if ( res.status === 200 ) {
@@ -43,15 +57,22 @@
 
                 offering.value = data.offering;
                 ages.value = data.ages;
-                reset();
             } );
         } else {
             alert( 'Failed to load' );
         }
     } );
 
-    const reset = () => {
-        const keys = Object.keys( offering.value );
+    const reset = ( skipCheck = true ) => {
+        if ( !skipCheck && !Object.keys( offering.value ).includes( selectedBar.value ) ) return;
+
+        if ( cashinInDepot && enableDepotReminder.value ) alert( 'Hand out chips for depot' );
+
+        cashinInDepot = false;
+
+        const keys = Object.keys( offering.value[ selectedBar.value ].offering );
+
+        selection.value = {};
 
         keys.forEach( val => {
             selection.value[ val ] = 0;
@@ -66,7 +87,10 @@
         for ( let i = 0; i < keys.length; i++ ) {
             const o = selection.value[ keys[ i ] ];
 
-            totalPrice += o * offering.value[ keys[ i ] ].price;
+            totalPrice += o * offering.value[ selectedBar.value ].offering[ keys[ i ] ].price;
+            totalPrice += o * ( offering.value[ selectedBar.value ].offering[ keys[ i ] ].depot ?? 0 );
+
+            if ( offering.value[ selectedBar.value ].offering[ keys[ i ] ].depot ?? 0 > 0 ) cashinInDepot = true;
         }
 
         return totalPrice / 100;
@@ -83,17 +107,40 @@
 
 <template>
     <div class="bar-utility">
-        <h1>Bar utility</h1>
+        <div style="margin: 0">
+            <label> Depot chips reminder</label>
+            <input v-model="enableDepotReminder" type="checkbox">
+        </div>
+        <h1 style="margin: 15px;">
+            Bar utility
+        </h1>
+        <div>
+            <label for="bar-select">Select bar </label>
+            <select id="bar-select" v-model="selectedBar" @change="reset()">
+                <option v-for="bar in Object.values( offering )" :key="bar.id" :value="bar.id">
+                    {{ bar.name }}
+                </option>
+            </select>
+            <button @click="reset( false )">
+                Reset
+            </button>
+        </div>
         <p>Check ages! (18+: {{ ages[ '18+' ] }}, 16-18: {{ ages[ '16-18' ] }})</p>
-        <button @click="reset()">
-            Reset
-        </button>
-        <p>Total: CHF {{ total }}</p>
-        <table class="offering-wrapper">
+        <p v-if="Object.keys( offering ).includes( selectedBar )">
+            Total: CHF {{ total }}
+        </p>
+        <table v-if="Object.keys( offering ).includes( selectedBar )" class="offering-wrapper">
             <tbody>
-                <tr v-for="offer in offering" :key="offer.id" class="offering">
+                <tr
+                    v-for="offer in offering[ selectedBar ].offering"
+                    :key="offer.id"
+                    :class="[ 'offering', offer.showLine ? 'show-line' : '' ]"
+                >
                     <td>
-                        <p>{{ offer.name }} (CHF {{ offer.price / 100 }})</p>
+                        <p>
+                            {{ offer.name }} (CHF {{ offer.price / 100 }}{{
+                                offer.depot ? ' + ' + ( offer.depot / 100 ) : '' }})
+                        </p>
                     </td>
                     <td>
                         <div>
@@ -120,7 +167,16 @@
     flex-direction: column;
 
     >.offering-wrapper {
+        border-collapse: collapse;
+        margin-bottom: 5vh;
+
         .offering {
+            &.show-line {
+                >td {
+                    border-bottom: solid 1px black;
+                }
+            }
+
             >td {
                 padding: 5px;
                 p {
