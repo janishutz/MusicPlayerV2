@@ -90,7 +90,8 @@
             totalPrice += o * offering.value[ selectedBar.value ].offering[ keys[ i ] ].price;
             totalPrice += o * ( offering.value[ selectedBar.value ].offering[ keys[ i ] ].depot ?? 0 );
 
-            if ( offering.value[ selectedBar.value ].offering[ keys[ i ] ].depot ?? 0 > 0 ) cashinInDepot = true;
+            if ( ( offering.value[ selectedBar.value ].offering[ keys[ i ] ].depot ?? 0 ) > 0 && o > 0 )
+                cashinInDepot = true;
         }
 
         return totalPrice / 100;
