@@ -50,7 +50,7 @@
 
     let cashinInDepot = false;
 
-    fetch( '/bar-config.json' ).then( res => {
+    fetch( '/bar-config.json', { cache: "no-store" } ).then( res => {
         if ( res.status === 200 ) {
             res.json().then( json => {
                 const data: FullConfig = json;
