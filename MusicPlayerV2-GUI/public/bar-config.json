@@ -1,8 +1,8 @@
 {
     "ages": {
-        "below": "red",
-        "16-18": "",
-        "18+": ""
+        "below": "Orange",
+        "16-18": "Yellow",
+        "18+": "Turquoise"
     },
     "offering": {
         "big-bar": {

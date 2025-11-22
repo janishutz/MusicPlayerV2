@@ -50,7 +50,9 @@
 
     let cashinInDepot = false;
 
-    fetch( '/bar-config.json', { cache: "no-store" } ).then( res => {
+    fetch( '/bar-config.json', {
+        'cache': 'no-store'
+    } ).then( res => {
         if ( res.status === 200 ) {
             res.json().then( json => {
                 const data: FullConfig = json;
@@ -83,18 +85,22 @@
         const keys = Object.keys( selection.value );
 
         let totalPrice = 0;
+        let totalDepot = 0;
 
         for ( let i = 0; i < keys.length; i++ ) {
             const o = selection.value[ keys[ i ] ];
 
             totalPrice += o * offering.value[ selectedBar.value ].offering[ keys[ i ] ].price;
-            totalPrice += o * ( offering.value[ selectedBar.value ].offering[ keys[ i ] ].depot ?? 0 );
-
-            if ( ( offering.value[ selectedBar.value ].offering[ keys[ i ] ].depot ?? 0 ) > 0 && o > 0 )
-                cashinInDepot = true;
+            totalDepot += o * ( offering.value[ selectedBar.value ].offering[ keys[ i ] ].depot ?? 0 );
         }
 
-        return totalPrice / 100;
+        if ( totalDepot > 0 ) {
+            cashinInDepot = true;
+        }
+
+        totalPrice += totalDepot;
+
+        return ( totalPrice / 100 ) + ( totalDepot ? ` (Depot = ${ totalDepot })` : '' );
     } );
 
     const changeValue = ( id: string, amount: number ) => {
@@ -157,6 +163,9 @@
                 </tr>
             </tbody>
         </table>
+        <p v-if="Object.keys( offering ).includes( selectedBar )">
+            Total: CHF {{ total }}
+        </p>
     </div>
 </template>
 
