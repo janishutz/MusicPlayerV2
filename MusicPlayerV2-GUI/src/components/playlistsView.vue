@@ -8,7 +8,10 @@
             <!-- TODO: Make prettier -->
         </div>
         <div v-else-if="!$props.isLoggedIn" class="not-logged-in">
-            <p>You are not logged into Apple Music. We therefore can't show you your playlists. <a href="" title="Refreshes the page, allowing you to log in">Change that</a></p>
+            <p>
+                You are not logged into Apple Music. We therefore can't show you your playlists.
+                <a href="" title="Refreshes the page, allowing you to log in">Change that</a>
+            </p>
             <p>Use the button below to load songs from your local disk</p>
             <input
                 id="pl-loader"

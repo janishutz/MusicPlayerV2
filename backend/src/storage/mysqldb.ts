@@ -10,6 +10,7 @@
 import mysql from 'mysql';
 import fs from 'fs';
 import path from 'path';
+import logger from '../logger';
 
 declare let __dirname: string | undefined;
 
@@ -63,20 +64,20 @@ class SQLDB {
             const self = this;
 
             if ( this.isRecovering ) {
-                console.log( '[ SQL ] Attempting to recover from critical error' );
+                logger.info( '[ SQL ] Attempting to recover from critical error' );
                 this.sqlConnection = mysql.createConnection( this.config );
                 this.isRecovering = false;
             }
 
             this.sqlConnection.connect( err => {
                 if ( err ) {
-                    console.error( '[ SQL ]: An error ocurred whilst connecting: ' + err.stack );
+                    logger.error( '[ SQL ]: An error ocurred whilst connecting: ' + err.stack );
                     reject( err );
 
                     return;
                 }
 
-                console.log( '[ SQL ] Connected to database successfully' );
+                logger.info( '[ SQL ] Connected to database successfully' );
                 self.sqlConnection.on( 'error', err => {
                     if ( err.code === 'ECONNRESET' ) {
                         self.isRecovering = true;
@@ -85,7 +86,7 @@ class SQLDB {
                             self.connect();
                         }, 1000 );
                     } else {
-                        console.error( err );
+                        logger.error( err );
                     }
                 } );
                 resolve( 'connection' );

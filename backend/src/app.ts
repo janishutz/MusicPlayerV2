@@ -21,6 +21,7 @@ import storeSDK from '@janishutz/store-sdk';
 import sdk from '@janishutz/login-sdk-server';
 import sse from './sse';
 import socket from './socket';
+import logger from './logger';
 
 // const isFossVersion = true;
 //
@@ -42,14 +43,12 @@ const run = () => {
     const httpServer = createServer( app );
 
     if ( !isFossVersion ) {
-        console.error( '[ APP ] Starting in non-FOSS version' );
+        logger.info( '[ APP ] Starting in non-FOSS version' );
 
         const storeConfig = JSON.parse( fs.readFileSync( path.join(
             __dirname,
             '/config/store-sdk.config.secret.json'
         ) ).toString() );
-
-        console.error( storeConfig );
 
         storeSDK.configure( storeConfig );
 
@@ -139,6 +138,7 @@ const run = () => {
                     'useAntiTamper': request.query.useAntiTamper === 'true'
                         ? true : false,
                 };
+                logger.debug( `Created room "${ roomName }"` );
                 response.send( roomToken );
             } else {
                 if (
@@ -211,7 +211,7 @@ const run = () => {
             } else {
                 storeSDK.getSubscriptions( uid )
                     .then( stat => {
-                        console.error( 'Subscription check was successful' );
+                        logger.log( 'Subscription check was successful' );
                         const now = new Date().getTime();
 
                         for ( const sub in stat ) {
@@ -232,7 +232,7 @@ const run = () => {
                         resolve( false );
                     } )
                     .catch( e => {
-                        console.error( 'Subscription check unsuccessful with error', e );
+                        logger.error( 'Subscription check unsuccessful with error', e );
                         reject( 'ERR_NOT_OWNED' );
                     } );
             }

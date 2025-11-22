@@ -4,6 +4,7 @@ import bodyParser from 'body-parser';
 import {
     SocketData
 } from './definitions';
+import logger from './logger';
 
 const useSSE = (
     app: express.Application,
@@ -86,7 +87,11 @@ const useSSE = (
 
                         for ( const c in cl ) {
                             if ( cl[ c ] === sid ) {
-                                cl.splice( parseInt( c ), 1 );
+                                try {
+                                    cl.splice( parseInt( c ), 1 );
+                                // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                                } catch ( _ ) { /* empty */ }
+
                                 break;
                             }
                         }
@@ -120,12 +125,13 @@ const useSSE = (
         ( request: express.Request, response: express.Response ) => {
             if ( request.query.room ) {
                 if ( socketData[ String( request.query.room ) ] ) {
+                    logger.debug( `Room "${ request.query.room }" was joined` );
                     response.send( 'ok' );
                 } else {
                     response.status( 404 ).send( 'ERR_ROOM_NOT_FOUND' );
                 }
             } else {
-                response.status( 404 ).send( 'ERR_NO_ROOM_SPECIFIED' );
+                response.status( 400 ).send( 'ERR_NO_ROOM_SPECIFIED' );
             }
         }
     );
@@ -138,7 +144,16 @@ const useSSE = (
         ( request: express.Request, response: express.Response ) => {
             if ( socketData[ request.body.roomName ] ) {
                 if ( request.body.event === 'tampering' ) {
+                    logger.debug( `Room "${
+                        request.query.roomName }" has new event: Tampering` );
+
                     const clients = clientReference[ request.body.roomName ];
+
+                    if ( !clients ) {
+                        response.send( 'ERR_CANNOT_SEND' );
+
+                        return;
+                    }
 
                     for ( const client in clients ) {
                         if ( importantClients[ clients[ client ] ] ) {
@@ -181,8 +196,17 @@ const useSSE = (
                                 .playlistIndex = request.body.data;
                         }
 
+                        logger.debug( `Room "${
+                            request.query.roomName }" has new event: ${ update }` );
+
                         if ( send ) {
                             const clients = clientReference[ request.body.roomName ];
+
+                            if ( !clients ) {
+                                response.send( 'ERR_CANNOT_SEND' );
+
+                                return;
+                            }
 
                             for ( const client in clients ) {
                                 if ( connectedClients[ clients[ client ] ] ) {
@@ -222,8 +246,16 @@ const useSSE = (
                         socketData[ request.body.roomName ].roomToken
                         === request.body.roomToken
                     ) {
+                        logger.debug( `Room "${
+                            request.query.roomName }" was deleted` );
                         socketData[ request.body.roomName ] = undefined;
                         const clients = clientReference[ request.body.roomName ];
+
+                        if ( !clients ) {
+                            response.send( 'ok' );
+
+                            return;
+                        }
 
                         for ( const client in clients ) {
                             if ( connectedClients[ clients[ client ] ] ) {
@@ -234,6 +266,8 @@ const useSSE = (
                                     } ) + '\n\n' );
                             }
                         }
+
+                        response.send( 'ok' );
                     } else {
                         response.send( 403 ).send( 'ERR_UNAUTHORIZED' );
                     }

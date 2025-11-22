@@ -1,7 +1,7 @@
 // These functions handle connections to the backend with socket.io
 
 import {
-    io, type Socket
+    type Socket, io
 } from 'socket.io-client';
 import type {
     SSEMap
@@ -57,7 +57,8 @@ class NotificationHandler {
      */
     connect ( roomName: string, useAntiTamper: boolean ): Promise<void> {
         return new Promise( ( resolve, reject ) => {
-            fetch( localStorage.getItem( 'url' ) + '/createRoomToken?roomName=' + roomName + '&useAntiTamper=' + useAntiTamper, {
+            fetch( localStorage.getItem( 'url' ) + '/createRoomToken?roomName='
+                  + roomName + '&useAntiTamper=' + useAntiTamper, {
                 'credentials': 'include'
             } ).then( res => {
                 if ( res.status === 200 ) {
@@ -110,7 +111,8 @@ class NotificationHandler {
                         'credentials': 'include'
                     } ).then( res => {
                         if ( res.status === 200 ) {
-                            this.eventSource = new EventSource( localStorage.getItem( 'url' ) + '/socket/connection?room=' + this.roomName, {
+                            this.eventSource = new EventSource( localStorage.getItem( 'url' )
+                                                               + '/socket/connection?room=' + this.roomName, {
                                 'withCredentials': true
                             } );
 
@@ -118,7 +120,8 @@ class NotificationHandler {
                                 this.isConnected = true;
                                 this.connectionWasSuccessful = true;
                                 this.reconnectRetryCount = 0;
-                                console.log( '[ SSE Connection ] - ' + new Date().toISOString() + ': Connection successfully established!' );
+                                console.log( '[ SSE Connection ] - '
+                                            + new Date().toISOString() + ': Connection successfully established!' );
                                 resolve();
                             };
 
@@ -135,8 +138,10 @@ class NotificationHandler {
                                     this.isConnected = false;
                                     this.eventSource?.close();
                                     this.openConnectionsCount -= 1;
-                                    console.debug( e );
-                                    console.log( '[ SSE Connection ] - ' + new Date().toISOString() + ': Reconnecting due to connection error!' );
+                                    console.debug( '[ SSE Connection ] - Error encountered: ', e );
+                                    console.log( '[ SSE Connection ] - '
+                                                + new Date().toISOString()
+                                                + ': Reconnecting due to connection error!' );
 
                                     this.eventSource = undefined;
 
@@ -146,7 +151,8 @@ class NotificationHandler {
                                     }, 1000 * this.reconnectRetryCount );
                                 }
                             };
-                        } else if ( res.status === 403 || res.status === 401 || res.status === 404 || res.status === 402 ) {
+                        } else if ( res.status === 403 || res.status === 401
+                            || res.status === 404 || res.status === 402 ) {
                             document.dispatchEvent( new Event( 'musicplayer:autherror' ) );
                             reject( 'ERR_UNAUTHORIZED' );
                         } else {
@@ -158,7 +164,8 @@ class NotificationHandler {
                                 reject( 'ERR_ROOM_CONNECTING' );
                             } else {
                                 this.openConnectionsCount -= 1;
-                                console.log( '[ SSE Connection ] - ' + new Date().toISOString() + ': Reconnecting due to severe connection error!' );
+                                console.log( '[ SSE Connection ] - ' + new Date().toISOString()
+                                            + ': Reconnecting due to severe connection error!' );
 
                                 this.eventSource = undefined;
 

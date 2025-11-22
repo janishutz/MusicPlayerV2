@@ -1,7 +1,7 @@
 // These functions handle connections to the backend with socket.io
 
 import {
-    io, type Socket
+    type Socket, io
 } from 'socket.io-client';
 import type {
     SSEMap

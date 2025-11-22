@@ -10,6 +10,7 @@
 import path from 'path';
 import fs from 'fs';
 import * as sqlDB from './mysqldb.js';
+import logger from '../logger.js';
 
 declare let __dirname: string | undefined;
 
@@ -33,9 +34,9 @@ dbh.connect();
  */
 const initDB = (): undefined => {
     ( async () => {
-        console.log( '[ DB ] Setting up...' );
+        logger.info( '[ DB ] Setting up...' );
         dbh.setupDB();
-        console.log( '[ DB ] Setting up complete!' );
+        logger.info( '[ DB ] Setting up complete!' );
     } )();
 };
 
